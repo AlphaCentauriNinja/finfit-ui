@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import {
     PortfolioGraph,
+    FinFitScoreWidget,
     SavingsGauge,
     SpendingBreakdown,
     GoalTracker,
@@ -99,6 +100,9 @@ export default function Overview() {
 
             {/* Right Side Summary Panel */}
             <aside className="w-full xl:w-96 space-y-8 flex-shrink-0">
+                {/* FinFit Score */}
+                <FinFitScoreWidget />
+
                 {/* Gauge */}
                 <div className="xl:mt-14">
                     <SavingsGauge />

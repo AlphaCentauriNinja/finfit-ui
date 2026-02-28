@@ -1,10 +1,12 @@
 'use client'
 
+import Link from 'next/link'
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-    PieChart, Pie, Cell, BarChart, Bar, Legend
+    PieChart, Pie, Cell, BarChart, Bar
 } from 'recharts'
-import { ArrowUpRight, ArrowDownRight, Target, ShoppingBag, Home, Zap, ExternalLink } from 'lucide-react'
+import { ArrowDownRight, Target, ShoppingBag, Home, Zap, ArrowRight, ExternalLink } from 'lucide-react'
+import { babySteps } from '@/lib/baby-steps'
 
 const portfolioData = [
     { name: 'Jan', value: 180000 },
@@ -60,6 +62,61 @@ export function PortfolioGraph() {
                     </AreaChart>
                 </ResponsiveContainer>
             </div>
+        </div>
+    )
+}
+
+export function FinFitScoreWidget() {
+    const score = 3
+    const currentStep = babySteps[score - 1]
+
+    return (
+        <div className="bg-white/5 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/10">
+            <div className="flex items-start justify-between mb-4">
+                <div>
+                    <h3 className="text-sm font-bold text-white">FinFit Score</h3>
+                    <p className="text-xs text-white/50 mt-1">AI-determined from the FinFit 7 Baby Steps</p>
+                </div>
+                <p className="text-indigo-300 font-bold text-xl leading-none">
+                    {score}
+                    <span className="text-sm text-white/50 ml-0.5">/7</span>
+                </p>
+            </div>
+
+            <div className="mb-4">
+                <div className="grid grid-cols-7 gap-2">
+                    {babySteps.map((stepData, index) => {
+                        const value = index + 1
+                        const isActive = value <= score
+
+                        return (
+                            <div
+                                key={stepData.step}
+                                className={`h-11 rounded-lg border flex items-center justify-center text-2xl leading-none font-bold ${isActive
+                                    ? 'bg-purple-500/25 text-purple-400 border-purple-400/60'
+                                    : 'bg-white/5 text-slate-400 border-white/10'
+                                    }`}
+                            >
+                                {value}
+                            </div>
+                        )
+                    })}
+                </div>
+            </div>
+
+            <div className="rounded-xl bg-white/5 border border-white/10 p-3">
+                <p className="text-[11px] uppercase tracking-wide text-white/45">Current Step</p>
+                <p className="text-sm font-semibold text-white mt-1">Baby Step {score}</p>
+                <p className="text-xs text-white/70 mt-1 leading-relaxed">{currentStep.title}</p>
+            </div>
+
+            <Link
+                href="/dashboard/baby-steps"
+                className="inline-flex items-center gap-1 text-xs text-indigo-300 hover:text-indigo-200 mt-4 transition-colors"
+            >
+                Learn the 7 baby steps
+                <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
         </div>
     )
 }
