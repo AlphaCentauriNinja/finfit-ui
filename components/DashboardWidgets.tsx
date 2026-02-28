@@ -42,7 +42,21 @@ export function PortfolioGraph() {
                             itemStyle={{ color: '#818cf8' }}
                             formatter={(value: number) => [`£${value.toLocaleString()}`, 'Portfolio Value']}
                         />
-                        <Area type="monotone" dataKey="value" stroke="#818cf8" strokeWidth={3} fillOpacity={1} fill="url(#colorValue)" />
+                        <Area
+                            type="natural"
+                            dataKey="value"
+                            stroke="#818cf8"
+                            strokeWidth={3}
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            fillOpacity={1}
+                            fill="url(#colorValue)"
+                            dot={false}
+                            activeDot={{ r: 5, strokeWidth: 0, fill: '#a5b4fc' }}
+                            isAnimationActive
+                            animationDuration={900}
+                            animationEasing="ease-out"
+                        />
                     </AreaChart>
                 </ResponsiveContainer>
             </div>

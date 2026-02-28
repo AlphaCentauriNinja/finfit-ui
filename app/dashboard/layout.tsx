@@ -22,13 +22,13 @@ export default async function Layout({
             {/* Subtle Grid Pattern Overlay */}
             <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay pointer-events-none"></div>
 
-            <div className="relative z-10 flex w-full min-h-screen">
-                <div className="flex w-full">
-                    {/* The sidebar will be flush left, and the main content will have appropriate padding */}
-                    <div className="h-screen sticky top-0 hidden lg:block">
+            <div className="relative z-10 flex w-full min-h-screen p-4">
+                <div className="flex w-full min-h-[calc(100vh-2rem)] overflow-hidden rounded-3xl border border-white/10 bg-slate-900/45 backdrop-blur-xl shadow-[0_20px_80px_rgba(2,6,23,0.45)]">
+                    {/* The sidebar and navbar remain separate components but share one visual shell */}
+                    <div className="hidden lg:block">
                         <Sidebar />
                     </div>
-                    <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
+                    <div className="flex-1 flex flex-col min-h-[calc(100vh-2rem)] overflow-hidden">
                         <Navbar userEmail={user?.email} userFullName={user?.user_metadata?.full_name} />
                         <main className="flex-1 p-8 pb-10 overflow-y-auto">
                             {children}

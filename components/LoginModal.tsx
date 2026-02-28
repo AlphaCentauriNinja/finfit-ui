@@ -56,10 +56,10 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
                 <div className="text-center mb-8">
                     <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-indigo-600 dark:from-purple-400 dark:to-indigo-400">
-                        Welcome Back
+                        Welcome to FinFit
                     </h2>
                     <p className="text-zinc-500 dark:text-zinc-400 mt-2 text-sm">
-                        Enter your credentials to access your account
+                        Enter your credentials to access your dashboard
                     </p>
                 </div>
 
