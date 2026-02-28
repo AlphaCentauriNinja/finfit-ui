@@ -17,10 +17,12 @@ export default function AddPensionButton() {
                 <span>Add Pension</span>
             </button>
 
-            <PensionModal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-            />
+            {isModalOpen ? (
+                <PensionModal
+                    isOpen={isModalOpen}
+                    onClose={() => setIsModalOpen(false)}
+                />
+            ) : null}
         </>
     )
 }

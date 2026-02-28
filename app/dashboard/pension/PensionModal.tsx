@@ -2,8 +2,9 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { X } from 'lucide-react'
+import { Loader2, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import PensionOperationModal from './PensionOperationModal'
 
 type Props = {
     isOpen: boolean
@@ -146,11 +147,20 @@ export default function PensionModal({ isOpen, onClose }: Props) {
                             disabled={isSaving}
                             className="flex-1 bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-400 hover:to-indigo-500 text-white rounded-xl px-4 py-3 text-sm font-semibold transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-indigo-500/25 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
                         >
-                            {isSaving ? 'Saving...' : 'Save Account'}
+                            <span className="inline-flex items-center justify-center gap-2">
+                                {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                                {isSaving ? 'Saving...' : 'Save Account'}
+                            </span>
                         </button>
                     </div>
                 </form>
             </div>
+
+            <PensionOperationModal
+                isOpen={isSaving}
+                title="Saving Pension"
+                message="Please wait while we store your pension details."
+            />
         </div>
     )
 }
