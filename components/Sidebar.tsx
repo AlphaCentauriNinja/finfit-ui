@@ -29,7 +29,7 @@ export default function Sidebar() {
     const pathname = usePathname()
 
     return (
-        <aside className="w-64 h-full bg-transparent border-r border-white/10 p-6 flex flex-col">
+        <aside className="w-64 h-full bg-transparent p-6 flex flex-col">
             <div className="flex-1 space-y-8">
                 <div>
                     <h2 className="text-xl font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
