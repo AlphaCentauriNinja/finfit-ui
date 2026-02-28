@@ -42,7 +42,7 @@ export function PortfolioGraph() {
                         <Tooltip
                             contentStyle={{ backgroundColor: '#0f172a', borderColor: '#ffffff20', borderRadius: '12px', color: '#fff' }}
                             itemStyle={{ color: '#818cf8' }}
-                            formatter={(value: number) => [`£${value.toLocaleString()}`, 'Portfolio Value']}
+                            formatter={(value) => [`£${Number(value ?? 0).toLocaleString()}`, 'Portfolio Value']}
                         />
                         <Area
                             type="natural"
@@ -75,7 +75,7 @@ export function FinFitScoreWidget() {
             <div className="flex items-start justify-between mb-4">
                 <div>
                     <h3 className="text-sm font-bold text-white">FinFit Score</h3>
-                    <p className="text-xs text-white/50 mt-1">AI-determined from the FinFit 7 Baby Steps</p>
+                    <p className="text-xs text-white/50 mt-1">AI-determined from the FinFit 7 levels</p>
                 </div>
                 <p className="text-indigo-300 font-bold text-xl leading-none">
                     {score}
@@ -111,10 +111,10 @@ export function FinFitScoreWidget() {
             </div>
 
             <Link
-                href="/dashboard/baby-steps"
+                href="/dashboard/finfit-levels"
                 className="inline-flex items-center gap-1 text-xs text-indigo-300 hover:text-indigo-200 mt-4 transition-colors"
             >
-                Learn the 7 baby steps
+                Open FinFit Levels
                 <ArrowRight className="w-3.5 h-3.5" />
             </Link>
         </div>

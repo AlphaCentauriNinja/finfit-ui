@@ -18,7 +18,7 @@ const links = [
     { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Pension', href: '/dashboard/pension', icon: Briefcase },
     { name: 'Savings', href: '/dashboard/savings', icon: PiggyBank },
-    { name: 'ISA', href: '/dashboard/isa', icon: TrendingUp },
+    { name: 'Investments', href: '/dashboard/investments', icon: TrendingUp },
     { name: 'Crypto', href: '/dashboard/crypto', icon: Coins },
     { name: 'Bullion', href: '/dashboard/bullion', icon: Gem },
     { name: 'Real Estate', href: '/dashboard/real-estate', icon: Home },

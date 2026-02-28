@@ -24,7 +24,7 @@ const getIconForAsset = (name: string) => {
     switch (name) {
         case 'Pension': return Briefcase
         case 'Real Estate': return Home
-        case 'ISA': return TrendingUp
+        case 'Investments': return TrendingUp
         case 'Savings': return PiggyBank
         case 'Crypto': return Coins
         case 'Bullion': return Gem
@@ -36,7 +36,7 @@ const getRouteForAsset = (name: string) => {
     switch (name) {
         case 'Pension': return '/dashboard/pension'
         case 'Savings': return '/dashboard/savings'
-        case 'ISA': return '/dashboard/isa'
+        case 'Investments': return '/dashboard/investments'
         case 'Crypto': return '/dashboard/crypto'
         case 'Bullion': return '/dashboard/bullion'
         case 'Real Estate': return '/dashboard/real-estate'
