@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import StatCard from '@/components/StatCard'
 import AssetCard from '@/components/AssetCard'
 import { assetsWithAllocation, totalAssets } from '@/lib/assets'
@@ -30,6 +31,18 @@ const getIconForAsset = (name: string) => {
     }
 }
 
+const getRouteForAsset = (name: string) => {
+    switch (name) {
+        case 'Pension': return '/dashboard/pension'
+        case 'Savings': return '/dashboard/savings'
+        case 'ISA': return '/dashboard/isa'
+        case 'Crypto': return '/dashboard/crypto'
+        case 'Bullion': return '/dashboard/bullion'
+        case 'Real Estate': return '/dashboard/real-estate'
+        default: return '/dashboard'
+    }
+}
+
 export default function Overview() {
     return (
         <div className="flex flex-col xl:flex-row gap-8">
@@ -57,15 +70,24 @@ export default function Overview() {
                         <h2 className="text-lg font-bold text-white">Asset Allocation</h2>
                     </div>
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {assetsWithAllocation.map((asset) => (
-                            <AssetCard
-                                key={asset.name}
-                                name={asset.name}
-                                value={asset.value}
-                                allocation={asset.allocation}
-                                icon={getIconForAsset(asset.name)}
-                            />
-                        ))}
+                        {assetsWithAllocation.map((asset) => {
+                            const href = getRouteForAsset(asset.name)
+
+                            return (
+                                <Link
+                                    key={asset.name}
+                                    href={href}
+                                    className="block rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/60 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+                                >
+                                    <AssetCard
+                                        name={asset.name}
+                                        value={asset.value}
+                                        allocation={asset.allocation}
+                                        icon={getIconForAsset(asset.name)}
+                                    />
+                                </Link>
+                            )
+                        })}
                     </div>
                 </section>
 
