@@ -42,7 +42,7 @@ export function PortfolioGraph() {
                         <Tooltip
                             contentStyle={{ backgroundColor: '#0f172a', borderColor: '#ffffff20', borderRadius: '12px', color: '#fff' }}
                             itemStyle={{ color: '#818cf8' }}
-                            formatter={(value: number) => [`£${value.toLocaleString()}`, 'Portfolio Value']}
+                            formatter={(value) => [`£${Number(value ?? 0).toLocaleString()}`, 'Portfolio Value']}
                         />
                         <Area
                             type="natural"
