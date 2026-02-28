@@ -49,15 +49,15 @@ export default function FinFitLevelsPage() {
                     onClick={() => setSelectedStep(null)}
                 >
                     <div
-                        className="w-full max-w-2xl bg-slate-900 border border-white/10 rounded-3xl shadow-2xl p-6 md:p-7 space-y-6"
+                        className="w-full max-w-2xl bg-slate-900 border border-white/10 rounded-3xl shadow-2xl p-6 md:p-7 space-y-7"
                         onClick={(event) => event.stopPropagation()}
                     >
-                        <div className="flex items-start justify-between gap-4">
-                            <div className="space-y-2">
+                        <div className="flex items-start justify-between gap-4 pb-5">
+                            <div className="space-y-3">
                                 <p className="text-xs uppercase tracking-[0.2em] text-indigo-200/80">
                                     Step {selectedStep.step}
                                 </p>
-                                <h3 className="text-xl md:text-2xl font-bold text-white">
+                                <h3 className="text-xl md:text-2xl font-bold text-white leading-tight">
                                     {selectedStep.title}
                                 </h3>
                             </div>
@@ -71,7 +71,7 @@ export default function FinFitLevelsPage() {
                             </button>
                         </div>
 
-                        <div className="space-y-5">
+                        <div className="space-y-5 pt-4">
                             <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
                                 <p className="text-xs uppercase tracking-wide text-white/45 mb-2">Focus</p>
                                 <p className="text-sm text-white/85 leading-relaxed">
