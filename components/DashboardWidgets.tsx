@@ -93,7 +93,7 @@ export function FinFitScoreWidget() {
                             <div
                                 key={stepData.step}
                                 className={`h-11 rounded-lg border flex items-center justify-center text-2xl leading-none font-bold ${isActive
-                                    ? 'bg-purple-500/30 text-purple-200 border-purple-400/50'
+                                    ? 'bg-purple-500/25 text-purple-400 border-purple-400/60'
                                     : 'bg-white/5 text-slate-400 border-white/10'
                                     }`}
                             >
