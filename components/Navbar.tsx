@@ -9,8 +9,7 @@ import {
     MessageSquare,
     User,
     Settings,
-    LogOut,
-    Menu
+    LogOut
 } from 'lucide-react'
 
 export default function Navbar({ userEmail, userFullName }: { userEmail?: string; userFullName?: string }) {
@@ -27,7 +26,7 @@ export default function Navbar({ userEmail, userFullName }: { userEmail?: string
     const displayName = userFullName || userEmail?.split('@')[0] || 'User'
 
     return (
-        <header className="sticky top-0 z-40 w-full bg-white/5 backdrop-blur-md border-b border-white/10 px-8 py-4">
+        <header className="sticky top-0 z-40 w-full bg-transparent border-b border-white/10 px-8 py-4">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                     {/* Mobile menu toggle could go here if implemented later */}
