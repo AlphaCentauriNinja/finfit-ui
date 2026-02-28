@@ -1,7 +1,9 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { X } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 
 type Props = {
     isOpen: boolean
@@ -11,16 +13,60 @@ type Props = {
 export default function PensionModal({ isOpen, onClose }: Props) {
     const [name, setName] = useState('')
     const [value, setValue] = useState('')
+    const [isSaving, setIsSaving] = useState(false)
+    const [formError, setFormError] = useState<string | null>(null)
+    const router = useRouter()
+    const supabase = createClient()
 
     if (!isOpen) return null
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        // Here you would typically save the data via Supabase
-        console.log({ name, value })
-        onClose()
+        setFormError(null)
+
+        const cleanName = name.trim()
+        const parsedValue = Number(value)
+
+        if (!cleanName) {
+            setFormError('Provider name is required.')
+            return
+        }
+
+        if (!Number.isFinite(parsedValue) || parsedValue < 0) {
+            setFormError('Value must be a valid number greater than or equal to 0.')
+            return
+        }
+
+        setIsSaving(true)
+
+        const {
+            data: { user },
+            error: userError,
+        } = await supabase.auth.getUser()
+
+        if (userError || !user) {
+            setFormError('Session not found. Please sign in again.')
+            setIsSaving(false)
+            return
+        }
+
+        const { error: insertError } = await supabase.from('pension_accounts').insert({
+            user_id: user.id,
+            provider_name: cleanName,
+            current_value: parsedValue,
+        })
+
+        if (insertError) {
+            setFormError(insertError.message)
+            setIsSaving(false)
+            return
+        }
+
+        setIsSaving(false)
         setName('')
         setValue('')
+        onClose()
+        router.refresh()
     }
 
     return (
@@ -80,19 +126,27 @@ export default function PensionModal({ isOpen, onClose }: Props) {
                         </div>
                     </div>
 
+                    {formError ? (
+                        <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
+                            {formError}
+                        </div>
+                    ) : null}
+
                     <div className="pt-4 flex gap-3">
                         <button
                             type="button"
                             onClick={onClose}
+                            disabled={isSaving}
                             className="flex-1 px-4 py-3 border border-white/10 rounded-xl text-white/80 hover:bg-white/5 hover:text-white transition-colors text-sm font-semibold"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
-                            className="flex-1 bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-400 hover:to-indigo-500 text-white rounded-xl px-4 py-3 text-sm font-semibold transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-indigo-500/25"
+                            disabled={isSaving}
+                            className="flex-1 bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-400 hover:to-indigo-500 text-white rounded-xl px-4 py-3 text-sm font-semibold transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-indigo-500/25 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
                         >
-                            Save Account
+                            {isSaving ? 'Saving...' : 'Save Account'}
                         </button>
                     </div>
                 </form>
