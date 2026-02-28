@@ -338,19 +338,19 @@ export default function InvestmentsPage() {
                 <InvestmentLineChart data={chartData} />
             </div>
 
-            <div className="pt-4 w-full">
-                <div className="w-full bg-white/5 backdrop-blur-sm rounded-2xl shadow-sm border border-white/10 overflow-hidden">
+            <div className="pt-4 w-full self-stretch">
+                <div className="w-full max-w-none bg-white/5 backdrop-blur-sm rounded-2xl shadow-sm border border-white/10 overflow-hidden">
                     <div className="px-6 py-4 border-b border-white/10">
                         <h3 className="text-sm font-semibold text-white">Portfolio Holdings</h3>
                     </div>
                     <div className="w-full overflow-x-auto">
-                        <table className="w-full table-fixed text-sm">
+                        <table className="w-full min-w-full table-fixed text-sm">
                             <thead className="bg-white/[0.03]">
                                 <tr className="text-white/60">
-                                    <th className="text-left font-medium px-6 py-3">Ticker</th>
-                                    <th className="text-right font-medium px-6 py-3">Invested</th>
-                                    <th className="text-right font-medium px-6 py-3">Value</th>
-                                    <th className="text-right font-medium px-6 py-3">PNL</th>
+                                    <th className="text-center font-medium px-6 py-3">Ticker</th>
+                                    <th className="text-center font-medium px-6 py-3">Invested</th>
+                                    <th className="text-center font-medium px-6 py-3">Value</th>
+                                    <th className="text-center font-medium px-6 py-3">PNL</th>
                                     <th className="text-center font-medium px-6 py-3">Trend</th>
                                 </tr>
                             </thead>
@@ -363,14 +363,14 @@ export default function InvestmentsPage() {
 
                                     return (
                                         <tr key={row.ticker} className="border-t border-white/10">
-                                            <td className="px-6 py-4 text-white font-semibold">{row.ticker}</td>
-                                            <td className="px-6 py-4 text-right text-white/80">
+                                            <td className="px-6 py-4 text-center text-white font-semibold">{row.ticker}</td>
+                                            <td className="px-6 py-4 text-center text-white/80">
                                                 £{row.invested.toLocaleString(undefined, { maximumFractionDigits: 2 })}
                                             </td>
-                                            <td className="px-6 py-4 text-right text-white/80">
+                                            <td className="px-6 py-4 text-center text-white/80">
                                                 £{row.value.toLocaleString(undefined, { maximumFractionDigits: 2 })}
                                             </td>
-                                            <td className={`px-6 py-4 text-right font-semibold ${isUp ? 'text-emerald-400' : isDown ? 'text-rose-400' : 'text-white/70'}`}>
+                                            <td className={`px-6 py-4 text-center font-semibold ${isUp ? 'text-emerald-400' : isDown ? 'text-rose-400' : 'text-white/70'}`}>
                                                 {pnl >= 0 ? '+' : ''}£{pnl.toLocaleString(undefined, { maximumFractionDigits: 2 })} ({pnlPct.toFixed(2)}%)
                                             </td>
                                             <td className="px-6 py-4">
