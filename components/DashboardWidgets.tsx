@@ -111,10 +111,10 @@ export function FinFitScoreWidget() {
             </div>
 
             <Link
-                href="/dashboard/baby-steps"
+                href="/dashboard/finfit-levels"
                 className="inline-flex items-center gap-1 text-xs text-indigo-300 hover:text-indigo-200 mt-4 transition-colors"
             >
-                Learn the 7 baby steps
+                Open FinFit Levels
                 <ArrowRight className="w-3.5 h-3.5" />
             </Link>
         </div>
