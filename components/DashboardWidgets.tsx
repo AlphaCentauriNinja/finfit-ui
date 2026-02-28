@@ -1,11 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import Link from 'next/link'
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     PieChart, Pie, Cell, BarChart, Bar
 } from 'recharts'
-import { ArrowDownRight, Target, ShoppingBag, Home, Zap, ExternalLink } from 'lucide-react'
+import { ArrowDownRight, Target, ShoppingBag, Home, Zap, ArrowRight, ExternalLink } from 'lucide-react'
+import { babySteps } from '@/lib/baby-steps'
 
 const portfolioData = [
     { name: 'Jan', value: 180000 },
@@ -65,18 +66,8 @@ export function PortfolioGraph() {
     )
 }
 
-const babySteps = [
-    'Save $1,000 for your starter emergency fund.',
-    'Pay off all debt (except the house) using the debt snowball.',
-    'Save 3-6 months of expenses in a fully funded emergency fund.',
-    'Invest 15% of your household income in retirement.',
-    "Save for your children's college fund.",
-    'Pay off your home early.',
-    'Build wealth and give.',
-]
-
 export function FinFitScoreWidget() {
-    const [score, setScore] = useState(3)
+    const score = 3
     const currentStep = babySteps[score - 1]
 
     return (
@@ -84,7 +75,7 @@ export function FinFitScoreWidget() {
             <div className="flex items-start justify-between mb-4">
                 <div>
                     <h3 className="text-sm font-bold text-white">FinFit Score</h3>
-                    <p className="text-xs text-white/50 mt-1">Based on Ramsey&rsquo;s 7 Baby Steps</p>
+                    <p className="text-xs text-white/50 mt-1">AI-determined from the FinFit 7 Baby Steps</p>
                 </div>
                 <p className="text-indigo-300 font-bold text-xl leading-none">
                     {score}
@@ -93,54 +84,39 @@ export function FinFitScoreWidget() {
             </div>
 
             <div className="mb-4">
-                <div className="grid grid-cols-7 gap-1.5 mb-3">
-                    {babySteps.map((step, index) => {
+                <div className="grid grid-cols-7 gap-2">
+                    {babySteps.map((stepData, index) => {
                         const value = index + 1
                         const isActive = value <= score
 
                         return (
-                            <button
-                                key={step}
-                                type="button"
-                                onClick={() => setScore(value)}
-                                className={`h-2 rounded-full transition-colors ${isActive ? 'bg-indigo-400' : 'bg-white/10 hover:bg-white/20'}`}
-                                aria-label={`Set FinFit score to ${value}`}
-                            />
+                            <div
+                                key={stepData.step}
+                                className={`h-11 rounded-lg border flex items-center justify-center text-2xl leading-none font-bold ${isActive
+                                    ? 'bg-purple-500/30 text-purple-200 border-purple-400/50'
+                                    : 'bg-white/5 text-slate-400 border-white/10'
+                                    }`}
+                            >
+                                {value}
+                            </div>
                         )
                     })}
-                </div>
-
-                <input
-                    type="range"
-                    min={1}
-                    max={7}
-                    step={1}
-                    value={score}
-                    onChange={(event) => setScore(Number(event.target.value))}
-                    className="w-full accent-indigo-400 cursor-pointer"
-                    aria-label="FinFit score from 1 to 7"
-                />
-                <div className="flex items-center justify-between mt-1 text-[10px] text-white/45">
-                    <span>1</span>
-                    <span>7</span>
                 </div>
             </div>
 
             <div className="rounded-xl bg-white/5 border border-white/10 p-3">
                 <p className="text-[11px] uppercase tracking-wide text-white/45">Current Step</p>
                 <p className="text-sm font-semibold text-white mt-1">Baby Step {score}</p>
-                <p className="text-xs text-white/70 mt-1 leading-relaxed">{currentStep}</p>
+                <p className="text-xs text-white/70 mt-1 leading-relaxed">{currentStep.title}</p>
             </div>
 
-            <a
-                href="https://www.ramseysolutions.com/dave-ramsey-7-baby-steps"
-                target="_blank"
-                rel="noopener noreferrer"
+            <Link
+                href="/dashboard/baby-steps"
                 className="inline-flex items-center gap-1 text-xs text-indigo-300 hover:text-indigo-200 mt-4 transition-colors"
             >
-                View all 7 steps
-                <ExternalLink className="w-3.5 h-3.5" />
-            </a>
+                Learn the 7 baby steps
+                <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
         </div>
     )
 }
