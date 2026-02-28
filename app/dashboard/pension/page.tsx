@@ -162,17 +162,17 @@ export default async function PensionPage() {
     const total = pensions.reduce((sum, pension) => sum + pension.value, 0)
     const allDates = new Set<string>([getTodayIso()])
 
-    ; ((contributionData as PensionContributionRow[] | null) ?? []).forEach((contribution) => {
-        if (contribution.contribution_date) {
-            allDates.add(contribution.contribution_date)
-        }
-    })
+        ; ((contributionData as PensionContributionRow[] | null) ?? []).forEach((contribution) => {
+            if (contribution.contribution_date) {
+                allDates.add(contribution.contribution_date)
+            }
+        })
 
-    ; ((valueData as PensionValueRow[] | null) ?? []).forEach((valueRow) => {
-        if (valueRow.value_date) {
-            allDates.add(valueRow.value_date)
-        }
-    })
+        ; ((valueData as PensionValueRow[] | null) ?? []).forEach((valueRow) => {
+            if (valueRow.value_date) {
+                allDates.add(valueRow.value_date)
+            }
+        })
 
     const sortedDates = [...allDates].sort((a, b) => a.localeCompare(b))
 
@@ -187,9 +187,11 @@ export default async function PensionPage() {
         {}
     )
 
-    let cumulativeContribution = 0
-    const chartData: ChartPoint[] = sortedDates.map((dateValue) => {
-        cumulativeContribution += contributionByDate[dateValue] ?? 0
+    const chartData: ChartPoint[] = sortedDates.reduce<ChartPoint[]>((acc, dateValue) => {
+        const previousContribution = acc.length > 0
+            ? acc[acc.length - 1].contributions
+            : 0
+        const cumulativeContribution = previousContribution + (contributionByDate[dateValue] ?? 0)
 
         const totalValueOnDate = pensions.reduce((sum, pension) => {
             const snapshots = sortedSnapshotsByAccount[pension.id] ?? []
@@ -207,14 +209,16 @@ export default async function PensionPage() {
             return sum + accountValue
         }, 0)
 
-        return {
+        acc.push({
             date: dateValue,
             label: formatChartDate(dateValue),
             totalValue: totalValueOnDate,
             contributions: cumulativeContribution,
             pnl: totalValueOnDate - cumulativeContribution,
-        }
-    })
+        })
+
+        return acc
+    }, [])
 
     const latestChartPoint = chartData.length > 0
         ? chartData[chartData.length - 1]

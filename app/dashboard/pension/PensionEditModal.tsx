@@ -86,8 +86,8 @@ export default function PensionEditModal({ isOpen, onClose, pensionId, initialNa
 
             <div className="relative w-full max-w-md bg-[#0f172a] border border-white/10 rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                 <div className="flex items-center justify-between p-6 border-b border-white/10">
-                    <h2 className="text-xl font-bold text-white">Edit Pension Account</h2>
-                    <button onClick={onClose} className="text-white/50 hover:text-white transition-colors p-1">
+                    <h2 className="text-xl font-bold text-red">Edit Pension Account</h2>
+                    <button onClick={onClose} className="text-white/50 hover:text-red transition-colors p-1">
                         <X className="w-5 h-5" />
                     </button>
                 </div>
@@ -152,7 +152,8 @@ export default function PensionEditModal({ isOpen, onClose, pensionId, initialNa
                                 type="button"
                                 onClick={handleDelete}
                                 disabled={isDeleting}
-                                className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl !bg-lime-500 hover:!bg-lime-400 !text-white px-4 py-3 text-sm font-semibold transition-colors shadow-lg shadow-lime-500/25 disabled:opacity-60 disabled:cursor-not-allowed"
+                                className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-colors shadow-lg shadow-green-500/30 disabled:opacity-60 disabled:cursor-not-allowed"
+                                style={{ backgroundColor: '#22c55e', color: '#ffffff' }}
                             >
                                 {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                                 YES
@@ -161,7 +162,8 @@ export default function PensionEditModal({ isOpen, onClose, pensionId, initialNa
                                 type="button"
                                 onClick={handleCancelDeleteOperation}
                                 disabled={isDeleting}
-                                className="flex-1 rounded-xl !bg-red-500 hover:!bg-red-400 !text-white px-4 py-3 text-sm font-semibold transition-colors shadow-lg shadow-red-500/25 disabled:opacity-60 disabled:cursor-not-allowed"
+                                className="flex-1 rounded-xl px-4 py-3 text-sm font-semibold transition-colors shadow-lg shadow-red-500/30 disabled:opacity-60 disabled:cursor-not-allowed"
+                                style={{ backgroundColor: '#ef4444', color: '#ffffff' }}
                             >
                                 CANCEL
                             </button>
