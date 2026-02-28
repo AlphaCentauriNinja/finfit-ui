@@ -75,7 +75,7 @@ export function FinFitScoreWidget() {
             <div className="flex items-start justify-between mb-4">
                 <div>
                     <h3 className="text-sm font-bold text-white">FinFit Score</h3>
-                    <p className="text-xs text-white/50 mt-1">AI-determined from the FinFit 7 Baby Steps</p>
+                    <p className="text-xs text-white/50 mt-1">AI-determined from the FinFit 7 levels</p>
                 </div>
                 <p className="text-indigo-300 font-bold text-xl leading-none">
                     {score}

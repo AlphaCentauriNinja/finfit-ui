@@ -11,9 +11,17 @@ export default function FinFitLevelsPage() {
         <div className="w-full space-y-8">
             <header className="space-y-3">
                 <h1 className="text-2xl font-bold text-white">FinFit Levels</h1>
-                <p className="text-sm text-white/70 max-w-3xl">
-                    FinFit Levels are based on a 7-step financial progression. Click any step to view details and practical actions.
-                </p>
+                <div className="max-w-4xl space-y-4 text-sm text-white/70 leading-relaxed">
+                    <p>
+                        The FinFit Levels framework follows a structured 7-step path to financial fitness. Instead of treating money goals as disconnected tasks, it creates a clear order: stabilize first, then remove debt pressure, then grow long-term wealth from a stronger foundation.
+                    </p>
+                    <p>
+                        The sequence starts with a £1,000 starter emergency fund, then moves to paying off all non-mortgage debt. After that, the focus shifts to building a fully funded emergency reserve of 3-6 months of expenses, investing 15% of household income for retirement, and saving for children&apos;s education where relevant.
+                    </p>
+                    <p>
+                        Once those core priorities are in place, the final levels are to pay off your home early and continue building wealth while giving generously. The reason this method works is that each level reduces risk and increases capacity, so progress becomes more sustainable over time rather than relying on short-term motivation alone.
+                    </p>
+                </div>
             </header>
 
             <section className="grid grid-cols-1 xl:grid-cols-2 gap-5">
