@@ -32,7 +32,7 @@ export default function Navbar({ userEmail, userFullName }: { userEmail?: string
                 <div className="flex items-center gap-4">
                     {/* Mobile menu toggle could go here if implemented later */}
                     <div className="hidden lg:block text-white/50 text-sm font-medium">
-                        Welcome back, {displayName}
+                        FinFit Dashboard | Welcome back, {displayName}
                     </div>
                 </div>
 

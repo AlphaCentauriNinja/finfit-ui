@@ -33,9 +33,9 @@ export default function Sidebar() {
             <div className="flex-1 space-y-8">
                 <div>
                     <h2 className="text-xl font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
-                        Finance
+                        FinFit
                     </h2>
-                    <p className="text-xs text-white/50 mt-1">Portfolio Tracker</p>
+                    <p className="text-xs text-white/50 mt-1">Personal Finance Hub</p>
                 </div>
 
                 <nav className="space-y-1 text-sm font-medium">

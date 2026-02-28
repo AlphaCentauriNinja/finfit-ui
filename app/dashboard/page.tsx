@@ -37,7 +37,7 @@ export default function Overview() {
             <div className="flex-1 space-y-8 xl:max-w-[calc(100%-26rem)]">
                 {/* Header KPI */}
                 <section>
-                    <h1 className="text-2xl font-bold mb-6 text-white">Portfolio Overview</h1>
+                    <h1 className="text-2xl font-bold mb-6 text-white">FinFit Portfolio Overview</h1>
                     <StatCard
                         title="Total Net Assets"
                         value={`£${totalAssets.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}

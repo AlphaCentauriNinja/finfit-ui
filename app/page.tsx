@@ -1,8 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import Image from 'next/image'
-import Link from 'next/link'
 import { ArrowRight, Sparkles, ShieldCheck, BarChart3 } from 'lucide-react'
 import LoginModal from '@/components/LoginModal'
 
@@ -27,7 +25,7 @@ export default function LandingPage() {
             </svg>
           </div>
           <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70 tracking-tight">
-            BullionVault
+            FinFit
           </span>
         </div>
         <div className="flex items-center gap-4">
@@ -50,18 +48,18 @@ export default function LandingPage() {
       <main className="relative z-10 flex flex-col items-center justify-center min-h-[calc(100vh-80px)] px-6 text-center max-w-4xl mx-auto -mt-10">
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-sm mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
           <Sparkles className="w-4 h-4 text-purple-400" />
-          <span className="text-xs font-medium text-purple-200 tracking-wide uppercase">Next-Gen Wealth Management</span>
+          <span className="text-xs font-medium text-purple-200 tracking-wide uppercase">Smart Personal Finance</span>
         </div>
 
         <h1 className="text-5xl sm:text-7xl font-extrabold tracking-tight text-white mb-8 leading-[1.1] animate-in fade-in slide-in-from-bottom-6 duration-1000 delay-100">
-          Secure your future with <br className="hidden sm:block" />
+          Build momentum with <br className="hidden sm:block" />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-fuchsia-400 to-indigo-400">
-            Intelligent Vaulting
+            FinFit
           </span>
         </h1>
 
         <p className="text-lg sm:text-xl text-slate-300/80 max-w-2xl mb-12 leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
-          Experience enterprise-grade security and real-time analytics for your precious metal assets. Protected by advanced multi-factor authentication.
+          Track spending, investments, savings goals, and net worth in one secure workspace designed for everyday financial decisions.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 items-center animate-in fade-in slide-in-from-bottom-10 duration-1000 delay-500">
@@ -69,7 +67,7 @@ export default function LandingPage() {
             onClick={() => setIsLoginModalOpen(true)}
             className="group flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-8 py-4 rounded-full font-semibold text-lg hover:shadow-[0_0_40px_rgba(147,51,234,0.4)] transition-all hover:scale-105 active:scale-95 w-full sm:w-auto"
           >
-            Access Dashboard
+            Open FinFit Dashboard
             <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </button>
         </div>
@@ -82,7 +80,7 @@ export default function LandingPage() {
             </div>
             <div>
               <h3 className="text-white font-medium mb-1">Bank-Grade Security</h3>
-              <p className="text-sm text-slate-400">Supabase Auth with MFA protection standard on all accounts.</p>
+              <p className="text-sm text-slate-400">Supabase auth with strong account protection on every FinFit profile.</p>
             </div>
           </div>
           <div className="flex items-start gap-4 p-4 rounded-2xl bg-white/5 border border-white/5 backdrop-blur-sm">
@@ -90,8 +88,8 @@ export default function LandingPage() {
               <BarChart3 className="w-6 h-6" />
             </div>
             <div>
-              <h3 className="text-white font-medium mb-1">Real-Time Analytics</h3>
-              <p className="text-sm text-slate-400">Live market data and advanced portfolio visualization.</p>
+              <h3 className="text-white font-medium mb-1">Live Financial Insights</h3>
+              <p className="text-sm text-slate-400">Monitor portfolio performance and cash flow with real-time dashboards.</p>
             </div>
           </div>
         </div>
