@@ -17,6 +17,7 @@ export default function PensionEditModal({ isOpen, onClose, pensionId, initialNa
     const [name, setName] = useState(initialName)
     const [isSaving, setIsSaving] = useState(false)
     const [isDeleting, setIsDeleting] = useState(false)
+    const [isCancelling, setIsCancelling] = useState(false)
     const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false)
     const [formError, setFormError] = useState<string | null>(null)
     const router = useRouter()
@@ -73,9 +74,13 @@ export default function PensionEditModal({ isOpen, onClose, pensionId, initialNa
         router.refresh()
     }
 
-    const handleCancelDeleteOperation = () => {
-        if (isDeleting) return
+    const handleCancelDeleteOperation = async () => {
+        if (isDeleting || isCancelling) return
+        setIsCancelling(true)
         setIsDeleteConfirmOpen(false)
+        await new Promise((resolve) => {
+            setTimeout(resolve, 450)
+        })
         onClose()
         router.push('/pension')
     }
@@ -113,7 +118,7 @@ export default function PensionEditModal({ isOpen, onClose, pensionId, initialNa
 
                     <button
                         type="submit"
-                        disabled={isSaving || isDeleting}
+                        disabled={isSaving || isDeleting || isCancelling}
                         className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-400 hover:to-indigo-500 text-white rounded-xl px-4 py-3 text-sm font-semibold transition-all shadow-lg shadow-indigo-500/25 disabled:opacity-60 disabled:cursor-not-allowed"
                     >
                         {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
@@ -123,7 +128,7 @@ export default function PensionEditModal({ isOpen, onClose, pensionId, initialNa
                     <button
                         type="button"
                         onClick={() => setIsDeleteConfirmOpen(true)}
-                        disabled={isSaving || isDeleting}
+                        disabled={isSaving || isDeleting || isCancelling}
                         className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-rose-500/35 text-rose-300 hover:bg-rose-500/10 transition-colors text-sm font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
                     >
                         {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
@@ -151,7 +156,7 @@ export default function PensionEditModal({ isOpen, onClose, pensionId, initialNa
                             <button
                                 type="button"
                                 onClick={handleDelete}
-                                disabled={isDeleting}
+                                disabled={isDeleting || isCancelling}
                                 className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-colors shadow-lg shadow-green-500/30 disabled:opacity-60 disabled:cursor-not-allowed"
                                 style={{ backgroundColor: '#22c55e', color: '#ffffff' }}
                             >
@@ -161,7 +166,7 @@ export default function PensionEditModal({ isOpen, onClose, pensionId, initialNa
                             <button
                                 type="button"
                                 onClick={handleCancelDeleteOperation}
-                                disabled={isDeleting}
+                                disabled={isDeleting || isCancelling}
                                 className="flex-1 rounded-xl px-4 py-3 text-sm font-semibold transition-colors shadow-lg shadow-red-500/30 disabled:opacity-60 disabled:cursor-not-allowed"
                                 style={{ backgroundColor: '#ef4444', color: '#ffffff' }}
                             >
@@ -173,9 +178,14 @@ export default function PensionEditModal({ isOpen, onClose, pensionId, initialNa
             ) : null}
 
             <PensionOperationModal
-                isOpen={isSaving || isDeleting}
-                title={isDeleting ? 'Deleting Pension' : 'Saving Changes'}
-                message={isDeleting ? 'Please wait while we delete this pension and its related data.' : 'Please wait while we store your pension changes.'}
+                isOpen={isSaving || isDeleting || isCancelling}
+                title={isDeleting ? 'Deleting Pension' : isCancelling ? 'Cancelling Operation' : 'Saving Changes'}
+                message={isDeleting
+                    ? 'Please wait while we delete this pension and its related data.'
+                    : isCancelling
+                        ? 'Please wait while we cancel this action.'
+                        : 'Please wait while we store your pension changes.'
+                }
             />
         </div>
     )

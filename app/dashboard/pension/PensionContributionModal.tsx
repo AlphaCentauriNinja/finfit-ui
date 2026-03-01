@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Loader2, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import PensionOperationModal from './PensionOperationModal'
+import NativeDatePickerField from './NativeDatePickerField'
 
 type Props = {
     isOpen: boolean
@@ -122,16 +123,12 @@ export default function PensionContributionModal({ isOpen, onClose, pensionId, p
                         />
                     </div>
 
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-white/80">Contribution Date</label>
-                        <input
-                            type="date"
-                            required
-                            value={contributionDate}
-                            onChange={(event) => setContributionDate(event.target.value)}
-                            className="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all text-sm"
-                        />
-                    </div>
+                    <NativeDatePickerField
+                        label="Contribution Date"
+                        value={contributionDate}
+                        onChange={setContributionDate}
+                        disabled={isSaving}
+                    />
 
                     {formError ? (
                         <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">

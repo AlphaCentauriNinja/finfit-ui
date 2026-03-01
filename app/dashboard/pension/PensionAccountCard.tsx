@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { History, Pencil, PlusCircle, PoundSterling } from 'lucide-react'
+import { ArrowDownRight, ArrowUpRight, History, Minus, Pencil, PlusCircle, PoundSterling } from 'lucide-react'
 import PensionEditModal from './PensionEditModal'
 import PensionContributionModal from './PensionContributionModal'
 import PensionValueModal from './PensionValueModal'
@@ -13,10 +13,20 @@ type Props = {
         name: string
         value: number
         pnl: number
+        pnlPercentage: number
         contributionTotal: number
         latestValueDate: string | null
     }
     total: number
+}
+
+type PnlState = 'positive' | 'negative' | 'neutral'
+
+const getPnlState = (value: number): PnlState => {
+    const epsilon = 0.000001
+    if (value > epsilon) return 'positive'
+    if (value < -epsilon) return 'negative'
+    return 'neutral'
 }
 
 export default function PensionAccountCard({ pension, total }: Props) {
@@ -33,11 +43,14 @@ export default function PensionAccountCard({ pension, total }: Props) {
     })()
 
     const pnlLabel = `${pension.pnl >= 0 ? '+' : ''}£${pension.pnl.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-    const pnlPillClassName = pension.pnl > 0
-        ? 'border-emerald-400/35 bg-emerald-500/15 text-emerald-200'
-        : pension.pnl < 0
-            ? 'border-rose-400/35 bg-rose-500/15 text-rose-200'
-            : 'border-white/20 bg-white/10 text-white/70'
+    const pnlPctLabel = `${pension.pnlPercentage >= 0 ? '+' : ''}${pension.pnlPercentage.toFixed(2)}%`
+    const pnlState = getPnlState(pension.pnl)
+    const PnlIcon = pnlState === 'positive' ? ArrowUpRight : pnlState === 'negative' ? ArrowDownRight : Minus
+    const pnlPillTone = pnlState === 'positive'
+        ? 'border-green-500 bg-green-500/20 text-green-200'
+        : pnlState === 'negative'
+            ? 'border-red-500 bg-red-500/20 text-red-200'
+            : 'border-amber-500 bg-amber-500/20 text-amber-200'
 
     return (
         <>
@@ -46,9 +59,13 @@ export default function PensionAccountCard({ pension, total }: Props) {
                 <p className="text-2xl font-bold text-white mt-2">
                     £{pension.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
-                <div className="mt-2">
-                    <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${pnlPillClassName}`}>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${pnlPillTone}`}>
+                        <PnlIcon className="mr-1 h-3.5 w-3.5" />
                         PNL {pnlLabel}
+                    </span>
+                    <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${pnlPillTone}`}>
+                        {pnlPctLabel}
                     </span>
                 </div>
                 {valueDateLabel ? (

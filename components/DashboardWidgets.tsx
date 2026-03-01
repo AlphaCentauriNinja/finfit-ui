@@ -160,30 +160,51 @@ export function SavingsGauge() {
 }
 
 const spendingData = [
-    { name: 'Housing', amount: 1200 },
-    { name: 'Food', amount: 600 },
-    { name: 'Transport', amount: 300 },
-    { name: 'Utilities', amount: 250 },
-    { name: 'Ent.', amount: 400 },
+    { name: 'Housing', amount: 1200, color: '#a78bfa' },
+    { name: 'Food', amount: 600, color: '#60a5fa' },
+    { name: 'Transport', amount: 300, color: '#34d399' },
+    { name: 'Utilities', amount: 250, color: '#f59e0b' },
+    { name: 'Ent.', amount: 400, color: '#f472b6' },
 ]
 
 export function SpendingBreakdown() {
+    const totalSpending = spendingData.reduce((sum, item) => sum + item.amount, 0)
+
     return (
         <div className="bg-white/5 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/10">
             <h3 className="text-sm font-bold text-white mb-4">Monthly Spending</h3>
-            <div className="h-[200px] w-full">
+            <div className="h-[230px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={spendingData} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
+                    <BarChart data={spendingData} margin={{ top: 6, right: 0, left: -20, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
-                        <XAxis dataKey="name" stroke="#ffffff50" fontSize={11} tickLine={false} axisLine={false} />
-                        <YAxis stroke="#ffffff50" fontSize={11} tickLine={false} axisLine={false} />
+                        <XAxis dataKey="name" stroke="#ffffff70" fontSize={11} tickLine={false} axisLine={false} />
+                        <YAxis stroke="#ffffff70" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(value) => `£${value}`} />
                         <Tooltip
-                            cursor={{ fill: '#ffffff10' }}
                             contentStyle={{ backgroundColor: '#0f172a', borderColor: '#ffffff20', borderRadius: '12px' }}
+                            formatter={(value, name) => [`£${Number(value ?? 0).toLocaleString()}`, name]}
                         />
-                        <Bar dataKey="amount" fill="#c084fc" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="amount" radius={[6, 6, 0, 0]}>
+                            {spendingData.map((item) => (
+                                <Cell key={item.name} fill={item.color} />
+                            ))}
+                        </Bar>
                     </BarChart>
                 </ResponsiveContainer>
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2">
+                {spendingData.map((item) => (
+                    <div key={item.name} className="flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-2">
+                            <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+                            <span className="text-white/75">{item.name}</span>
+                        </div>
+                        <span className="font-semibold text-white">£{item.amount.toLocaleString()}</span>
+                    </div>
+                ))}
+            </div>
+            <div className="mt-3 flex items-center justify-center gap-2 text-xs text-white/65">
+                <span>Total</span>
+                <span className="font-semibold text-white">£{totalSpending.toLocaleString()}</span>
             </div>
         </div>
     )
