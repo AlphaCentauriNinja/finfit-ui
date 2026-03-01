@@ -2,6 +2,13 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 import Navbar from '@/components/Navbar'
+import { DashboardDataProvider } from '@/components/providers/DashboardDataProvider'
+import {
+    buildDashboardSnapshot,
+    type PensionAccountRow,
+    type PensionContributionRow,
+    type PensionValueRow,
+} from '@/lib/dashboard-data'
 
 export default async function Layout({
     children,
@@ -12,6 +19,30 @@ export default async function Layout({
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) redirect('/')
+
+    const [pensionAccountsResult, pensionContributionsResult, pensionValuesResult] = await Promise.all([
+        supabase
+            .from('pension_accounts')
+            .select('id, provider_name, current_value, created_at')
+            .order('created_at', { ascending: false }),
+        supabase
+            .from('pension_contributions')
+            .select('pension_account_id, contribution_value, contribution_date'),
+        supabase
+            .from('pension_account_values')
+            .select('pension_account_id, value_amount, value_date, created_at'),
+    ])
+
+    const dashboardData = buildDashboardSnapshot({
+        pensionAccounts: (pensionAccountsResult.data as PensionAccountRow[] | null) ?? [],
+        pensionContributions: (pensionContributionsResult.data as PensionContributionRow[] | null) ?? [],
+        pensionValues: (pensionValuesResult.data as PensionValueRow[] | null) ?? [],
+        pensionLoadError: Boolean(
+            pensionAccountsResult.error ||
+            pensionContributionsResult.error ||
+            pensionValuesResult.error
+        ),
+    })
 
     return (
         <div className="min-h-screen bg-slate-950 relative overflow-hidden font-sans text-gray-100">
@@ -28,12 +59,14 @@ export default async function Layout({
                     <div className="hidden lg:block">
                         <Sidebar />
                     </div>
-                    <div className="flex-1 flex flex-col min-h-[calc(100vh-2rem)] overflow-hidden">
-                        <Navbar userEmail={user?.email} userFullName={user?.user_metadata?.full_name} />
-                        <main className="flex-1 p-8 pb-10 overflow-y-auto">
-                            {children}
-                        </main>
-                    </div>
+                    <DashboardDataProvider initialData={dashboardData}>
+                        <div className="flex-1 flex flex-col min-h-[calc(100vh-2rem)] overflow-hidden">
+                            <Navbar userEmail={user?.email} userFullName={user?.user_metadata?.full_name} />
+                            <main className="flex-1 p-8 pb-10 overflow-y-auto">
+                                {children}
+                            </main>
+                        </div>
+                    </DashboardDataProvider>
                 </div>
             </div>
         </div>

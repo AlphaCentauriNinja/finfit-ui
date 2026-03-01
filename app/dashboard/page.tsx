@@ -1,7 +1,8 @@
+'use client'
+
 import Link from 'next/link'
 import StatCard from '@/components/StatCard'
 import AssetCard from '@/components/AssetCard'
-import { assetsWithAllocation, totalAssets } from '@/lib/assets'
 import {
     Wallet,
     Briefcase,
@@ -19,6 +20,7 @@ import {
     GoalTracker,
     TransactionHistory
 } from '@/components/DashboardWidgets'
+import { useDashboardData } from '@/components/providers/DashboardDataProvider'
 
 const getIconForAsset = (name: string) => {
     switch (name) {
@@ -45,6 +47,10 @@ const getRouteForAsset = (name: string) => {
 }
 
 export default function Overview() {
+    const dashboardData = useDashboardData()
+    const totalAssets = dashboardData.portfolio.totalAssets
+    const assetsWithAllocation = dashboardData.portfolio.assetsWithAllocation
+
     return (
         <div className="flex flex-col xl:flex-row gap-8">
             {/* Main Column */}
