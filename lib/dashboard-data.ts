@@ -19,6 +19,17 @@ export type PensionValueRow = {
     created_at: string
 }
 
+export type SalaryProfileRow = {
+    employer_name: string | null
+    monthly_net_salary: number | string | null
+}
+
+export type SalaryExpenditureRow = {
+    id: string
+    expenditure_name: string | null
+    monthly_amount: number | string | null
+}
+
 type ValueSnapshot = {
     amount: number
     valueDate: string
@@ -48,6 +59,17 @@ export type DashboardPensionChartPoint = {
     comparison: number
 }
 
+export type DashboardSalaryProfile = {
+    employerName: string
+    monthlyNetSalary: number
+}
+
+export type DashboardSalaryExpenditure = {
+    id: string
+    name: string
+    amount: number
+}
+
 export type DashboardDataSnapshot = {
     portfolio: {
         totalAssets: number
@@ -62,6 +84,15 @@ export type DashboardDataSnapshot = {
         comparisonLabel: string
         loadError: boolean
     }
+    salary: {
+        profile: DashboardSalaryProfile
+        expenditures: DashboardSalaryExpenditure[]
+        totalExpenditure: number
+        committedOutgoingRatio: number
+        annualNetSalary: number
+        disposableIncome: number
+        loadError: boolean
+    }
 }
 
 type BuildDashboardSnapshotInput = {
@@ -69,6 +100,9 @@ type BuildDashboardSnapshotInput = {
     pensionContributions?: PensionContributionRow[] | null
     pensionValues?: PensionValueRow[] | null
     pensionLoadError?: boolean
+    salaryProfile?: SalaryProfileRow | null
+    salaryExpenditures?: SalaryExpenditureRow[] | null
+    salaryLoadError?: boolean
 }
 
 const toNumber = (value: number | string | null | undefined): number => {
@@ -92,6 +126,9 @@ export const buildDashboardSnapshot = ({
     pensionContributions,
     pensionValues,
     pensionLoadError = false,
+    salaryProfile,
+    salaryExpenditures,
+    salaryLoadError = false,
 }: BuildDashboardSnapshotInput): DashboardDataSnapshot => {
     const accountRows = pensionAccounts ?? []
     const contributionRows = pensionContributions ?? []
@@ -268,6 +305,36 @@ export const buildDashboardSnapshot = ({
         allocation: totalAssets > 0 ? (asset.value / totalAssets) * 100 : 0,
     }))
 
+    const monthlyNetSalary = (() => {
+        const parsed = toNumber(salaryProfile?.monthly_net_salary)
+        return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0
+    })()
+    const employerName = (salaryProfile?.employer_name ?? '').trim() || 'Not set'
+
+    const expenditures = (salaryExpenditures ?? [])
+        .map<DashboardSalaryExpenditure | null>((expenditure) => {
+            const amount = toNumber(expenditure.monthly_amount)
+            const name = (expenditure.expenditure_name ?? '').trim()
+
+            if (!expenditure.id || !name || !Number.isFinite(amount) || amount < 0) {
+                return null
+            }
+
+            return {
+                id: expenditure.id,
+                name,
+                amount,
+            }
+        })
+        .filter((entry): entry is DashboardSalaryExpenditure => Boolean(entry))
+
+    const totalExpenditure = expenditures.reduce((sum, expenditure) => sum + expenditure.amount, 0)
+    const committedOutgoingRatio = monthlyNetSalary > 0
+        ? (totalExpenditure / monthlyNetSalary) * 100
+        : 0
+    const annualNetSalary = monthlyNetSalary * 12
+    const disposableIncome = monthlyNetSalary - totalExpenditure
+
     return {
         portfolio: {
             totalAssets,
@@ -282,6 +349,17 @@ export const buildDashboardSnapshot = ({
             comparisonLabel,
             loadError: pensionLoadError,
         },
+        salary: {
+            profile: {
+                employerName,
+                monthlyNetSalary,
+            },
+            expenditures,
+            totalExpenditure,
+            committedOutgoingRatio,
+            annualNetSalary,
+            disposableIncome,
+            loadError: salaryLoadError,
+        },
     }
 }
-

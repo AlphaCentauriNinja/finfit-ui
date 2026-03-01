@@ -7,6 +7,7 @@ import {
 } from 'recharts'
 import { ArrowDownRight, Target, ShoppingBag, Home, Zap, ArrowRight, ExternalLink } from 'lucide-react'
 import { babySteps } from '@/lib/baby-steps'
+import { useDashboardData } from '@/components/providers/DashboardDataProvider'
 
 const portfolioData = [
     { name: 'Jan', value: 180000 },
@@ -159,7 +160,7 @@ export function SavingsGauge() {
     )
 }
 
-const spendingData = [
+const spendingFallbackData = [
     { name: 'Housing', amount: 1200 },
     { name: 'Food', amount: 600 },
     { name: 'Transport', amount: 300 },
@@ -168,6 +169,15 @@ const spendingData = [
 ]
 
 export function SpendingBreakdown() {
+    const dashboardData = useDashboardData()
+    const providerSpendingData = dashboardData.salary.expenditures
+        .slice(0, 7)
+        .map((entry) => ({
+            name: entry.name.length > 12 ? `${entry.name.slice(0, 12)}...` : entry.name,
+            amount: entry.amount,
+        }))
+    const spendingData = providerSpendingData.length > 0 ? providerSpendingData : spendingFallbackData
+
     return (
         <div className="bg-white/5 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/10">
             <h3 className="text-sm font-bold text-white mb-4">Monthly Spending</h3>

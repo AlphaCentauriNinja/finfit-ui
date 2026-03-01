@@ -8,6 +8,8 @@ import {
     type PensionAccountRow,
     type PensionContributionRow,
     type PensionValueRow,
+    type SalaryExpenditureRow,
+    type SalaryProfileRow,
 } from '@/lib/dashboard-data'
 
 export default async function Layout({
@@ -20,7 +22,13 @@ export default async function Layout({
 
     if (!user) redirect('/')
 
-    const [pensionAccountsResult, pensionContributionsResult, pensionValuesResult] = await Promise.all([
+    const [
+        pensionAccountsResult,
+        pensionContributionsResult,
+        pensionValuesResult,
+        salaryProfileResult,
+        salaryExpendituresResult,
+    ] = await Promise.all([
         supabase
             .from('pension_accounts')
             .select('id, provider_name, current_value, created_at')
@@ -31,6 +39,14 @@ export default async function Layout({
         supabase
             .from('pension_account_values')
             .select('pension_account_id, value_amount, value_date, created_at'),
+        supabase
+            .from('salary_profiles')
+            .select('employer_name, monthly_net_salary')
+            .maybeSingle(),
+        supabase
+            .from('salary_expenditures')
+            .select('id, expenditure_name, monthly_amount')
+            .order('created_at', { ascending: false }),
     ])
 
     const dashboardData = buildDashboardSnapshot({
@@ -41,6 +57,12 @@ export default async function Layout({
             pensionAccountsResult.error ||
             pensionContributionsResult.error ||
             pensionValuesResult.error
+        ),
+        salaryProfile: (salaryProfileResult.data as SalaryProfileRow | null) ?? null,
+        salaryExpenditures: (salaryExpendituresResult.data as SalaryExpenditureRow[] | null) ?? [],
+        salaryLoadError: Boolean(
+            salaryProfileResult.error ||
+            salaryExpendituresResult.error
         ),
     })
 
