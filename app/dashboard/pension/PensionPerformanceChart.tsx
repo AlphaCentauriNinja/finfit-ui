@@ -2,13 +2,13 @@
 
 import {
     CartesianGrid,
-    Legend,
     Line,
     LineChart,
     ResponsiveContainer,
     Tooltip,
     XAxis,
     YAxis,
+    Legend,
 } from 'recharts'
 
 type ChartPoint = {
@@ -16,6 +16,7 @@ type ChartPoint = {
     label: string
     current: number
     comparison: number
+    contributions: number
 }
 
 type Props = {
@@ -30,95 +31,117 @@ type TooltipProps = {
         name?: string
         value?: number | string
         dataKey?: string
-        payload: ChartPoint
     }>
     label?: string
 }
 
-const formatCurrency = (value: number): string =>
-    `£${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+const formatGBP = (value: number): string =>
+    `£${value.toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
 
-function PerformanceTooltip({ active, payload, label }: TooltipProps) {
+function CustomTooltip({ active, payload, label }: TooltipProps) {
     if (!active || !payload?.length) return null
-    const currentSeries = payload.find((entry) => entry.dataKey === 'current')
-    const comparisonSeries = payload.find((entry) => entry.dataKey === 'comparison')
-    const currentValue = Number(currentSeries?.value ?? 0)
-    const comparisonValue = Number(comparisonSeries?.value ?? 0)
 
     return (
-        <div className="rounded-lg border border-slate-300 bg-white px-3 py-2 shadow-lg">
-            <p className="mb-2 text-xs font-medium text-slate-600">{label}</p>
-            <div className="space-y-1 text-xs">
-                <p className="font-semibold text-purple-700">CURRENT: {formatCurrency(currentValue)}</p>
-                <p className="font-semibold text-red-600">{comparisonSeries?.name}: {formatCurrency(comparisonValue)}</p>
-            </div>
+        <div className="rounded-lg border border-white/10 bg-[#0e1629] px-4 py-3 shadow-xl text-xs">
+            <p className="text-slate-400 mb-2 font-medium">{label}</p>
+            {payload.map((entry) => (
+                <div key={entry.dataKey} className="flex items-center gap-2 py-0.5">
+                    <span
+                        className="inline-block w-2 h-2 rounded-full flex-shrink-0"
+                        style={{ background: entry.color }}
+                    />
+                    <span className="text-slate-400">{entry.name}:</span>
+                    <span className="text-white font-semibold tabular-nums">
+                        {formatGBP(Number(entry.value ?? 0))}
+                    </span>
+                </div>
+            ))}
         </div>
     )
 }
 
-export default function PensionPerformanceChart({ data, comparisonLabel }: Props) {
-    const hasData = data.some((point) => point.current > 0 || point.comparison > 0)
+export default function PensionPerformanceChart({ data, comparisonLabel: _comparisonLabel }: Props) {
+    const hasData = data.some((point) => point.current > 0 || point.contributions > 0)
 
     if (!hasData) {
         return (
-            <section className="mb-8 rounded-2xl border border-red-500/35 bg-red-500/10 p-6">
-                <h2 className="text-lg font-semibold text-red-200">Pension Performance</h2>
-                <p className="mt-2 text-sm text-red-100">No pension data available for performance chart.</p>
+            <section className="mb-8 rounded-xl border border-white/[0.07] bg-[#0e1629] p-6">
+                <h2 className="text-base font-semibold text-white mb-1">Pension Performance</h2>
+                <p className="text-sm text-slate-500">
+                    No pension data yet. Add contributions and value snapshots to see your chart.
+                </p>
             </section>
         )
     }
 
     return (
-        <section className="mb-8 rounded-2xl border border-slate-300 bg-[#e5e5e5] p-6">
-            <div className="mb-4">
-                <h2 className="text-lg font-semibold text-slate-900">Pension Performance</h2>
-                <p className="mt-1 text-xs text-slate-600">Current combined value compared with provider trend</p>
+        <section className="mb-8 rounded-xl border border-white/[0.07] bg-[#0e1629] overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-5 border-b border-white/[0.06]">
+                <div>
+                    <h2 className="text-base font-semibold text-white">Pension Performance</h2>
+                    <p className="text-xs text-slate-500 mt-0.5">Total pension value vs cumulative contributions over time</p>
+                </div>
+                <div className="flex items-center gap-4 text-xs text-slate-400">
+                    <span className="flex items-center gap-1.5">
+                        <span className="inline-block w-3 h-0.5 bg-blue-500 rounded" />
+                        Total Value
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                        <span className="inline-block w-3 h-0.5 bg-emerald-500 rounded-full [border-style:dashed]" />
+                        Contributions
+                    </span>
+                </div>
             </div>
 
-            <div className="h-[380px] w-full rounded-xl border border-slate-300 bg-[#e5e5e5] p-3">
+            {/* Chart */}
+            <div className="h-[340px] w-full p-4 pt-6">
                 <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={data} margin={{ top: 12, right: 24, left: 8, bottom: 8 }}>
-                        <CartesianGrid vertical={false} stroke="#94a3b8" strokeOpacity={0.5} />
+                    <LineChart data={data} margin={{ top: 4, right: 16, left: 0, bottom: 4 }}>
+                        <CartesianGrid
+                            vertical={false}
+                            stroke="rgba(255,255,255,0.05)"
+                        />
                         <XAxis
                             dataKey="label"
-                            tick={{ fill: '#111827', fontSize: 11, fontWeight: 500 }}
-                            tickLine={false}
-                            axisLine={{ stroke: '#6b7280' }}
-                            minTickGap={18}
-                        />
-                        <YAxis
-                            tickFormatter={(value) => `£${Number(value).toLocaleString()}`}
-                            tick={{ fill: '#111827', fontSize: 11 }}
+                            tick={{ fill: '#64748b', fontSize: 11 }}
                             tickLine={false}
                             axisLine={false}
-                            width={110}
+                            minTickGap={20}
                         />
-                        <Tooltip content={<PerformanceTooltip />} />
-                        <Legend
-                            verticalAlign="top"
-                            align="center"
-                            iconType="line"
-                            wrapperStyle={{ color: '#111827', fontSize: 12, paddingBottom: 14 }}
+                        <YAxis
+                            tickFormatter={formatGBP}
+                            tick={{ fill: '#64748b', fontSize: 11 }}
+                            tickLine={false}
+                            axisLine={false}
+                            width={80}
                         />
+                        <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'rgba(255,255,255,0.08)', strokeWidth: 1 }} />
+                        <Legend wrapperStyle={{ display: 'none' }} />
+
+                        {/* Total pension value */}
                         <Line
                             type="monotone"
                             dataKey="current"
-                            name="CURRENT"
-                            stroke="#a21caf"
-                            strokeWidth={3}
-                            activeDot={{ r: 4 }}
+                            name="Total Value"
+                            stroke="#3b82f6"
+                            strokeWidth={2.5}
                             dot={false}
+                            activeDot={{ r: 4, fill: '#3b82f6', strokeWidth: 0 }}
                             isAnimationActive={false}
                             connectNulls
                         />
+
+                        {/* Cumulative contributions */}
                         <Line
                             type="monotone"
-                            dataKey="comparison"
-                            name={comparisonLabel}
-                            stroke="#ef4444"
-                            strokeWidth={2.5}
-                            activeDot={{ r: 4 }}
+                            dataKey="contributions"
+                            name="Contributions"
+                            stroke="#10b981"
+                            strokeWidth={2}
+                            strokeDasharray="5 3"
                             dot={false}
+                            activeDot={{ r: 4, fill: '#10b981', strokeWidth: 0 }}
                             isAnimationActive={false}
                             connectNulls
                         />

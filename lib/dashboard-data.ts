@@ -57,6 +57,7 @@ export type DashboardPensionChartPoint = {
     label: string
     current: number
     comparison: number
+    contributions: number
 }
 
 export type DashboardSalaryProfile = {
@@ -244,6 +245,24 @@ export const buildDashboardSnapshot = ({
     const sortedDates = [...allDates].sort((a, b) => a.localeCompare(b))
     const sortedMonths = [...new Set(sortedDates.map((dateValue) => dateValue.slice(0, 7)))].sort((a, b) => a.localeCompare(b))
 
+    // Build cumulative contributions per month
+    const contributionsByMonth: Record<string, number> = {}
+    for (const contribution of contributionRows) {
+        const month = contribution.contribution_date?.slice(0, 7)
+        if (!month) continue
+        const value = toNumber(contribution.contribution_value)
+        if (!Number.isFinite(value)) continue
+        contributionsByMonth[month] = (contributionsByMonth[month] ?? 0) + value
+    }
+    const cumulativeContributionsAtMonth = (monthKey: string): number => {
+        let total = 0
+        for (const m of sortedMonths) {
+            if (m > monthKey) break
+            total += contributionsByMonth[m] ?? 0
+        }
+        return total
+    }
+
     const pensionBeeAccountIds = pensionAccountsSummary
         .filter((pension) => pension.name.toLowerCase().includes('pensionbee'))
         .map((pension) => pension.id)
@@ -273,12 +292,14 @@ export const buildDashboardSnapshot = ({
     const chartData = sortedMonths.reduce<DashboardPensionChartPoint[]>((acc, monthKey) => {
         const current = pensionAccountsSummary.reduce((sum, pension) => sum + valueAtMonth(pension.id, monthKey), 0)
         const comparison = comparisonAccountIds.reduce((sum, accountId) => sum + valueAtMonth(accountId, monthKey), 0)
+        const contributions = cumulativeContributionsAtMonth(monthKey)
 
         acc.push({
             month: monthKey,
             label: formatMonthLabel(monthKey),
             current,
             comparison,
+            contributions,
         })
 
         return acc
@@ -291,6 +312,7 @@ export const buildDashboardSnapshot = ({
             label: formatMonthLabel(monthKey),
             current: 0,
             comparison: 0,
+            contributions: 0,
         })
     }
 

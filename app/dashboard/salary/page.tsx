@@ -86,8 +86,8 @@ function EditSalaryModal({
     return (
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" onClick={onClose} />
-            <div className="relative w-full max-w-md overflow-hidden rounded-2xl border border-white/10 bg-[#0f172a] shadow-xl">
-                <div className="flex items-center justify-between border-b border-white/10 p-6">
+            <div className="relative w-full max-w-md overflow-hidden rounded-2xl border border-green bg-[#0f172a] shadow-xl">
+                <div className="flex items-center justify-between border-b border-green/10 p-6">
                     <h3 className="text-lg font-bold text-white">Edit Salary Details</h3>
                     <button onClick={onClose} className="p-1 text-white/60 hover:text-white">
                         <X className="h-5 w-5" />
@@ -457,10 +457,10 @@ export default function SalaryPage() {
                         <div className="flex items-center gap-2">
                             <button
                                 onClick={() => setIsEditSalaryOpen(true)}
-                                className="inline-flex items-center gap-1 rounded-lg border border-emerald-400/30 bg-emerald-400/10 px-2.5 py-1.5 text-xs font-semibold text-emerald-200 hover:bg-emerald-400/20"
+                                aria-label="Edit salary details"
+                                className="inline-flex items-center justify-center rounded-lg border border-purple-400/40 bg-purple-500/20 p-2 text-purple-200 hover:bg-purple-500/30 hover:text-purple-100"
                             >
                                 <Pencil className="h-3.5 w-3.5" />
-                                Edit
                             </button>
                             <Wallet className="h-5 w-5 text-emerald-400" />
                         </div>
@@ -515,32 +515,38 @@ export default function SalaryPage() {
                 </div>
             ) : (
                 <div className="space-y-4">
-                    {expenditures.map((expenditure) => (
-                        <div
-                            key={expenditure.id}
-                            className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 p-5 shadow-sm backdrop-blur-sm transition-colors hover:bg-white/10"
-                        >
-                            <div className="flex items-center gap-4">
-                                <div className="rounded-lg border border-white/10 bg-white/5 p-2.5">
-                                    <ReceiptText className="h-5 w-5 text-white/80" />
-                                </div>
-                                <div>
-                                    <p className="font-bold text-white">{expenditure.name}</p>
-                                    <p className="text-sm text-white/60">Monthly committed cost</p>
-                                </div>
-                            </div>
-                            <p className="text-lg font-bold text-white">
-                                £{expenditure.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            </p>
-                            <button
-                                onClick={() => setEditingExpenditureId(expenditure.id)}
-                                className="ml-4 inline-flex items-center gap-1 rounded-lg border border-white/15 bg-white/5 px-2.5 py-1.5 text-xs font-semibold text-white/85 hover:bg-white/10"
+                    {expenditures.map((expenditure) => {
+                        const percentageOfSalary = salaryData.profile.monthlyNetSalary > 0
+                            ? (expenditure.amount / salaryData.profile.monthlyNetSalary) * 100
+                            : 0
+
+                        return (
+                            <div
+                                key={expenditure.id}
+                                className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 p-5 shadow-sm backdrop-blur-sm transition-colors hover:bg-white/10"
                             >
-                                <Pencil className="h-3.5 w-3.5" />
-                                Edit
-                            </button>
-                        </div>
-                    ))}
+                                <div className="flex items-center gap-4">
+                                    <div className="rounded-lg border border-white/10 bg-white/5 p-2.5">
+                                        <ReceiptText className="h-5 w-5 text-white/80" />
+                                    </div>
+                                    <div>
+                                        <p className="font-bold text-white">{expenditure.name}</p>
+                                        <p className="text-xs text-green-300">{percentageOfSalary.toFixed(1)}% of monthly salary</p>
+                                    </div>
+                                </div>
+                                <p className="text-lg font-bold text-white">
+                                    £{expenditure.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </p>
+                                <button
+                                    onClick={() => setEditingExpenditureId(expenditure.id)}
+                                    className="ml-4 inline-flex items-center gap-1 rounded-lg border border-white/15 bg-white/5 px-2.5 py-1.5 text-xs font-semibold text-white/85 hover:bg-white/10"
+                                >
+                                    <Pencil className="h-3.5 w-3.5" />
+                                    Edit
+                                </button>
+                            </div>
+                        )
+                    })}
                 </div>
             )}
 
