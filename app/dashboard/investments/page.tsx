@@ -279,8 +279,32 @@ export default function InvestmentsPage() {
 
     const allData = mockedOhlcByInstrument[selectedInstrument]
     const chartData = useMemo(() => filterByTimeframe(allData, selectedTimeframe), [allData, selectedTimeframe])
+    const portfolioDeposit = useMemo(
+        () => positionRows.reduce((sum, row) => sum + row.invested, 0),
+        []
+    )
+    const portfolioCurrentValue = useMemo(
+        () => positionRows.reduce((sum, row) => sum + row.value, 0),
+        []
+    )
+    const portfolioPnl = portfolioCurrentValue - portfolioDeposit
+    const portfolioPnlPct = portfolioDeposit > 0 ? (portfolioPnl / portfolioDeposit) * 100 : 0
+    const referenceValue = Math.max(portfolioDeposit, portfolioCurrentValue, 1)
+    const investedWidthPct = (portfolioDeposit / referenceValue) * 100
+    const currentWidthPct = (portfolioCurrentValue / referenceValue) * 100
 
     const instrumentLabel = instrumentOptions.find((option) => option.value === selectedInstrument)?.label ?? selectedInstrument
+    const portfolioPnlClassName = portfolioPnl > 0
+        ? 'text-emerald-300'
+        : portfolioPnl < 0
+            ? 'text-rose-300'
+            : 'text-amber-300'
+    const currentValueBarClassName = portfolioPnl > 0
+        ? 'bg-emerald-500'
+        : portfolioPnl < 0
+            ? 'bg-rose-500'
+            : 'bg-amber-500'
+    const referenceLabel = portfolioCurrentValue >= portfolioDeposit ? 'Current Value' : 'Invested'
 
     return (
         <div className="w-full space-y-16">
@@ -291,6 +315,62 @@ export default function InvestmentsPage() {
                         Mocked OHLC data per ticker/ETF with a guaranteed line chart render.
                     </p>
                 </div>
+            </div>
+
+            <div className="bg-white/5 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/10 hover:shadow-md hover:bg-white/10 transition-all">
+                <div className="flex flex-wrap items-start justify-between gap-6">
+                    <div>
+                        <p className="text-sm font-medium text-white/60">Deposit</p>
+                        <h2 className="text-3xl font-bold mt-2 text-white">
+                            £{portfolioDeposit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </h2>
+                    </div>
+
+                    <div className="text-left md:text-right">
+                        <p className="text-sm font-medium text-white/60">Current Value</p>
+                        <h2 className="text-3xl font-bold mt-2 text-white">
+                            £{portfolioCurrentValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </h2>
+                    </div>
+                </div>
+
+                <div className="mt-5 space-y-3">
+                    <p className="text-xs text-white/55">
+                        100% reference: {referenceLabel}
+                    </p>
+
+                    <div>
+                        <div className="flex items-center justify-between text-xs text-white/65 mb-1.5">
+                            <span>Invested</span>
+                            <span>£{portfolioDeposit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        </div>
+                        <div className="h-2.5 w-full rounded-full bg-white/10 overflow-hidden">
+                            <div
+                                className="h-full rounded-full bg-white/60"
+                                style={{ width: `${investedWidthPct}%` }}
+                            />
+                        </div>
+                    </div>
+
+                    <div>
+                        <div className="flex items-center justify-between text-xs text-white/65 mb-1.5">
+                            <span>Current Value</span>
+                            <span>£{portfolioCurrentValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        </div>
+                        <div className="h-2.5 w-full rounded-full bg-white/10 overflow-hidden">
+                            <div
+                                className={`h-full rounded-full ${currentValueBarClassName}`}
+                                style={{ width: `${currentWidthPct}%` }}
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <p className={`text-xs font-medium mt-4 flex items-center ${portfolioPnlClassName}`}>
+                    <span className={`px-2 py-1 rounded-md ${portfolioPnl > 0 ? 'bg-emerald-500/10' : portfolioPnl < 0 ? 'bg-rose-500/10' : 'bg-amber-500/10'}`}>
+                        PNL {portfolioPnl >= 0 ? '+' : ''}£{portfolioPnl.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ({portfolioPnlPct.toFixed(2)}%)
+                    </span>
+                </p>
             </div>
 
             <div className="bg-white/5 backdrop-blur-sm p-6 pb-10 rounded-2xl shadow-sm border border-white/10 mt-2">
