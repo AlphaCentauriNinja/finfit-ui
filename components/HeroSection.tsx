@@ -64,11 +64,10 @@ export default function HeroSection({ onOpenLogin }: HeroSectionProps) {
 
         {/* Right: Dashboard mockup */}
         <div className="relative">
-          {/* Ambient glow behind card */}
           <div className="absolute -inset-12 bg-[radial-gradient(ellipse_at_center,rgba(30,64,175,0.12),transparent_70%)] pointer-events-none" />
 
           <div className="relative rounded-xl border border-white/[0.08] bg-[#0e1629] overflow-hidden shadow-2xl">
-            {/* Card header bar */}
+            {/* Window chrome */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06]">
               <div className="flex items-center gap-2">
                 <div className="w-2.5 h-2.5 rounded-full bg-red-500/70" />
@@ -94,30 +93,20 @@ export default function HeroSection({ onOpenLogin }: HeroSectionProps) {
 
               {/* Allocation bars */}
               <div className="space-y-4 mb-8">
-                <div>
-                  <div className="flex justify-between text-[11px] text-slate-500 mb-1.5">
-                    <span>Equities</span><span>84%</span>
+                {[
+                  { label: 'Equities', pct: '84%', color: 'bg-blue-500' },
+                  { label: 'Fixed Income', pct: '62%', color: 'bg-cyan-500' },
+                  { label: 'Alternatives', pct: '46%', color: 'bg-violet-500' },
+                ].map((bar) => (
+                  <div key={bar.label}>
+                    <div className="flex justify-between text-[11px] text-slate-500 mb-1.5">
+                      <span>{bar.label}</span><span>{bar.pct}</span>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
+                      <div className={`h-full rounded-full ${bar.color}`} style={{ width: bar.pct }} />
+                    </div>
                   </div>
-                  <div className="h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
-                    <div className="h-full w-[84%] bg-blue-500 rounded-full" />
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between text-[11px] text-slate-500 mb-1.5">
-                    <span>Fixed Income</span><span>62%</span>
-                  </div>
-                  <div className="h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
-                    <div className="h-full w-[62%] bg-cyan-500 rounded-full" />
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between text-[11px] text-slate-500 mb-1.5">
-                    <span>Alternatives</span><span>46%</span>
-                  </div>
-                  <div className="h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
-                    <div className="h-full w-[46%] bg-violet-500 rounded-full" />
-                  </div>
-                </div>
+                ))}
               </div>
 
               {/* Asset cards */}

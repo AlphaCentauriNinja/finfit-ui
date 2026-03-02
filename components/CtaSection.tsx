@@ -8,10 +8,7 @@ export default function CtaSection({ onOpenLogin }: CtaSectionProps) {
   return (
     <section>
       <div className="relative rounded-xl border border-white/[0.07] bg-[#0e1629] overflow-hidden">
-        {/* Top accent line */}
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-500/60 to-transparent" />
-
-        {/* Ambient glow */}
         <div className="absolute bottom-0 right-0 w-96 h-64 bg-[radial-gradient(ellipse_at_bottom_right,rgba(30,64,175,0.15),transparent_70%)] pointer-events-none" />
 
         <div className="relative px-8 sm:px-14 py-14 sm:py-16">

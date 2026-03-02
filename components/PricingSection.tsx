@@ -34,8 +34,6 @@ const plans = [
 export default function PricingSection({ onOpenLogin }: PricingSectionProps) {
   return (
     <section id="pricing" className="scroll-mt-20">
-
-      {/* Header */}
       <div className="mb-12">
         <p className="text-[11px] uppercase tracking-widest text-blue-400 mb-4">Pricing</p>
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
@@ -44,15 +42,13 @@ export default function PricingSection({ onOpenLogin }: PricingSectionProps) {
         </div>
       </div>
 
-      {/* Plans */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-white/[0.05] rounded-xl overflow-hidden border border-white/[0.06]">
         {plans.map((plan) => (
           <div
             key={plan.name}
-            className={`relative flex flex-col p-8 ${plan.highlighted ? 'bg-[#0d1a35]' : 'bg-[#080d1a] hover:bg-[#0e1629]'
-              } transition-colors`}
+            className={`relative flex flex-col p-8 transition-colors ${plan.highlighted ? 'bg-[#0d1a35]' : 'bg-[#080d1a] hover:bg-[#0e1629]'
+              }`}
           >
-            {/* Most popular badge */}
             {plan.highlighted && (
               <div className="absolute top-0 left-8 right-8">
                 <div className="h-px bg-gradient-to-r from-transparent via-blue-500 to-transparent" />
@@ -97,7 +93,6 @@ export default function PricingSection({ onOpenLogin }: PricingSectionProps) {
           </div>
         ))}
       </div>
-
     </section>
   )
 }
