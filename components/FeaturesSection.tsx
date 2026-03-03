@@ -36,7 +36,7 @@ export default function FeaturesSection() {
 
         <div className="rounded-xl border border-white/[0.07] bg-[#0e1629] p-7">
           <p className="text-xs font-semibold text-slate-300 uppercase tracking-widest mb-5">
-            Why teams choose FinFit
+            Why people choose FinFit
           </p>
           <ul className="space-y-3">
             {reasons.map((r) => (
