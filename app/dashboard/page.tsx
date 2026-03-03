@@ -1,8 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import StatCard from '@/components/StatCard'
-import AssetCard from '@/components/AssetCard'
+import StatCard from '@/app/dashboard/components/StatCard'
+import AssetCard from '@/app/dashboard/components/AssetCard'
 import {
     Wallet,
     Briefcase,
@@ -19,8 +19,8 @@ import {
     SpendingBreakdown,
     GoalTracker,
     TransactionHistory
-} from '@/components/DashboardWidgets'
-import { useDashboardData } from '@/components/providers/DashboardDataProvider'
+} from '@/app/dashboard/components/DashboardWidgets'
+import { useDashboardData } from '@/app/dashboard/components/providers/DashboardDataProvider'
 
 const getIconForAsset = (name: string) => {
     switch (name) {

@@ -1,7 +1,7 @@
 'use client'
 
 import { ArrowDownRight, ArrowUpRight, Minus } from 'lucide-react'
-import { useDashboardData } from '@/components/providers/DashboardDataProvider'
+import { useDashboardData } from '@/app/dashboard/components/providers/DashboardDataProvider'
 import AddPensionButton from './AddPensionButton'
 import PensionAccountCard from './PensionAccountCard'
 import PensionPerformanceChart from './PensionPerformanceChart'

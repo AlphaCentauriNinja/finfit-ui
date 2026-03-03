@@ -4,7 +4,7 @@ import { FormEvent, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { BriefcaseBusiness, CreditCard, Loader2, Pencil, Plus, ReceiptText, Trash2, Wallet, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { useDashboardData } from '@/components/providers/DashboardDataProvider'
+import { useDashboardData } from '@/app/dashboard/components/providers/DashboardDataProvider'
 
 type BaseModalProps = {
     isOpen: boolean

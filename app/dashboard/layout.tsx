@@ -1,8 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import Sidebar from '@/components/Sidebar'
-import Navbar from '@/components/Navbar'
-import { DashboardDataProvider } from '@/components/providers/DashboardDataProvider'
+import Sidebar from '@/app/dashboard/components/Sidebar'
+import Navbar from '@/app/dashboard/components/Navbar'
+import { DashboardDataProvider } from '@/app/dashboard/components/providers/DashboardDataProvider'
 import {
     buildDashboardSnapshot,
     type PensionAccountRow,

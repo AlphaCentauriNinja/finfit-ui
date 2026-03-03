@@ -1,13 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import LoginModal from '@/components/LoginModal'
-import HeroSection from '@/components/HeroSection'
-import FeaturesSection from '@/components/FeaturesSection'
-import PricingSection from '@/components/PricingSection'
-import FaqSection from '@/components/FaqSection'
-import SocialProofSection from '@/components/SocialProofSection'
-import CtaSection from '@/components/CtaSection'
+import LoginModal from '@/app/components/LoginModal'
+import HeroSection from '@/app/components/HeroSection'
+import FeaturesSection from '@/app/components/FeaturesSection'
+import PricingSection from '@/app/components/PricingSection'
+import FaqSection from '@/app/components/FaqSection'
+import SocialProofSection from '@/app/components/SocialProofSection'
+import CtaSection from '@/app/components/CtaSection'
 
 export default function LandingPage() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
@@ -40,7 +40,7 @@ export default function LandingPage() {
               onClick={() => setIsLoginModalOpen(true)}
               className="text-sm font-semibold bg-blue-600 text-white px-5 py-2.5 rounded-md hover:bg-blue-500 transition-all active:scale-95 shadow-lg shadow-blue-500/20"
             >
-              SIGN IN
+              Sign In
             </button>
           </div>
         </div>

@@ -7,7 +7,7 @@ import {
 } from 'recharts'
 import { ArrowDownRight, Target, ShoppingBag, Home, Zap, ArrowRight, ExternalLink } from 'lucide-react'
 import { babySteps } from '@/lib/baby-steps'
-import { useDashboardData } from '@/components/providers/DashboardDataProvider'
+import { useDashboardData } from '@/app/dashboard/components/providers/DashboardDataProvider'
 
 const portfolioData = [
     { name: 'Jan', value: 180000 },
