@@ -116,7 +116,7 @@ export default function PotOperationModal({
                     <h2 className="text-xl font-bold text-white">
                         {potId ? 'Edit Pot' : 'Create New Pot'}
                     </h2>
-                    <button onClick={onClose} className="text-white/50 hover:text-white transition-colors p-1">
+                    <button onClick={onClose} className="text-rose-300 hover:text-rose-300 transition-colors p-1">
                         <X className="w-5 h-5" />
                     </button>
                 </div>
@@ -172,7 +172,7 @@ export default function PotOperationModal({
                             type="button"
                             onClick={onClose}
                             disabled={isLoading}
-                            className="flex-1 rounded-xl border border-white/10 text-white/80 px-4 py-3 text-sm font-semibold hover:bg-white/5"
+                            className="flex-1 rounded-xl border border-rose-500/35 text-rose-300 px-4 py-3 text-sm font-semibold hover:bg-rose-500/10 transition-colors"
                         >
                             Cancel
                         </button>

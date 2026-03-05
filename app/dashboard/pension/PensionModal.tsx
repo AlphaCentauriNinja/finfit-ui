@@ -86,7 +86,7 @@ export default function PensionModal({ isOpen, onClose }: Props) {
                     </h2>
                     <button
                         onClick={onClose}
-                        className="text-white/50 hover:text-white transition-colors p-1"
+                        className="text-rose-300 hover:text-rose-300 transition-colors p-1"
                     >
                         <X className="w-5 h-5" />
                     </button>
@@ -138,7 +138,7 @@ export default function PensionModal({ isOpen, onClose }: Props) {
                             type="button"
                             onClick={onClose}
                             disabled={isSaving}
-                            className="flex-1 px-4 py-3 border border-white/10 rounded-xl text-white/80 hover:bg-white/5 hover:text-white transition-colors text-sm font-semibold"
+                            className="flex-1 px-4 py-3 border border-rose-500/35 rounded-xl text-rose-300 hover:bg-rose-500/10 transition-colors text-sm font-semibold"
                         >
                             Cancel
                         </button>

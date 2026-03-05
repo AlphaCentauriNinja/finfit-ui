@@ -88,7 +88,7 @@ export default function EditAccountModal({ isOpen, onClose, accountId, initialNa
             <div className="relative w-full max-w-md bg-[#0f172a] border border-white/10 rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                 <div className="flex items-center justify-between p-6 border-b border-white/10">
                     <h2 className="text-xl font-bold text-white">Edit Savings Account</h2>
-                    <button onClick={onClose} className="text-white/50 hover:text-white transition-colors p-1">
+                    <button onClick={onClose} className="text-rose-300 hover:text-rose-300 transition-colors p-1">
                         <X className="w-5 h-5" />
                     </button>
                 </div>
@@ -126,7 +126,7 @@ export default function EditAccountModal({ isOpen, onClose, accountId, initialNa
                                     type="button"
                                     onClick={onClose}
                                     disabled={isLoading}
-                                    className="rounded-xl border border-white/10 text-white/80 px-4 py-2 text-sm font-semibold hover:bg-white/5"
+                                    className="rounded-xl border border-rose-500/35 text-rose-300 px-4 py-2 text-sm font-semibold hover:bg-rose-500/10 transition-colors"
                                 >
                                     Cancel
                                 </button>
@@ -162,7 +162,7 @@ export default function EditAccountModal({ isOpen, onClose, accountId, initialNa
                                 type="button"
                                 onClick={() => setShowDeleteConfirm(false)}
                                 disabled={isDeleting}
-                                className="flex-1 rounded-xl border border-white/10 text-white/80 px-4 py-3 text-sm font-semibold hover:bg-white/5"
+                                className="flex-1 rounded-xl border border-rose-500/35 text-rose-300 px-4 py-3 text-sm font-semibold hover:bg-rose-500/10 transition-colors"
                             >
                                 Cancel
                             </button>

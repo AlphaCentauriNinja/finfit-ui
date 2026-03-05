@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Loader2, Pencil, Trash2, X } from 'lucide-react'
 import PensionOperationModal from './PensionOperationModal'
-import NativeDatePickerField from './NativeDatePickerField'
+import DatePickerField from './DatePickerField'
 
 type Props = {
     isOpen: boolean
@@ -163,13 +163,13 @@ export default function PensionHistoryModal({ isOpen, onClose, pensionId, pensio
     useEffect(() => {
         let active = true
 
-        ; (async () => {
-            const result = await fetchHistoryEntries(pensionId)
-            if (!active) return
-            setEntries(result.entries)
-            setLoadError(result.error)
-            setIsLoading(false)
-        })()
+            ; (async () => {
+                const result = await fetchHistoryEntries(pensionId)
+                if (!active) return
+                setEntries(result.entries)
+                setLoadError(result.error)
+                setIsLoading(false)
+            })()
 
         return () => {
             active = false
@@ -284,7 +284,7 @@ export default function PensionHistoryModal({ isOpen, onClose, pensionId, pensio
                         <h2 className="text-xl font-bold text-white">History</h2>
                         <p className="text-xs text-white/60 mt-1">{pensionName}</p>
                     </div>
-                    <button onClick={onClose} className="text-white/50 hover:text-white transition-colors p-1">
+                    <button onClick={onClose} className="text-rose-300 hover:text-rose-300 transition-colors p-1">
                         <X className="w-5 h-5" />
                     </button>
                 </div>
@@ -403,7 +403,7 @@ export default function PensionHistoryModal({ isOpen, onClose, pensionId, pensio
                                 />
                             </div>
 
-                            <NativeDatePickerField
+                            <DatePickerField
                                 label="Date"
                                 value={editDate}
                                 onChange={setEditDate}
@@ -421,7 +421,7 @@ export default function PensionHistoryModal({ isOpen, onClose, pensionId, pensio
                                     type="button"
                                     onClick={() => setEditingEntry(null)}
                                     disabled={isSavingEdit}
-                                    className="flex-1 rounded-xl border border-white/10 text-white/80 px-4 py-3 text-sm font-semibold hover:bg-white/5"
+                                    className="flex-1 rounded-xl border border-rose-500/35 text-rose-300 px-4 py-3 text-sm font-semibold hover:bg-rose-500/10 transition-colors"
                                 >
                                     Cancel
                                 </button>
@@ -469,7 +469,7 @@ export default function PensionHistoryModal({ isOpen, onClose, pensionId, pensio
                                     type="button"
                                     onClick={() => setDeletingEntry(null)}
                                     disabled={isDeletingEntry}
-                                    className="flex-1 rounded-xl border border-white/10 text-white/80 px-4 py-3 text-sm font-semibold hover:bg-white/5 disabled:opacity-60 disabled:cursor-not-allowed"
+                                    className="flex-1 rounded-xl border border-rose-500/35 text-rose-300 px-4 py-3 text-sm font-semibold hover:bg-rose-500/10 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                                 >
                                     Cancel
                                 </button>

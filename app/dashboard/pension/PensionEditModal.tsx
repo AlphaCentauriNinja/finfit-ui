@@ -92,7 +92,7 @@ export default function PensionEditModal({ isOpen, onClose, pensionId, initialNa
             <div className="relative w-full max-w-md bg-[#0f172a] border border-white/10 rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                 <div className="flex items-center justify-between p-6 border-b border-white/10">
                     <h2 className="text-xl font-bold text-red">Edit Pension Account</h2>
-                    <button onClick={onClose} className="text-white/50 hover:text-red transition-colors p-1">
+                    <button onClick={onClose} className="text-rose-300 hover:text-rose-300 transition-colors p-1">
                         <X className="w-5 h-5" />
                     </button>
                 </div>
