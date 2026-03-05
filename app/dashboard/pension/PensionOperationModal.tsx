@@ -14,7 +14,7 @@ export default function PensionOperationModal({ isOpen }: Props) {
             <div className="flex flex-col items-center justify-center gap-5">
                 <div
                     aria-hidden="true"
-                    className="h-24 w-24 animate-spin rounded-full border-8 border-purple-200/30 border-t-purple-500 border-r-purple-500"
+                    className="h-48 w-48 animate-spin rounded-full border-8 border-sky-200/30 border-t-sky-400 border-r-sky-400 shadow-[0_0_30px_rgba(56,189,248,0.3)]"
                 />
                 <p className="text-xl font-semibold tracking-wide text-white">Loading</p>
             </div>

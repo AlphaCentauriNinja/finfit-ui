@@ -30,6 +30,21 @@ export type SalaryExpenditureRow = {
     monthly_amount: number | string | null
 }
 
+export type SavingsAccountRow = {
+    id: string
+    name: string
+    created_at: string
+}
+
+export type SavingsPotRow = {
+    id: string
+    account_id: string
+    name: string
+    balance: number | string | null
+    target_amount: number | string | null
+    created_at: string
+}
+
 type ValueSnapshot = {
     amount: number
     valueDate: string
@@ -71,6 +86,26 @@ export type DashboardSalaryExpenditure = {
     amount: number
 }
 
+export type DashboardSavingsPot = {
+    id: string
+    name: string
+    balance: number
+    targetAmount: number | null
+}
+
+export type DashboardSavingsChartPoint = {
+    month: string
+    label: string
+    current: number
+}
+
+export type DashboardSavingsAccount = {
+    id: string
+    name: string
+    totalValue: number
+    pots: DashboardSavingsPot[]
+}
+
 export type DashboardDataSnapshot = {
     portfolio: {
         totalAssets: number
@@ -94,6 +129,12 @@ export type DashboardDataSnapshot = {
         disposableIncome: number
         loadError: boolean
     }
+    savings: {
+        accounts: DashboardSavingsAccount[]
+        totalValue: number
+        chartData: DashboardSavingsChartPoint[]
+        loadError: boolean
+    }
 }
 
 type BuildDashboardSnapshotInput = {
@@ -104,6 +145,9 @@ type BuildDashboardSnapshotInput = {
     salaryProfile?: SalaryProfileRow | null
     salaryExpenditures?: SalaryExpenditureRow[] | null
     salaryLoadError?: boolean
+    savingsAccounts?: SavingsAccountRow[] | null
+    savingsPots?: SavingsPotRow[] | null
+    savingsLoadError?: boolean
 }
 
 const toNumber = (value: number | string | null | undefined): number => {
@@ -130,6 +174,9 @@ export const buildDashboardSnapshot = ({
     salaryProfile,
     salaryExpenditures,
     salaryLoadError = false,
+    savingsAccounts = [],
+    savingsPots = [],
+    savingsLoadError = false,
 }: BuildDashboardSnapshotInput): DashboardDataSnapshot => {
     const accountRows = pensionAccounts ?? []
     const contributionRows = pensionContributions ?? []
@@ -357,6 +404,54 @@ export const buildDashboardSnapshot = ({
     const annualNetSalary = monthlyNetSalary * 12
     const disposableIncome = monthlyNetSalary - totalExpenditure
 
+    // Savings logic
+    const potsByAccount = (savingsPots ?? []).reduce<Record<string, DashboardSavingsPot[]>>((acc, potRow) => {
+        const balance = toNumber(potRow.balance)
+        if (!Number.isFinite(balance) || balance < 0) return acc
+
+        const targetAmountRaw = potRow.target_amount ? toNumber(potRow.target_amount) : null
+        const targetAmount = targetAmountRaw !== null && Number.isFinite(targetAmountRaw) && targetAmountRaw >= 0 ? targetAmountRaw : null
+
+        if (!acc[potRow.account_id]) acc[potRow.account_id] = []
+        acc[potRow.account_id].push({
+            id: potRow.id,
+            name: (potRow.name ?? '').trim(),
+            balance,
+            targetAmount,
+        })
+        return acc
+    }, {})
+
+    // Sort pots alphabetically by name
+    Object.values(potsByAccount).forEach(pots => pots.sort((a, b) => a.name.localeCompare(b.name)))
+
+    const savingsAccountsSummary: DashboardSavingsAccount[] = (savingsAccounts ?? []).map((accRow) => {
+        const pots = potsByAccount[accRow.id] ?? []
+        const totalValue = pots.reduce((sum, pot) => sum + pot.balance, 0)
+        return {
+            id: accRow.id,
+            name: (accRow.name ?? '').trim(),
+            totalValue,
+            pots,
+        }
+    }).sort((a, b) => a.name.localeCompare(b.name))
+
+    const totalSavingsValue = savingsAccountsSummary.reduce((sum, acc) => sum + acc.totalValue, 0)
+
+    // Generate basic 6-month flatline history for Savings using current total
+    // (Until a history table for savings is added)
+    const savingsChartData: DashboardSavingsChartPoint[] = []
+    const currentDate = new Date()
+    for (let i = 5; i >= 0; i--) {
+        const d = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1)
+        const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+        savingsChartData.push({
+            month: monthKey,
+            label: formatMonthLabel(monthKey),
+            current: totalSavingsValue
+        })
+    }
+
     return {
         portfolio: {
             totalAssets,
@@ -383,5 +478,11 @@ export const buildDashboardSnapshot = ({
             disposableIncome,
             loadError: salaryLoadError,
         },
+        savings: {
+            accounts: savingsAccountsSummary,
+            totalValue: totalSavingsValue,
+            chartData: savingsChartData,
+            loadError: savingsLoadError,
+        }
     }
 }
