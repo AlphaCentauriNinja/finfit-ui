@@ -10,6 +10,9 @@ import {
     YAxis,
     Legend,
 } from 'recharts'
+import { useState, useMemo } from 'react'
+
+type TimeframeOption = '3m' | '6m' | '1y' | 'all'
 
 type ChartPoint = {
     month: string
@@ -61,6 +64,15 @@ function CustomTooltip({ active, payload, label }: TooltipProps) {
 }
 
 export default function PensionPerformanceChart({ data, comparisonLabel: _comparisonLabel }: Props) {
+    const [selectedTimeframe, setSelectedTimeframe] = useState<TimeframeOption>('all')
+
+    const filteredData = useMemo(() => {
+        if (selectedTimeframe === 'all' || data.length === 0) return data
+
+        const count = selectedTimeframe === '3m' ? 3 : selectedTimeframe === '6m' ? 6 : 12
+        return data.slice(-count)
+    }, [data, selectedTimeframe])
+
     const hasData = data.some((point) => point.current > 0 || point.contributions > 0)
 
     if (!hasData) {
@@ -82,22 +94,36 @@ export default function PensionPerformanceChart({ data, comparisonLabel: _compar
                     <h2 className="text-base font-semibold text-white">Pension Performance</h2>
                     <p className="text-xs text-slate-500 mt-0.5">Total pension value vs cumulative contributions over time</p>
                 </div>
-                <div className="flex items-center gap-4 text-xs text-slate-400">
-                    <span className="flex items-center gap-1.5">
-                        <span className="inline-block w-3 h-0.5 bg-blue-500 rounded" />
-                        Total Value
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                        <span className="inline-block w-3 h-0.5 bg-emerald-500 rounded-full [border-style:dashed]" />
-                        Contributions
-                    </span>
+                <div className="flex flex-wrap items-center gap-4">
+                    <div className="flex items-center gap-3 mr-2">
+                        <select
+                            value={selectedTimeframe}
+                            onChange={(e) => setSelectedTimeframe(e.target.value as TimeframeOption)}
+                            className="bg-slate-900 border border-white/10 text-white/70 text-[11px] font-medium rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500/50 appearance-none cursor-pointer hover:border-white/20 transition-colors"
+                        >
+                            <option value="3m">Last 3 Months</option>
+                            <option value="6m">Last 6 Months</option>
+                            <option value="1y">Last Year</option>
+                            <option value="all">All Time</option>
+                        </select>
+                    </div>
+                    <div className="flex items-center gap-4 text-xs text-slate-400">
+                        <span className="flex items-center gap-1.5">
+                            <span className="inline-block w-3 h-0.5 bg-blue-500 rounded" />
+                            Total Value
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                            <span className="inline-block w-3 h-0.5 bg-emerald-500 rounded-full [border-style:dashed]" />
+                            Contributions
+                        </span>
+                    </div>
                 </div>
             </div>
 
             {/* Chart */}
             <div className="h-[340px] w-full p-4 pt-6">
                 <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={data} margin={{ top: 4, right: 16, left: 0, bottom: 4 }}>
+                    <LineChart data={filteredData} margin={{ top: 4, right: 16, left: 0, bottom: 4 }}>
                         <CartesianGrid
                             vertical={false}
                             stroke="rgba(255,255,255,0.05)"

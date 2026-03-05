@@ -157,13 +157,16 @@ const toNumber = (value: number | string | null | undefined): number => {
 
 const getTodayIso = (): string => new Date().toISOString().slice(0, 10)
 
-const formatMonthLabel = (monthKey: string): string => {
+const formatMonthLabel = (monthKey: string, multiYear: boolean): string => {
     const [yearPart, monthPart] = monthKey.split('-')
     const year = Number(yearPart)
     const month = Number(monthPart)
     const date = new Date(year, month - 1, 1)
     if (Number.isNaN(date.getTime())) return monthKey
-    return new Intl.DateTimeFormat('en-GB', { month: 'short' }).format(date).toUpperCase()
+    const monthStr = new Intl.DateTimeFormat('en-GB', { month: 'short' }).format(date).toUpperCase()
+    if (!multiYear) return monthStr
+    // Include short year suffix when data spans multiple calendar years
+    return `${monthStr} '${String(year).slice(2)}`
 }
 
 export const buildDashboardSnapshot = ({
@@ -228,11 +231,6 @@ export const buildDashboardSnapshot = ({
         latestValueByAccount[accountId] = orderedSnapshots[orderedSnapshots.length - 1]
     })
 
-    const accountBaseValues = accountRows.reduce<Record<string, number>>((acc, account) => {
-        const parsedAmount = toNumber(account.current_value)
-        acc[account.id] = Number.isFinite(parsedAmount) ? parsedAmount : 0
-        return acc
-    }, {})
 
     const pensionAccountsSummary: DashboardPensionAccount[] = accountRows.map((account) => {
         const parsedAmount = toNumber(account.current_value)
@@ -320,10 +318,12 @@ export const buildDashboardSnapshot = ({
         ? 'PENSIONBEE'
         : (pensionAccountsSummary[0]?.name ? pensionAccountsSummary[0].name.toUpperCase() : 'BENCHMARK')
 
-    const valueAtMonth = (accountId: string, monthKey: string): number => {
+    // Returns null when no value snapshot exists at or before `monthKey`.
+    // Using null avoids polluting the chart with the account's creation/seed value
+    // for months that pre-date any real value entry.
+    const valueAtMonth = (accountId: string, monthKey: string): number | null => {
         const snapshots = sortedSnapshotsByAccount[accountId] ?? []
-        const fallbackValue = accountBaseValues[accountId] ?? 0
-        let accountValue = fallbackValue
+        let accountValue: number | null = null
 
         for (const snapshot of snapshots) {
             if (snapshot.valueDate.slice(0, 7) <= monthKey) {
@@ -336,14 +336,40 @@ export const buildDashboardSnapshot = ({
         return accountValue
     }
 
+    // Determine if data spans more than one calendar year so labels include the year
+    const yearsInData = new Set(sortedMonths.map((m) => m.slice(0, 4)))
+    const multiYear = yearsInData.size > 1
+
+    // Carry-forward accumulator: when a month has no new snapshot we use the last
+    // known total rather than dropping to 0.
+    let lastKnownTotal = 0
+
     const chartData = sortedMonths.reduce<DashboardPensionChartPoint[]>((acc, monthKey) => {
-        const current = pensionAccountsSummary.reduce((sum, pension) => sum + valueAtMonth(pension.id, monthKey), 0)
-        const comparison = comparisonAccountIds.reduce((sum, accountId) => sum + valueAtMonth(accountId, monthKey), 0)
         const contributions = cumulativeContributionsAtMonth(monthKey)
+
+        const accountValues = pensionAccountsSummary.map((pension) => valueAtMonth(pension.id, monthKey))
+        const hasAnySnapshot = accountValues.some((v) => v !== null)
+        const rawCurrent = accountValues.reduce<number>((sum, v) => sum + (v ?? 0), 0)
+
+        if (hasAnySnapshot) {
+            // Update carry-forward whenever we have real snapshot data
+            lastKnownTotal = rawCurrent
+        }
+
+        // Use the snapshot total if we have one, otherwise carry forward the last known
+        // total. If nothing has been recorded yet at all, fall back to contributions
+        // as the best-effort floor so the value line never goes below contributions.
+        const current = Math.max(
+            hasAnySnapshot ? rawCurrent : lastKnownTotal || contributions,
+            contributions
+        )
+
+        const comparisonValues = comparisonAccountIds.map((accountId) => valueAtMonth(accountId, monthKey))
+        const comparison = comparisonValues.reduce<number>((sum, v) => sum + (v ?? 0), 0)
 
         acc.push({
             month: monthKey,
-            label: formatMonthLabel(monthKey),
+            label: formatMonthLabel(monthKey, multiYear),
             current,
             comparison,
             contributions,
@@ -356,7 +382,7 @@ export const buildDashboardSnapshot = ({
         const monthKey = getTodayIso().slice(0, 7)
         chartData.push({
             month: monthKey,
-            label: formatMonthLabel(monthKey),
+            label: formatMonthLabel(monthKey, false),
             current: 0,
             comparison: 0,
             contributions: 0,
@@ -447,7 +473,7 @@ export const buildDashboardSnapshot = ({
         const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
         savingsChartData.push({
             month: monthKey,
-            label: formatMonthLabel(monthKey),
+            label: formatMonthLabel(monthKey, false),
             current: totalSavingsValue
         })
     }
