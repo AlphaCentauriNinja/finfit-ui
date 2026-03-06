@@ -402,47 +402,6 @@ export const buildDashboardSnapshot = ({
         })
     }
 
-    const mergedAssets = mockedAssets.map((asset) => (
-        asset.name === 'Pension'
-            ? { ...asset, value: totalPensionValue }
-            : asset
-    ))
-    const totalAssets = mergedAssets.reduce((sum, asset) => sum + asset.value, 0)
-    const assetsWithAllocation: DashboardAsset[] = mergedAssets.map((asset) => ({
-        ...asset,
-        allocation: totalAssets > 0 ? (asset.value / totalAssets) * 100 : 0,
-    }))
-
-    const monthlyNetSalary = (() => {
-        const parsed = toNumber(salaryProfile?.monthly_net_salary)
-        return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0
-    })()
-    const employerName = (salaryProfile?.employer_name ?? '').trim() || 'Not set'
-
-    const expenditures = (salaryExpenditures ?? [])
-        .map<DashboardSalaryExpenditure | null>((expenditure) => {
-            const amount = toNumber(expenditure.monthly_amount)
-            const name = (expenditure.expenditure_name ?? '').trim()
-
-            if (!expenditure.id || !name || !Number.isFinite(amount) || amount < 0) {
-                return null
-            }
-
-            return {
-                id: expenditure.id,
-                name,
-                amount,
-            }
-        })
-        .filter((entry): entry is DashboardSalaryExpenditure => Boolean(entry))
-
-    const totalExpenditure = expenditures.reduce((sum, expenditure) => sum + expenditure.amount, 0)
-    const committedOutgoingRatio = monthlyNetSalary > 0
-        ? (totalExpenditure / monthlyNetSalary) * 100
-        : 0
-    const annualNetSalary = monthlyNetSalary * 12
-    const disposableIncome = monthlyNetSalary - totalExpenditure
-
     // Savings logic
     const potsByAccount = (savingsPots ?? []).reduce<Record<string, DashboardSavingsPot[]>>((acc, potRow) => {
         const balance = toNumber(potRow.balance)
@@ -499,6 +458,51 @@ export const buildDashboardSnapshot = ({
     }).sort((a, b) => a.name.localeCompare(b.name))
 
     const totalSavingsValue = savingsAccountsSummary.reduce((sum, acc) => sum + acc.totalValue, 0)
+
+    const mergedAssets = mockedAssets.map((asset) => {
+        if (asset.name === 'Pension') {
+            return { ...asset, value: totalPensionValue }
+        }
+        if (asset.name === 'Savings') {
+            return { ...asset, value: totalSavingsValue }
+        }
+        return asset
+    })
+    const totalAssets = mergedAssets.reduce((sum, asset) => sum + asset.value, 0)
+    const assetsWithAllocation: DashboardAsset[] = mergedAssets.map((asset) => ({
+        ...asset,
+        allocation: totalAssets > 0 ? (asset.value / totalAssets) * 100 : 0,
+    }))
+
+    const monthlyNetSalary = (() => {
+        const parsed = toNumber(salaryProfile?.monthly_net_salary)
+        return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0
+    })()
+    const employerName = (salaryProfile?.employer_name ?? '').trim() || 'Not set'
+
+    const expenditures = (salaryExpenditures ?? [])
+        .map<DashboardSalaryExpenditure | null>((expenditure) => {
+            const amount = toNumber(expenditure.monthly_amount)
+            const name = (expenditure.expenditure_name ?? '').trim()
+
+            if (!expenditure.id || !name || !Number.isFinite(amount) || amount < 0) {
+                return null
+            }
+
+            return {
+                id: expenditure.id,
+                name,
+                amount,
+            }
+        })
+        .filter((entry): entry is DashboardSalaryExpenditure => Boolean(entry))
+
+    const totalExpenditure = expenditures.reduce((sum, expenditure) => sum + expenditure.amount, 0)
+    const committedOutgoingRatio = monthlyNetSalary > 0
+        ? (totalExpenditure / monthlyNetSalary) * 100
+        : 0
+    const annualNetSalary = monthlyNetSalary * 12
+    const disposableIncome = monthlyNetSalary - totalExpenditure
 
     // Generate basic 6-month flatline history for Savings using current total
     // (Until a history table for savings is added)
