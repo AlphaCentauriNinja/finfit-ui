@@ -13,18 +13,19 @@ import {
     Pie,
     Cell
 } from 'recharts'
+import { useMemo } from 'react'
 
-type SavingsAccount = {
+type SavingsPot = {
     name: string
     value: number
 }
 
 type Props = {
-    accounts: SavingsAccount[]
+    pots: SavingsPot[]
     chartData: { month: string; label: string; current: number }[]
 }
 
-const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899']
+const COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f59e0b', '#10b981', '#06b6d4', '#3b82f6']
 
 const formatGBP = (value: number): string =>
     `£${value.toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
@@ -69,20 +70,27 @@ function PieTooltip({ active, payload }: any) {
     )
 }
 
-export default function SavingsCharts({ accounts, chartData }: Props) {
-    const pieData = accounts.filter(a => a.value > 0).map((a, i) => ({
-        ...a,
-        fill: COLORS[i % COLORS.length]
-    }))
+export default function SavingsCharts({ pots, chartData }: Props) {
+    const pieData = useMemo(() => {
+        return pots
+            .filter(p => p.value > 0)
+            .sort((a, b) => b.value - a.value)
+            .map((p, i) => ({
+                ...p,
+                fill: COLORS[i % COLORS.length]
+            }))
+    }, [pots])
+
+    const totalPotsValue = useMemo(() => pieData.reduce((s, a) => s + a.value, 0), [pieData])
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
             {/* 75% Line Chart */}
-            <div className="lg:col-span-3 rounded-xl border border-white/[0.07] bg-[#0e1629] overflow-hidden flex flex-col">
-                <div className="flex items-center justify-between px-6 py-5 border-b border-white/[0.06]">
+            <div className="lg:col-span-3 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm overflow-hidden flex flex-col shadow-sm">
+                <div className="flex items-center justify-between px-6 py-5 border-b border-white/10">
                     <div>
                         <h2 className="text-base font-semibold text-white">Savings History</h2>
-                        <p className="text-xs text-slate-500 mt-0.5">Total savings value over time</p>
+                        <p className="text-xs text-white/50 mt-0.5">Total savings value over time</p>
                     </div>
                 </div>
                 <div className="h-[340px] w-full p-4 pt-6 flex-1">
@@ -91,14 +99,14 @@ export default function SavingsCharts({ accounts, chartData }: Props) {
                             <CartesianGrid vertical={false} stroke="rgba(255,255,255,0.05)" />
                             <XAxis
                                 dataKey="label"
-                                tick={{ fill: '#64748b', fontSize: 11 }}
+                                tick={{ fill: '#94a3b8', fontSize: 11 }}
                                 tickLine={false}
                                 axisLine={false}
                                 minTickGap={20}
                             />
                             <YAxis
                                 tickFormatter={formatGBP}
-                                tick={{ fill: '#64748b', fontSize: 11 }}
+                                tick={{ fill: '#94a3b8', fontSize: 11 }}
                                 tickLine={false}
                                 axisLine={false}
                                 width={80}
@@ -108,10 +116,10 @@ export default function SavingsCharts({ accounts, chartData }: Props) {
                                 type="monotone"
                                 dataKey="current"
                                 name="Total Value"
-                                stroke="#3b82f6"
+                                stroke="#818cf8"
                                 strokeWidth={2.5}
                                 dot={false}
-                                activeDot={{ r: 4, fill: '#3b82f6', strokeWidth: 0 }}
+                                activeDot={{ r: 4, fill: '#818cf8', strokeWidth: 0 }}
                                 isAnimationActive={false}
                             />
                         </LineChart>
@@ -120,11 +128,11 @@ export default function SavingsCharts({ accounts, chartData }: Props) {
             </div>
 
             {/* 25% Pie Chart */}
-            <div className="lg:col-span-1 rounded-xl border border-white/[0.07] bg-[#0e1629] overflow-hidden flex flex-col">
-                <div className="flex items-center justify-between px-6 py-5 border-b border-white/[0.06]">
+            <div className="lg:col-span-1 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm overflow-hidden flex flex-col shadow-sm">
+                <div className="flex items-center justify-between px-6 py-5 border-b border-white/10">
                     <div>
-                        <h2 className="text-base font-semibold text-white">Allocation</h2>
-                        <p className="text-xs text-slate-500 mt-0.5">Distribution</p>
+                        <h2 className="text-base font-semibold text-white">Pot Allocation</h2>
+                        <p className="text-xs text-white/50 mt-0.5">Distribution across goals</p>
                     </div>
                 </div>
                 <div className="h-[340px] w-full p-4 flex flex-col justify-center items-center flex-1">
@@ -135,9 +143,9 @@ export default function SavingsCharts({ accounts, chartData }: Props) {
                                     data={pieData}
                                     cx="50%"
                                     cy="50%"
-                                    innerRadius={60}
-                                    outerRadius={80}
-                                    paddingAngle={5}
+                                    innerRadius={55}
+                                    outerRadius={75}
+                                    paddingAngle={4}
                                     dataKey="value"
                                     stroke="none"
                                 >
@@ -150,15 +158,15 @@ export default function SavingsCharts({ accounts, chartData }: Props) {
                         </ResponsiveContainer>
                     </div>
                     {/* Legend underneath */}
-                    <div className="w-full mt-4 flex flex-col gap-2 px-2 overflow-y-auto">
+                    <div className="w-full mt-4 flex flex-col gap-2 px-2 max-h-[100px] overflow-y-auto custom-scrollbar">
                         {pieData.map((entry, idx) => (
-                            <div key={idx} className="flex items-center justify-between text-xs">
-                                <div className="flex items-center gap-2">
-                                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: entry.fill }} />
-                                    <span className="text-slate-300 truncate max-w-[100px]">{entry.name}</span>
+                            <div key={idx} className="flex items-center justify-between text-[10px]">
+                                <div className="flex items-center gap-2 min-w-0">
+                                    <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: entry.fill }} />
+                                    <span className="text-white/70 truncate">{entry.name}</span>
                                 </div>
-                                <span className="text-white font-medium">
-                                    {Math.round((entry.value / pieData.reduce((s, a) => s + a.value, 0)) * 100)}%
+                                <span className="text-white font-medium ml-2 tabular-nums">
+                                    {totalPotsValue > 0 ? Math.round((entry.value / totalPotsValue) * 100) : 0}%
                                 </span>
                             </div>
                         ))}

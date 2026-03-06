@@ -99,10 +99,12 @@ export default function AddAccountModal({ isOpen, onClose }: Props) {
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 text-white px-4 py-3 text-sm font-semibold hover:bg-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                            className="flex-1 bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-400 hover:to-indigo-500 text-white rounded-xl px-4 py-3 text-sm font-semibold transition-all shadow-lg shadow-indigo-500/25 disabled:opacity-60 disabled:cursor-not-allowed group"
                         >
-                            {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                            {isLoading ? 'Saving...' : 'Add Account'}
+                            <span className="inline-flex items-center justify-center gap-2">
+                                {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                                {isLoading ? 'Saving...' : 'Add Account'}
+                            </span>
                         </button>
                     </div>
                 </form>

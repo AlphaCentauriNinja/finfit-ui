@@ -12,6 +12,7 @@ import {
     type SalaryProfileRow,
     type SavingsAccountRow,
     type SavingsPotRow,
+    type SavingsHistoryRow,
 } from '@/lib/dashboard-data'
 
 export default async function Layout({
@@ -32,6 +33,7 @@ export default async function Layout({
         salaryExpendituresResult,
         savingsAccountsResult,
         savingsPotsResult,
+        savingsHistoryResult,
     ] = await Promise.all([
         supabase
             .from('pension_accounts')
@@ -59,6 +61,10 @@ export default async function Layout({
             .from('savings_pots')
             .select('id, account_id, name, balance, target_amount, created_at')
             .order('created_at', { ascending: false }),
+        supabase
+            .from('savings_history')
+            .select('id, pot_id, amount, date, name, created_at')
+            .order('date', { ascending: false }),
     ])
 
     const dashboardData = buildDashboardSnapshot({
@@ -78,9 +84,11 @@ export default async function Layout({
         ),
         savingsAccounts: (savingsAccountsResult.data as SavingsAccountRow[] | null) ?? [],
         savingsPots: (savingsPotsResult.data as SavingsPotRow[] | null) ?? [],
+        savingsHistory: (savingsHistoryResult.data as SavingsHistoryRow[] | null) ?? [],
         savingsLoadError: Boolean(
             savingsAccountsResult.error ||
-            savingsPotsResult.error
+            savingsPotsResult.error ||
+            savingsHistoryResult.error
         ),
     })
 

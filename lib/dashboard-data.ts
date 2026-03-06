@@ -45,6 +45,15 @@ export type SavingsPotRow = {
     created_at: string
 }
 
+export type SavingsHistoryRow = {
+    id: string
+    pot_id: string
+    amount: number | string | null
+    date: string | null
+    name: string | null
+    created_at: string
+}
+
 type ValueSnapshot = {
     amount: number
     valueDate: string
@@ -103,6 +112,8 @@ export type DashboardSavingsAccount = {
     id: string
     name: string
     totalValue: number
+    totalPnl: number
+    totalPnlPercentage: number
     pots: DashboardSavingsPot[]
 }
 
@@ -147,6 +158,7 @@ type BuildDashboardSnapshotInput = {
     salaryLoadError?: boolean
     savingsAccounts?: SavingsAccountRow[] | null
     savingsPots?: SavingsPotRow[] | null
+    savingsHistory?: SavingsHistoryRow[] | null
     savingsLoadError?: boolean
 }
 
@@ -179,6 +191,7 @@ export const buildDashboardSnapshot = ({
     salaryLoadError = false,
     savingsAccounts = [],
     savingsPots = [],
+    savingsHistory = [],
     savingsLoadError = false,
 }: BuildDashboardSnapshotInput): DashboardDataSnapshot => {
     const accountRows = pensionAccounts ?? []
@@ -451,13 +464,36 @@ export const buildDashboardSnapshot = ({
     // Sort pots alphabetically by name
     Object.values(potsByAccount).forEach(pots => pots.sort((a, b) => a.name.localeCompare(b.name)))
 
+    const historyByPot = (savingsHistory ?? []).reduce<Record<string, number>>((acc, row) => {
+        const amount = toNumber(row.amount)
+        if (!Number.isFinite(amount)) return acc
+        acc[row.pot_id] = (acc[row.pot_id] ?? 0) + amount
+        return acc
+    }, {})
+
     const savingsAccountsSummary: DashboardSavingsAccount[] = (savingsAccounts ?? []).map((accRow) => {
         const pots = potsByAccount[accRow.id] ?? []
         const totalValue = pots.reduce((sum, pot) => sum + pot.balance, 0)
+
+        let totalPnl = 0
+        let totalDeposits = 0
+
+        pots.forEach(pot => {
+            const deposits = historyByPot[pot.id] ?? 0
+            if (deposits > 0) {
+                totalDeposits += deposits
+                totalPnl += (pot.balance - deposits)
+            }
+        })
+
+        const totalPnlPercentage = totalDeposits > 0 ? (totalPnl / totalDeposits) * 100 : 0
+
         return {
             id: accRow.id,
             name: (accRow.name ?? '').trim(),
             totalValue,
+            totalPnl,
+            totalPnlPercentage,
             pots,
         }
     }).sort((a, b) => a.name.localeCompare(b.name))
