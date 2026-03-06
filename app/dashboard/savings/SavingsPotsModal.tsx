@@ -46,7 +46,7 @@ export default function SavingsPotsModal({ isOpen, onClose, account }: Props) {
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" onClick={onClose} />
-            <div className="relative w-full max-w-2xl bg-[#0f172a] border border-white/10 rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
+            <div className="relative w-full max-w-4xl bg-[#0f172a] border border-white/10 rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
                 <div className="flex items-center justify-between p-6 border-b border-white/10 shrink-0">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-400 border border-indigo-500/20">
@@ -79,7 +79,7 @@ export default function SavingsPotsModal({ isOpen, onClose, account }: Props) {
                             <p className="text-sm text-white/40 italic">No pots inside this account.</p>
                         </div>
                     ) : (
-                        <div className="grid gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {account.pots.map((pot) => {
                                 const hasTarget = pot.targetAmount !== null && pot.targetAmount > 0
                                 const progressPercentage = hasTarget

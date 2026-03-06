@@ -27,7 +27,7 @@ type Props = {
     chartData: { month: string; label: string; current: number }[]
 }
 
-const COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f59e0b', '#10b981', '#06b6d4', '#3b82f6']
+const COLORS = ['#6366f1', '#fbbf24', '#10b981', '#f43f5e', '#22d3ee', '#d946ef', '#84cc16', '#ea580c']
 
 const formatGBP = (value: number): string =>
     `£${value.toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
@@ -140,10 +140,10 @@ export default function SavingsCharts({ pots, chartData }: Props) {
                                 type="monotone"
                                 dataKey="current"
                                 name="Total Value"
-                                stroke="#818cf8"
+                                stroke="#fbbf24"
                                 strokeWidth={2.5}
                                 dot={false}
-                                activeDot={{ r: 4, fill: '#818cf8', strokeWidth: 0 }}
+                                activeDot={{ r: 4, fill: '#fbbf24', strokeWidth: 0 }}
                                 isAnimationActive={false}
                             />
                         </LineChart>

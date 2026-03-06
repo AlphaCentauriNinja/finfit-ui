@@ -109,7 +109,7 @@ export default function PensionPerformanceChart({ data, comparisonLabel: _compar
                     </div>
                     <div className="flex items-center gap-4 text-xs text-slate-400">
                         <span className="flex items-center gap-1.5">
-                            <span className="inline-block w-3 h-0.5 bg-blue-500 rounded" />
+                            <span className="inline-block w-3 h-0.5 bg-amber-400 rounded" />
                             Total Value
                         </span>
                         <span className="flex items-center gap-1.5">
@@ -151,10 +151,10 @@ export default function PensionPerformanceChart({ data, comparisonLabel: _compar
                             type="monotone"
                             dataKey="current"
                             name="Total Value"
-                            stroke="#3b82f6"
+                            stroke="#fbbf24"
                             strokeWidth={2.5}
                             dot={false}
-                            activeDot={{ r: 4, fill: '#3b82f6', strokeWidth: 0 }}
+                            activeDot={{ r: 4, fill: '#fbbf24', strokeWidth: 0 }}
                             isAnimationActive={false}
                             connectNulls
                         />

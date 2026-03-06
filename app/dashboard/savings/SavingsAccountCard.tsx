@@ -1,29 +1,17 @@
 'use client'
 
 import { useState } from 'react'
-import { ArrowDownRight, ArrowUpRight, ChevronRight, History, LayoutGrid, Minus, Pencil, PlusCircle, Trash2, Wallet } from 'lucide-react'
-import type { DashboardSavingsAccount, DashboardSavingsPot } from '@/lib/dashboard-data'
+import { ChevronRight, History, LayoutGrid, Pencil, PlusCircle, Wallet } from 'lucide-react'
+import type { DashboardSavingsAccount } from '@/lib/dashboard-data'
 import EditAccountModal from './EditAccountModal'
-import PotOperationModal from './PotOperationModal'
 import SavingsDepositModal from './SavingsDepositModal'
 import SavingsHistoryModal from './SavingsHistoryModal'
 import SavingsPotsModal from './SavingsPotsModal'
-import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import PensionOperationModal from '../pension/PensionOperationModal'
 
 type Props = {
     account: DashboardSavingsAccount
     totalSavingsValue: number
-}
-
-type PnlState = 'positive' | 'negative' | 'neutral'
-
-const getPnlState = (value: number): PnlState => {
-    const epsilon = 0.000001
-    if (value > epsilon) return 'positive'
-    if (value < -epsilon) return 'negative'
-    return 'neutral'
 }
 
 export default function SavingsAccountCard({ account, totalSavingsValue }: Props) {
@@ -31,25 +19,7 @@ export default function SavingsAccountCard({ account, totalSavingsValue }: Props
     const [isDepositOpen, setIsDepositOpen] = useState(false)
     const [isHistoryOpen, setIsHistoryOpen] = useState(false)
     const [isPotsOpen, setIsPotsOpen] = useState(false)
-    const [potModalOpen, setPotModalOpen] = useState(false)
-    const [editingPot, setEditingPot] = useState<DashboardSavingsPot | null>(null)
-    const [deletingPotId, setDeletingPotId] = useState<string | null>(null)
     const router = useRouter()
-
-    const openCreatePotModal = () => {
-        setEditingPot(null)
-        setPotModalOpen(true)
-    }
-
-    const pnlLabel = `${account.totalPnl >= 0 ? '+' : ''}£${account.totalPnl.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-    const pnlPctLabel = `${account.totalPnlPercentage >= 0 ? '+' : ''}${account.totalPnlPercentage.toFixed(2)}%`
-    const pnlState = getPnlState(account.totalPnl)
-    const PnlIcon = pnlState === 'positive' ? ArrowUpRight : pnlState === 'negative' ? ArrowDownRight : Minus
-    const pnlPillTone = pnlState === 'positive'
-        ? 'border-green-500 bg-green-500/20 text-green-200'
-        : pnlState === 'negative'
-            ? 'border-red-500 bg-red-500/20 text-red-200'
-            : 'border-amber-500 bg-amber-500/20 text-amber-200'
 
     return (
         <div className="bg-white/5 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/10 hover:bg-white/10 transition-colors flex flex-col h-full group/card">
@@ -63,16 +33,6 @@ export default function SavingsAccountCard({ account, totalSavingsValue }: Props
                 <div className="w-10 h-10 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-400 font-bold border border-indigo-500/20 group-hover/card:scale-110 transition-transform">
                     <Wallet className="w-5 h-5" />
                 </div>
-            </div>
-
-            <div className="mt-2 flex flex-wrap items-center gap-2">
-                <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${pnlPillTone}`}>
-                    <PnlIcon className="mr-1 h-3.5 w-3.5" />
-                    PNL {pnlLabel}
-                </span>
-                <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${pnlPillTone}`}>
-                    {pnlPctLabel}
-                </span>
             </div>
 
             <div className="w-full bg-white/5 rounded-full h-1.5 mt-4 mb-6">
