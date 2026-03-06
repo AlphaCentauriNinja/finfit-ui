@@ -136,8 +136,9 @@ export default function PensionPerformanceChart({ data, comparisonLabel: _compar
                             minTickGap={20}
                         />
                         <YAxis
+                            domain={['auto', 'auto']}
                             tickFormatter={formatGBP}
-                            tick={{ fill: '#64748b', fontSize: 11 }}
+                            tick={{ fill: '#94a3b8', fontSize: 11 }}
                             tickLine={false}
                             axisLine={false}
                             width={80}
