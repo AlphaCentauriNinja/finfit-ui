@@ -3,7 +3,7 @@
 import { FormEvent, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Loader2, X } from 'lucide-react'
+import { ArrowRightLeft, Loader2, X } from 'lucide-react'
 import DatePickerField from '../pension/DatePickerField'
 import type { DashboardSavingsAccount } from '@/lib/dashboard-data'
 
@@ -13,10 +13,10 @@ type Props = {
     account: DashboardSavingsAccount
 }
 
-export default function SavingsDepositModal({ isOpen, onClose, account }: Props) {
+export default function SavingsTransactionModal({ isOpen, onClose, account }: Props) {
     const [potId, setPotId] = useState(account.pots[0]?.id || '')
     const [amount, setAmount] = useState('')
-    const [name, setName] = useState('Deposit')
+    const [name, setName] = useState('Transaction')
     const [date, setDate] = useState(new Date().toISOString().split('T')[0])
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
@@ -27,8 +27,8 @@ export default function SavingsDepositModal({ isOpen, onClose, account }: Props)
         setError(null)
 
         const parsedAmount = Number(amount)
-        if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
-            setError('Amount must be a valid number greater than 0.')
+        if (!Number.isFinite(parsedAmount) || parsedAmount === 0) {
+            setError('Amount must be a valid non-zero number.')
             return
         }
 
@@ -47,7 +47,7 @@ export default function SavingsDepositModal({ isOpen, onClose, account }: Props)
                 pot_id: potId,
                 amount: parsedAmount,
                 date: date,
-                name: name.trim() || 'Deposit'
+                name: name.trim() || 'Transaction'
             })
 
         if (historyError) {
@@ -82,9 +82,14 @@ export default function SavingsDepositModal({ isOpen, onClose, account }: Props)
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" onClick={onClose} />
-            <div className="relative w-full max-w-5xl bg-[#0f172a] border border-white/10 rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="relative w-full max-w-5xl bg-[#0f172a] border border-white/10 rounded-2xl shadow-xl animate-in fade-in zoom-in-95 duration-200">
                 <div className="flex items-center justify-between p-6 border-b border-white/10">
-                    <h2 className="text-xl font-bold text-white">Add Deposit</h2>
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-400 border border-indigo-500/20">
+                            <ArrowRightLeft className="w-5 h-5" />
+                        </div>
+                        <h2 className="text-xl font-bold text-white">New Transaction</h2>
+                    </div>
                     <button onClick={onClose} className="text-rose-300 hover:text-rose-300 transition-colors p-1">
                         <X className="w-5 h-5" />
                     </button>
@@ -105,16 +110,20 @@ export default function SavingsDepositModal({ isOpen, onClose, account }: Props)
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-white/80">Amount (£)</label>
+                        <div className="flex justify-between items-center">
+                            <label className="text-sm font-medium text-white/80">Amount (£)</label>
+                            <span className="text-[10px] text-white/40 uppercase tracking-wider font-semibold">
+                                Use negative for withdrawal
+                            </span>
+                        </div>
                         <input
                             type="number"
                             required
-                            min="0.01"
                             step="any"
                             value={amount}
                             onChange={(e) => setAmount(e.target.value)}
                             placeholder="0.00"
-                            className="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all text-sm"
+                            className="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all text-sm font-semibold"
                         />
                     </div>
 
@@ -124,7 +133,7 @@ export default function SavingsDepositModal({ isOpen, onClose, account }: Props)
                             type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            placeholder="Deposit"
+                            placeholder="Transaction"
                             className="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all text-sm"
                         />
                     </div>
@@ -156,7 +165,7 @@ export default function SavingsDepositModal({ isOpen, onClose, account }: Props)
                             className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 text-white px-4 py-3 text-sm font-semibold hover:bg-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
                         >
                             {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                            {isLoading ? 'Saving...' : 'Add Deposit'}
+                            {isLoading ? 'Saving...' : 'Add Transaction'}
                         </button>
                     </div>
                 </form>

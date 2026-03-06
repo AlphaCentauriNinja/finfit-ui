@@ -1,10 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { ChevronRight, History, LayoutGrid, Pencil, PlusCircle, Wallet } from 'lucide-react'
+import { ArrowRightLeft, ChevronRight, History, LayoutGrid, Pencil, Wallet } from 'lucide-react'
 import type { DashboardSavingsAccount } from '@/lib/dashboard-data'
 import EditAccountModal from './EditAccountModal'
-import SavingsDepositModal from './SavingsDepositModal'
+import SavingsTransactionModal from './SavingsTransactionModal'
 import SavingsHistoryModal from './SavingsHistoryModal'
 import SavingsPotsModal from './SavingsPotsModal'
 import { useRouter } from 'next/navigation'
@@ -79,8 +79,8 @@ export default function SavingsAccountCard({ account, totalSavingsValue }: Props
                         onClick={() => setIsDepositOpen(true)}
                         className="inline-flex items-center justify-center gap-2 rounded-lg border border-indigo-400/30 bg-indigo-500/10 px-3 py-2 text-xs font-semibold text-indigo-200 hover:bg-indigo-500/20 hover:text-indigo-100 transition-colors"
                     >
-                        <PlusCircle className="h-3.5 w-3.5" />
-                        Add Deposit
+                        <ArrowRightLeft className="h-3.5 w-3.5" />
+                        Transaction
                     </button>
                     <button
                         onClick={() => setIsHistoryOpen(true)}
@@ -102,7 +102,7 @@ export default function SavingsAccountCard({ account, totalSavingsValue }: Props
             )}
 
             {isDepositOpen && (
-                <SavingsDepositModal
+                <SavingsTransactionModal
                     isOpen={isDepositOpen}
                     onClose={() => setIsDepositOpen(false)}
                     account={account}

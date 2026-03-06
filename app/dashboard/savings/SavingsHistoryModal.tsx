@@ -104,8 +104,8 @@ export default function SavingsHistoryModal({ isOpen, onClose, account }: Props)
         setEditError(null)
 
         const parsedAmount = Number(editAmount)
-        if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
-            setEditError('Amount must be greater than 0.')
+        if (!Number.isFinite(parsedAmount) || parsedAmount === 0) {
+            setEditError('Amount must be a non-zero number.')
             return
         }
 
@@ -174,7 +174,7 @@ export default function SavingsHistoryModal({ isOpen, onClose, account }: Props)
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" onClick={onClose} />
-            <div className="relative w-full max-w-5xl bg-[#0f172a] border border-white/10 rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="relative w-full max-w-5xl bg-[#0f172a] border border-white/10 rounded-2xl shadow-xl animate-in fade-in zoom-in-95 duration-200">
                 <div className="flex items-center justify-between p-6 border-b border-white/10">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-400 border border-emerald-500/20">
@@ -225,7 +225,9 @@ export default function SavingsHistoryModal({ isOpen, onClose, account }: Props)
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 text-white/70">{entry.name}</td>
-                                            <td className="px-6 py-4 font-semibold text-emerald-400">+{formatAmount(entry.amount)}</td>
+                                            <td className={`px-6 py-4 font-semibold ${entry.amount > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                                {entry.amount > 0 ? '+' : ''} {formatAmount(entry.amount)}
+                                            </td>
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center justify-center gap-2">
                                                     <button
@@ -274,14 +276,19 @@ export default function SavingsHistoryModal({ isOpen, onClose, account }: Props)
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-medium text-white/80">Amount (£)</label>
+                                    <div className="flex justify-between items-center">
+                                        <label className="text-sm font-medium text-white/80">Amount (£)</label>
+                                        <span className="text-[10px] text-white/40 uppercase tracking-wider font-semibold">
+                                            Use negative for withdrawal
+                                        </span>
+                                    </div>
                                     <input
                                         type="number"
                                         required
                                         step="any"
                                         value={editAmount}
                                         onChange={(e) => setEditAmount(e.target.value)}
-                                        className="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                                        className="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 font-semibold"
                                     />
                                 </div>
                                 <DatePickerField label="Date" value={editDate} onChange={setEditDate} />
