@@ -128,9 +128,40 @@ const gaugeData = [
 ]
 
 export function SavingsGauge() {
+    const dashboardData = useDashboardData()
+
+    // Find the Emergency Fund pot across all accounts
+    const allPots = dashboardData.savings.accounts.flatMap(acc => acc.pots)
+    const emergencyFund = allPots.find(p => p.name.toLowerCase().includes('emergency')) || allPots[0]
+
+    if (!emergencyFund) {
+        return (
+            <div className="bg-white/5 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/10 flex flex-col items-center justify-center">
+                <h3 className="text-sm font-bold text-white w-full text-left mb-2">Emergency Fund</h3>
+                <div className="py-8 text-center">
+                    <p className="text-xs text-white/40 italic">No savings pots found.</p>
+                </div>
+            </div>
+        )
+    }
+
+    const saved = emergencyFund.balance
+    const goal = emergencyFund.targetAmount || saved || 1
+    const percentage = Math.min((saved / goal) * 100, 100)
+
+    const gaugeData = [
+        { name: 'Saved', value: saved },
+        { name: 'Remaining', value: Math.max(0, goal - saved) },
+    ]
+
+    const formatShortValue = (val: number) => {
+        if (val >= 1000) return `£${(val / 1000).toFixed(1)}k`
+        return `£${val}`
+    }
+
     return (
         <div className="bg-white/5 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/10 flex flex-col items-center justify-center">
-            <h3 className="text-sm font-bold text-white w-full text-left mb-2">Emergency Fund</h3>
+            <h3 className="text-sm font-bold text-white w-full text-left mb-2">{emergencyFund.name}</h3>
             <div className="relative h-[160px] w-full flex items-center justify-center">
                 <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
@@ -152,8 +183,10 @@ export function SavingsGauge() {
                     </PieChart>
                 </ResponsiveContainer>
                 <div className="absolute flex flex-col items-center justify-center mt-6">
-                    <span className="text-2xl font-bold text-white">£21k</span>
-                    <span className="text-xs text-white/50">of £36k goal</span>
+                    <span className="text-2xl font-bold text-white">{formatShortValue(saved)}</span>
+                    <span className="text-xs text-white/50">
+                        {emergencyFund.targetAmount ? `of ${formatShortValue(goal)} goal` : 'no goal set'}
+                    </span>
                 </div>
             </div>
         </div>
@@ -200,6 +233,30 @@ export function SpendingBreakdown() {
 }
 
 export function GoalTracker() {
+    const dashboardData = useDashboardData()
+
+    // Flatten all pots from all accounts and filter for ones with targets
+    const goals = dashboardData.savings.accounts
+        .flatMap(acc => acc.pots)
+        .filter(pot => pot.targetAmount && pot.targetAmount > 0)
+        .sort((a, b) => b.balance / (b.targetAmount ?? 1) - a.balance / (a.targetAmount ?? 1)) // Sort by progress
+
+    if (goals.length === 0) {
+        return (
+            <div className="bg-white/5 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/10">
+                <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-bold text-white">Goals</h3>
+                    <Target className="w-4 h-4 text-white/50" />
+                </div>
+                <div className="py-4 text-center">
+                    <p className="text-xs text-white/40 italic">No savings goals set yet.</p>
+                </div>
+            </div>
+        )
+    }
+
+    const PROGRESS_COLORS = ['bg-emerald-400', 'bg-indigo-400', 'bg-fuchsia-400', 'bg-amber-400', 'bg-rose-400']
+
     return (
         <div className="bg-white/5 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/10">
             <div className="flex items-center justify-between mb-4">
@@ -208,33 +265,27 @@ export function GoalTracker() {
             </div>
 
             <div className="space-y-4">
-                <div>
-                    <div className="flex justify-between text-xs mb-2">
-                        <span className="text-white/80 font-medium">Emergency Fund</span>
-                        <span className="text-white">£4k / £10k</span>
-                    </div>
-                    <div className="w-full bg-white/10 rounded-full h-2">
-                        <div className="bg-emerald-400 h-2 rounded-full" style={{ width: '40%' }}></div>
-                    </div>
-                </div>
-                <div>
-                    <div className="flex justify-between text-xs mb-2">
-                        <span className="text-white/80 font-medium">New Car</span>
-                        <span className="text-white">£15k / £25k</span>
-                    </div>
-                    <div className="w-full bg-white/10 rounded-full h-2">
-                        <div className="bg-indigo-400 h-2 rounded-full" style={{ width: '60%' }}></div>
-                    </div>
-                </div>
-                <div>
-                    <div className="flex justify-between text-xs mb-2">
-                        <span className="text-white/80 font-medium">Holiday</span>
-                        <span className="text-white">£2.5k / £3k</span>
-                    </div>
-                    <div className="w-full bg-white/10 rounded-full h-2">
-                        <div className="bg-fuchsia-400 h-2 rounded-full" style={{ width: '85%' }}></div>
-                    </div>
-                </div>
+                {goals.slice(0, 5).map((goal, index) => {
+                    const percentage = Math.min((goal.balance / (goal.targetAmount ?? 1)) * 100, 100)
+                    const colorClass = PROGRESS_COLORS[index % PROGRESS_COLORS.length]
+
+                    return (
+                        <div key={goal.id}>
+                            <div className="flex justify-between text-xs mb-2">
+                                <span className="text-white/80 font-medium">{goal.name}</span>
+                                <span className="text-white">
+                                    £{goal.balance.toLocaleString()} / £{goal.targetAmount?.toLocaleString()}
+                                </span>
+                            </div>
+                            <div className="w-full bg-white/10 rounded-full h-2">
+                                <div
+                                    className={`${colorClass} h-2 rounded-full transition-all duration-500`}
+                                    style={{ width: `${percentage}%` }}
+                                ></div>
+                            </div>
+                        </div>
+                    )
+                })}
             </div>
         </div>
     )
