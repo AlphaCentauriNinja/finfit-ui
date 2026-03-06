@@ -46,7 +46,7 @@ export default function SavingsPotsModal({ isOpen, onClose, account }: Props) {
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" onClick={onClose} />
-            <div className="relative w-full max-w-4xl bg-[#0f172a] border border-white/10 rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
+            <div className="relative w-full max-w-5xl bg-[#0f172a] border border-white/10 rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
                 <div className="flex items-center justify-between p-6 border-b border-white/10 shrink-0">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-400 border border-indigo-500/20">
@@ -142,7 +142,7 @@ export default function SavingsPotsModal({ isOpen, onClose, account }: Props) {
                 <div className="p-6 border-t border-white/10 bg-white/[0.02] shrink-0">
                     <button
                         onClick={onClose}
-                        className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-white/60 hover:bg-white/10 hover:text-white transition-all shadow-lg"
+                        className="w-full rounded-xl border border-rose-500/35 px-4 py-3 text-sm font-semibold text-rose-300 hover:bg-rose-500/10 transition-all shadow-lg"
                     >
                         Close
                     </button>

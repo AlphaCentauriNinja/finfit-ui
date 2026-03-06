@@ -287,7 +287,7 @@ export default function SavingsHistoryModal({ isOpen, onClose, account }: Props)
                                 <DatePickerField label="Date" value={editDate} onChange={setEditDate} />
                                 {editError && <p className="text-xs text-rose-400">{editError}</p>}
                                 <div className="flex gap-3 pt-2">
-                                    <button type="button" onClick={() => setEditingEntry(null)} className="flex-1 px-4 py-2.5 rounded-xl border border-white/10 text-white/60 text-sm font-semibold">Cancel</button>
+                                    <button type="button" onClick={() => setEditingEntry(null)} className="flex-1 px-4 py-2.5 rounded-xl border border-rose-500/35 text-rose-300 text-sm font-semibold hover:bg-rose-500/10 transition-colors">Cancel</button>
                                     <button type="submit" disabled={isSavingEdit} className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2">
                                         {isSavingEdit && <Loader2 className="w-4 h-4 animate-spin" />}
                                         Save Changes
@@ -309,7 +309,7 @@ export default function SavingsHistoryModal({ isOpen, onClose, account }: Props)
                             <h3 className="text-lg font-bold text-white mb-2">Delete Entry?</h3>
                             <p className="text-sm text-white/60 mb-6">Are you sure you want to delete this history entry? The pot balance will be updated accordingly.</p>
                             <div className="flex gap-3">
-                                <button type="button" onClick={() => setDeletingEntry(null)} className="flex-1 px-4 py-2.5 rounded-xl border border-white/10 text-white/60 text-sm font-semibold">Cancel</button>
+                                <button type="button" onClick={() => setDeletingEntry(null)} className="flex-1 px-4 py-2.5 rounded-xl border border-rose-500/35 text-rose-300 text-sm font-semibold hover:bg-rose-500/10 transition-colors">Cancel</button>
                                 <button type="button" onClick={handleDelete} disabled={isDeletingEntry} className="flex-1 bg-rose-600 hover:bg-rose-500 text-white px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2">
                                     {isDeletingEntry && <Loader2 className="w-4 h-4 animate-spin" />}
                                     Delete
