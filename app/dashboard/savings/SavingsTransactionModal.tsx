@@ -4,7 +4,7 @@ import { FormEvent, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { ArrowRightLeft, Loader2, X } from 'lucide-react'
-import DatePickerField from '../pension/DatePickerField'
+import DatePickerField from '../components/DatePickerField'
 import type { DashboardSavingsAccount } from '@/lib/dashboard-data'
 
 type Props = {

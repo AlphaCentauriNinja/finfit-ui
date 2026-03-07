@@ -13,7 +13,46 @@
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
   }
+}
+
+.dark {
+  --background: 222.2 84% 4.9%;
+  --foreground: 210 40% 98%;
+  --card: 222.2 84% 4.9%;
+  --card-foreground: 210 40% 98%;
+  --popover: 222.2 84% 4.9%;
+  --popover-foreground: 210 40% 98%;
+  --primary: 210 40% 98%;
+  --primary-foreground: 222.2 47.4% 11.2%;
+  --secondary: 217.2 32.6% 17.5%;
+  --secondary-foreground: 210 40% 98%;
+  --muted: 217.2 32.6% 17.5%;
+  --muted-foreground: 215 20.2% 65.1%;
+  --accent: 217.2 32.6% 17.5%;
+  --accent-foreground: 210 40% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 217.2 32.6% 17.5%;
+  --input: 217.2 32.6% 17.5%;
+  --ring: 212.7 26.8% 83.9%;
 }
 
 body {
@@ -27,8 +66,13 @@ html {
 }
 
 @keyframes marquee {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
 }
 
 .animate-marquee {
@@ -37,4 +81,60 @@ html {
 
 .pause-marquee:hover .animate-marquee {
   animation-play-state: paused;
+}
+
+/* DatePicker Overrides */
+/* Use component props or internal themed classes instead of broad absolute selectors */
+
+/* Ensure ALL transparent or white backgrounds within the picker are solid slate-950 */
+.dark .bg-white,
+.dark .bg-slate-50,
+.dark .bg-slate-800,
+.dark .bg-slate-900 {
+  background-color: #020617 !important;
+}
+
+.dark .text-gray-700,
+.dark .text-gray-600,
+.dark .text-slate-700 {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.dark .text-gray-500,
+.dark .text-slate-500 {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.dark .hover\:bg-gray-100:hover,
+.dark .hover\:bg-slate-100:hover {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* DatePicker hard overrides: force opaque dark surfaces inside modals */
+.datepicker-trigger {
+  background-color: #020617 !important;
+  opacity: 1 !important;
+}
+
+.datepicker-popover,
+.datepicker-popover .rdp-root,
+.datepicker-popover .rdp-months,
+.datepicker-popover .rdp-month,
+.datepicker-popover .rdp-month_grid,
+.datepicker-popover .rdp-weekdays,
+.datepicker-popover .rdp-weeks,
+.datepicker-popover .rdp-week {
+  background-color: #020617 !important;
+  background-image: none !important;
+  backdrop-filter: none !important;
+  opacity: 1 !important;
+}
+
+.datepicker-popover .rdp-day_button {
+  background-color: #020617 !important;
+}
+
+.datepicker-popover .rdp-selected .rdp-day_button {
+  background-color: #4f46e5 !important;
+  color: #ffffff !important;
 }

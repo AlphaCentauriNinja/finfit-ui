@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Loader2, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import PensionOperationModal from './PensionOperationModal'
-import NativeDatePickerField from './NativeDatePickerField'
+import DatePickerField from '../components/DatePickerField'
 
 type Props = {
     isOpen: boolean
@@ -103,8 +103,8 @@ export default function PensionValueModal({ isOpen, onClose, pensionId, pensionN
                         />
                     </div>
 
-                    <NativeDatePickerField
-                        label="Value Date"
+                    <DatePickerField
+                        label="Date"
                         value={valueDate}
                         onChange={setValueDate}
                         disabled={isSaving}
