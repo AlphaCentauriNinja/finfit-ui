@@ -66,14 +66,6 @@ export default function Navbar({ userEmail, userFullName }: { userEmail?: string
                         {isProfileOpen && (
                             <div className="absolute right-0 mt-2 w-48 bg-slate-900 border border-white/10 rounded-2xl shadow-xl py-2 overflow-hidden animate-in fade-in slide-in-from-top-4 duration-200">
                                 <Link
-                                    href="/dashboard/user/profile"
-                                    onClick={() => setIsProfileOpen(false)}
-                                    className="flex items-center gap-3 px-4 py-2 text-sm text-white/80 hover:bg-white/5 hover:text-white transition-colors"
-                                >
-                                    <User className="w-4 h-4" />
-                                    Profile
-                                </Link>
-                                <Link
                                     href="/dashboard/user/settings"
                                     onClick={() => setIsProfileOpen(false)}
                                     className="flex items-center gap-3 px-4 py-2 text-sm text-white/80 hover:bg-white/5 hover:text-white transition-colors"
