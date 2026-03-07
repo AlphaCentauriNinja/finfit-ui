@@ -386,7 +386,7 @@ export default function InvestmentsPage() {
                             <select
                                 value={selectedInstrument}
                                 onChange={(event) => setSelectedInstrument(event.target.value as InstrumentKey)}
-                                className="bg-slate-900 border border-white/15 text-white text-xs rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400/50"
+                                className="h-12 bg-slate-900 border border-white/15 text-white text-sm rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-400/50"
                                 aria-label="Select instrument"
                             >
                                 {instrumentOptions.map((option) => (
@@ -402,7 +402,7 @@ export default function InvestmentsPage() {
                             <select
                                 value={selectedTimeframe}
                                 onChange={(event) => setSelectedTimeframe(event.target.value as TimeframeOption)}
-                                className="bg-slate-900 border border-white/15 text-white text-xs rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400/50"
+                                className="h-12 bg-slate-900 border border-white/15 text-white text-sm rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-400/50"
                                 aria-label="Select timeframe"
                             >
                                 {timeframeOptions.map((option) => (

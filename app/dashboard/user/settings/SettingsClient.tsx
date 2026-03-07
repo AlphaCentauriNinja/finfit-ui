@@ -81,7 +81,7 @@ const tabs: TabItem[] = [
 
 const cardClass = 'rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-sm p-5 md:p-6'
 const labelClass = 'text-xs uppercase tracking-wide text-white/50 font-semibold'
-const inputClass = 'w-full rounded-xl border border-white/10 bg-slate-950/70 px-4 py-3 text-sm text-white placeholder:text-white/35 focus:outline-none focus:ring-2 focus:ring-indigo-500/50'
+const inputClass = 'w-full h-12 rounded-xl border border-white/10 bg-slate-950/70 px-4 py-3 text-sm text-white placeholder:text-white/35 focus:outline-none focus:ring-2 focus:ring-indigo-500/50'
 const secondaryButtonClass = 'inline-flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-semibold text-white/85 hover:bg-white/10 transition-colors'
 const primaryButtonClass = 'inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-500 transition-colors'
 
@@ -417,7 +417,7 @@ export default function SettingsClient({
     }
 
     return (
-        <div className="w-full space-y-6">
+        <div className="w-full space-y-8 xl:space-y-10">
             {activeToast ? (
                 <div className="w-full pb-8">
                     <div className={`w-full rounded-2xl border px-4 py-3 text-sm shadow-xl backdrop-blur ${activeToast.type === 'success'
@@ -488,7 +488,7 @@ export default function SettingsClient({
             </nav>
 
             {activeTab === 'personal' && (
-                <section className="grid grid-cols-1 gap-4">
+                <section className="grid grid-cols-1 gap-6">
                     <div className={`${cardClass} max-w-3xl`}>
                         <h2 className="mb-5 text-xl font-bold text-white">Basic Information</h2>
                         <form onSubmit={handlePersonalSave} className="space-y-4">
@@ -512,29 +512,7 @@ export default function SettingsClient({
             )}
 
             {activeTab === 'financials' && (
-                <section className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-                    <div className={cardClass}>
-                        <h2 className="mb-5 text-xl font-bold text-white">Currency Preferences</h2>
-                        <form onSubmit={handleCurrencySave} className="space-y-4">
-                            <div className="space-y-2">
-                                <label className={labelClass}>Default currency</label>
-                                <select name="preferred_currency" className={inputClass} defaultValue={userInfo.preferredCurrency}>
-                                    <option value="GBP">GBP - British Pound</option>
-                                    <option value="EUR">EUR - Euro</option>
-                                    <option value="USD">USD - US Dollar</option>
-                                    <option value="CHF">CHF - Swiss Franc</option>
-                                    <option value="CAD">CAD - Canadian Dollar</option>
-                                </select>
-                            </div>
-                            <div className="rounded-xl border border-indigo-500/30 bg-indigo-500/10 p-3 text-sm text-indigo-100">
-                                Your selected currency is loaded from Supabase and drives valuations, totals, and performance reporting.
-                            </div>
-                            <button type="submit" disabled={isSavingCurrency} className={`${primaryButtonClass} w-full disabled:cursor-not-allowed disabled:opacity-60`}>
-                                <Save className="h-4 w-4" /> {isSavingCurrency ? 'Saving...' : 'Save currency'}
-                            </button>
-                        </form>
-                    </div>
-
+                <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
                     <div className={cardClass}>
                         <h2 className="mb-5 inline-flex items-center gap-2 text-xl font-bold text-white">
                             <Landmark className="h-5 w-5 text-cyan-300" />
@@ -633,11 +611,33 @@ export default function SettingsClient({
                             </div>
                         </div>
                     </div>
+
+                    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur-sm xl:col-span-2 xl:max-w-xl">
+                        <h2 className="mb-3 text-lg font-bold text-white">Currency Preferences</h2>
+                        <form onSubmit={handleCurrencySave} className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                            <div className="w-full space-y-2 sm:max-w-sm">
+                                <label className={labelClass}>Default currency</label>
+                                <select name="preferred_currency" className={inputClass} defaultValue={userInfo.preferredCurrency}>
+                                    <option value="GBP">GBP - British Pound</option>
+                                    <option value="EUR">EUR - Euro</option>
+                                    <option value="USD">USD - US Dollar</option>
+                                    <option value="CHF">CHF - Swiss Franc</option>
+                                    <option value="CAD">CAD - Canadian Dollar</option>
+                                </select>
+                            </div>
+                            <button type="submit" disabled={isSavingCurrency} className={`${primaryButtonClass} w-full sm:w-auto sm:min-w-[170px] disabled:cursor-not-allowed disabled:opacity-60`}>
+                                <Save className="h-4 w-4" /> {isSavingCurrency ? 'Saving...' : 'Save currency'}
+                            </button>
+                        </form>
+                        <p className="mt-2 text-xs text-white/60">
+                            Used for valuations, totals, and performance reporting.
+                        </p>
+                    </div>
                 </section>
             )}
 
             {activeTab === 'security' && (
-                <section className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+                <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
                     <div className={cardClass}>
                         <h2 className="mb-5 text-xl font-bold text-white">Change Password</h2>
                         <form onSubmit={handlePasswordUpdate} className="space-y-4">
@@ -671,7 +671,7 @@ export default function SettingsClient({
             )}
 
             {activeTab === 'danger' && (
-                <section className="space-y-4">
+                <section className="space-y-6">
                     <div className="rounded-2xl border border-rose-500/35 bg-rose-500/8 p-5 md:p-6">
                         <div className="mb-6 flex items-start gap-3">
                             <div className="rounded-xl bg-rose-500/20 p-2.5 text-rose-300">

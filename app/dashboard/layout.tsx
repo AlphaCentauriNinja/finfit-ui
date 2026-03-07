@@ -93,7 +93,7 @@ export default async function Layout({
     })
 
     return (
-        <div className="min-h-screen bg-slate-950 relative overflow-hidden font-sans text-gray-100">
+        <div data-dashboard-root className="min-h-screen bg-slate-950 relative overflow-hidden font-sans text-gray-100">
             {/* Dynamic Background Gradients */}
             <div className="absolute top-0 -left-1/4 w-1/2 h-1/2 bg-purple-700/30 blur-[120px] rounded-full pointer-events-none mix-blend-screen" />
             <div className="absolute bottom-0 -right-1/4 w-1/2 h-1/2 bg-indigo-600/20 blur-[120px] rounded-full pointer-events-none mix-blend-screen" />

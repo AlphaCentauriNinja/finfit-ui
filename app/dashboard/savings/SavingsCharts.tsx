@@ -107,7 +107,7 @@ export default function SavingsCharts({ pots, chartData }: Props) {
                         <select
                             value={selectedTimeframe}
                             onChange={(e) => setSelectedTimeframe(e.target.value as TimeframeOption)}
-                            className="bg-slate-900 border border-white/10 text-white/70 text-[11px] font-medium rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500/50 appearance-none cursor-pointer hover:border-white/20 transition-colors"
+                            className="h-12 bg-slate-900 border border-white/10 text-white/70 text-sm font-medium rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 appearance-none cursor-pointer hover:border-white/20 transition-colors"
                         >
                             <option value="3m">Last 3 Months</option>
                             <option value="6m">Last 6 Months</option>

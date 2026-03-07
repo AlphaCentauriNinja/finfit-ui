@@ -101,7 +101,7 @@ export default function SavingsTransactionModal({ isOpen, onClose, account }: Pr
                         <select
                             value={potId}
                             onChange={(e) => setPotId(e.target.value)}
-                            className="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all text-sm"
+                            className="w-full h-12 bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all text-sm"
                         >
                             {account.pots.map(pot => (
                                 <option key={pot.id} value={pot.id}>{pot.name} (£{pot.balance.toLocaleString()})</option>
@@ -123,7 +123,7 @@ export default function SavingsTransactionModal({ isOpen, onClose, account }: Pr
                             value={amount}
                             onChange={(e) => setAmount(e.target.value)}
                             placeholder="0.00"
-                            className="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all text-sm font-semibold"
+                            className="w-full h-12 bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all text-sm font-semibold"
                         />
                     </div>
 
@@ -134,7 +134,7 @@ export default function SavingsTransactionModal({ isOpen, onClose, account }: Pr
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             placeholder="Transaction"
-                            className="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all text-sm"
+                            className="w-full h-12 bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all text-sm"
                         />
                     </div>
 
