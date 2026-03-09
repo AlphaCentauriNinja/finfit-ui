@@ -19,12 +19,12 @@ export type PensionValueRow = {
     created_at: string
 }
 
-export type SalaryProfileRow = {
+export type BudgetProfileRow = {
     employer_name: string | null
     monthly_net_salary: number | string | null
 }
 
-export type SalaryExpenditureRow = {
+export type BudgetExpenditureRow = {
     id: string
     expenditure_name: string | null
     monthly_amount: number | string | null
@@ -89,12 +89,12 @@ export type DashboardPensionChartPoint = {
     contributions: number
 }
 
-export type DashboardSalaryProfile = {
+export type DashboardBudgetProfile = {
     employerName: string
     monthlyNetSalary: number
 }
 
-export type DashboardSalaryExpenditure = {
+export type DashboardBudgetExpenditure = {
     id: string
     name: string
     amount: number
@@ -136,9 +136,9 @@ export type DashboardDataSnapshot = {
         comparisonLabel: string
         loadError: boolean
     }
-    salary: {
-        profile: DashboardSalaryProfile
-        expenditures: DashboardSalaryExpenditure[]
+    budget: {
+        profile: DashboardBudgetProfile
+        expenditures: DashboardBudgetExpenditure[]
         totalExpenditure: number
         committedOutgoingRatio: number
         annualNetSalary: number
@@ -163,9 +163,9 @@ type BuildDashboardSnapshotInput = {
     pensionContributions?: PensionContributionRow[] | null
     pensionValues?: PensionValueRow[] | null
     pensionLoadError?: boolean
-    salaryProfile?: SalaryProfileRow | null
-    salaryExpenditures?: SalaryExpenditureRow[] | null
-    salaryLoadError?: boolean
+    budgetProfile?: BudgetProfileRow | null
+    budgetExpenditures?: BudgetExpenditureRow[] | null
+    budgetLoadError?: boolean
     savingsAccounts?: SavingsAccountRow[] | null
     savingsPots?: SavingsPotRow[] | null
     savingsHistory?: SavingsHistoryRow[] | null
@@ -277,9 +277,9 @@ export const buildDashboardSnapshot = ({
     pensionContributions,
     pensionValues,
     pensionLoadError = false,
-    salaryProfile,
-    salaryExpenditures,
-    salaryLoadError = false,
+    budgetProfile,
+    budgetExpenditures,
+    budgetLoadError = false,
     savingsAccounts = [],
     savingsPots = [],
     savingsHistory = [],
@@ -568,13 +568,13 @@ export const buildDashboardSnapshot = ({
     }))
 
     const monthlyNetSalary = (() => {
-        const parsed = toNumber(salaryProfile?.monthly_net_salary)
+        const parsed = toNumber(budgetProfile?.monthly_net_salary)
         return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0
     })()
-    const employerName = (salaryProfile?.employer_name ?? '').trim() || 'Not set'
+    const employerName = (budgetProfile?.employer_name ?? '').trim() || 'Not set'
 
-    const expenditures = (salaryExpenditures ?? [])
-        .map<DashboardSalaryExpenditure | null>((expenditure) => {
+    const expenditures = (budgetExpenditures ?? [])
+        .map<DashboardBudgetExpenditure | null>((expenditure) => {
             const amount = toNumber(expenditure.monthly_amount)
             const name = (expenditure.expenditure_name ?? '').trim()
 
@@ -588,7 +588,7 @@ export const buildDashboardSnapshot = ({
                 amount,
             }
         })
-        .filter((entry): entry is DashboardSalaryExpenditure => Boolean(entry))
+        .filter((entry): entry is DashboardBudgetExpenditure => Boolean(entry))
 
     const totalExpenditure = expenditures.reduce((sum, expenditure) => sum + expenditure.amount, 0)
     const committedOutgoingRatio = monthlyNetSalary > 0
@@ -699,7 +699,7 @@ export const buildDashboardSnapshot = ({
             comparisonLabel,
             loadError: pensionLoadError,
         },
-        salary: {
+        budget: {
             profile: {
                 employerName,
                 monthlyNetSalary,
@@ -709,7 +709,7 @@ export const buildDashboardSnapshot = ({
             committedOutgoingRatio,
             annualNetSalary,
             disposableIncome,
-            loadError: salaryLoadError,
+            loadError: budgetLoadError,
         },
         savings: {
             accounts: savingsAccountsSummary,

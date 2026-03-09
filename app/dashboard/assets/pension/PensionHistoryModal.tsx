@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Loader2, Pencil, Trash2, X } from 'lucide-react'
 import PensionOperationModal from './PensionOperationModal'
-import DatePickerField from '../components/DatePickerField'
+import DatePickerField from '@/app/dashboard/components/DatePickerField'
 
 type Props = {
     isOpen: boolean

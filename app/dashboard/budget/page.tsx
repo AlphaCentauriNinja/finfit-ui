@@ -12,19 +12,19 @@ type BaseModalProps = {
     onClose: () => void
 }
 
-type EditSalaryModalProps = BaseModalProps & {
+type EditBudgetModalProps = BaseModalProps & {
     initialEmployerName: string
-    initialMonthlySalary: number
+    initialMonthlyIncome: number
 }
 
-function EditSalaryModal({
+function EditBudgetModal({
     isOpen,
     onClose,
     initialEmployerName,
-    initialMonthlySalary,
-}: EditSalaryModalProps) {
+    initialMonthlyIncome,
+}: EditBudgetModalProps) {
     const [employerName, setEmployerName] = useState(initialEmployerName === 'Not set' ? '' : initialEmployerName)
-    const [monthlySalary, setMonthlySalary] = useState(initialMonthlySalary > 0 ? String(initialMonthlySalary) : '')
+    const [monthlyIncome, setMonthlyIncome] = useState(initialMonthlyIncome > 0 ? String(initialMonthlyIncome) : '')
     const [isSaving, setIsSaving] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const router = useRouter()
@@ -37,15 +37,15 @@ function EditSalaryModal({
         setError(null)
 
         const cleanEmployer = employerName.trim()
-        const parsedSalary = Number(monthlySalary)
+        const parsedIncome = Number(monthlyIncome)
 
         if (!cleanEmployer) {
             setError('Current employer is required.')
             return
         }
 
-        if (!Number.isFinite(parsedSalary) || parsedSalary < 0) {
-            setError('Monthly net salary must be a valid amount.')
+        if (!Number.isFinite(parsedIncome) || parsedIncome < 0) {
+            setError('Monthly net income must be a valid amount.')
             return
         }
 
@@ -63,12 +63,12 @@ function EditSalaryModal({
         }
 
         const { error: upsertError } = await supabase
-            .from('salary_profiles')
+            .from('budget_profiles')
             .upsert(
                 {
                     user_id: user.id,
                     employer_name: cleanEmployer,
-                    monthly_net_salary: parsedSalary,
+                    monthly_net_budget: parsedIncome,
                 },
                 { onConflict: 'user_id' }
             )
@@ -89,7 +89,7 @@ function EditSalaryModal({
             <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" onClick={onClose} />
             <div className="relative w-full max-w-md overflow-hidden rounded-2xl border border-green bg-[#0f172a] shadow-xl">
                 <div className="flex items-center justify-between border-b border-green/10 p-6">
-                    <h3 className="text-lg font-bold text-white">Edit Salary Details</h3>
+                    <h3 className="text-lg font-bold text-white">Edit Budget Details</h3>
                     <button onClick={onClose} className="p-1 text-white/60 hover:text-white">
                         <X className="h-5 w-5" />
                     </button>
@@ -108,13 +108,13 @@ function EditSalaryModal({
                         />
                     </div>
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-white/80">Monthly Net Salary (£)</label>
+                        <label className="text-sm font-medium text-white/80">Monthly Net Income (£)</label>
                         <input
                             type="number"
                             min="0"
                             step="any"
-                            value={monthlySalary}
-                            onChange={(event) => setMonthlySalary(event.target.value)}
+                            value={monthlyIncome}
+                            onChange={(event) => setMonthlyIncome(event.target.value)}
                             required
                             disabled={isSaving}
                             className="w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-sm text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
@@ -442,7 +442,7 @@ type SalaryPieTooltipProps = {
     }>
 }
 
-function SalaryPieTooltip({ active, payload }: SalaryPieTooltipProps) {
+function BudgetPieTooltip({ active, payload }: SalaryPieTooltipProps) {
     if (!active || !payload?.length) return null
     const data = payload[0]?.payload
     if (!data) return null
@@ -465,29 +465,29 @@ function SalaryPieTooltip({ active, payload }: SalaryPieTooltipProps) {
     )
 }
 
-export default function SalaryPage() {
+export default function BudgetPage() {
     const dashboardData = useDashboardData()
-    const salaryData = dashboardData.salary
+    const budgetData = dashboardData.budget
     const expenditures = useMemo(
-        () => [...salaryData.expenditures].sort((a, b) => b.amount - a.amount),
-        [salaryData.expenditures]
+        () => [...budgetData.expenditures].sort((a, b) => b.amount - a.amount),
+        [budgetData.expenditures]
     )
-    const [isEditSalaryOpen, setIsEditSalaryOpen] = useState(false)
+    const [isEditBudgetOpen, setIsEditBudgetOpen] = useState(false)
     const [isAddExpenditureOpen, setIsAddExpenditureOpen] = useState(false)
     const [editingExpenditureId, setEditingExpenditureId] = useState<string | null>(null)
 
     const outgoingLabel = useMemo(
-        () => `${salaryData.committedOutgoingRatio.toFixed(1)}% of net income`,
-        [salaryData.committedOutgoingRatio]
+        () => `${budgetData.committedOutgoingRatio.toFixed(1)}% of net income`,
+        [budgetData.committedOutgoingRatio]
     )
-    const salarySplitData = useMemo(() => {
+    const budgetSplitData = useMemo(() => {
         const split = [
-            { name: 'Committed Outgoings', value: Number(salaryData.totalExpenditure) || 0, fill: '#fbbf24' },
-            { name: 'Disposable Income', value: Math.max(Number(salaryData.disposableIncome) || 0, 0), fill: '#7dd3fc' },
+            { name: 'Committed Outgoings', value: Number(budgetData.totalExpenditure) || 0, fill: '#fbbf24' },
+            { name: 'Disposable Income', value: Math.max(Number(budgetData.disposableIncome) || 0, 0), fill: '#7dd3fc' },
         ]
 
         return split.filter((entry) => entry.value > 0)
-    }, [salaryData.disposableIncome, salaryData.totalExpenditure])
+    }, [budgetData.disposableIncome, budgetData.totalExpenditure])
 
     return (
         <div className="w-full">
@@ -496,11 +496,11 @@ export default function SalaryPage() {
             <div className="mb-8 grid gap-6 md:grid-cols-3">
                 <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-6 shadow-sm backdrop-blur-sm">
                     <div className="mb-4 flex items-start justify-between gap-3">
-                        <h3 className="text-sm font-medium text-emerald-300">Monthly Net Salary</h3>
+                        <h3 className="text-sm font-medium text-emerald-300">Monthly Net Income</h3>
                         <div className="flex items-center gap-2">
                             <button
-                                onClick={() => setIsEditSalaryOpen(true)}
-                                aria-label="Edit salary details"
+                                onClick={() => setIsEditBudgetOpen(true)}
+                                aria-label="Edit budget details"
                                 className="inline-flex items-center justify-center rounded-lg border border-purple-400/40 bg-purple-500/20 p-2 text-purple-200 hover:bg-purple-500/30 hover:text-purple-100"
                             >
                                 <Pencil className="h-3.5 w-3.5" />
@@ -509,15 +509,15 @@ export default function SalaryPage() {
                         </div>
                     </div>
                     <p className="text-4xl font-bold text-emerald-400">
-                        £{salaryData.profile.monthlyNetSalary.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        £{budgetData.profile.monthlyNetSalary.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </p>
                     <p className="mt-2 text-sm font-medium text-emerald-300/80">
-                        £{salaryData.annualNetSalary.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} annually
+                        £{budgetData.annualNetSalary.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} annually
                     </p>
                     <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-500/15 px-3 py-1 text-xs text-emerald-200">
                         <BriefcaseBusiness className="h-3.5 w-3.5" />
                         <span className="text-emerald-200">Current employer:</span>
-                        <span className="text-white">{salaryData.profile.employerName}</span>
+                        <span className="text-white">{budgetData.profile.employerName}</span>
                     </div>
                 </div>
 
@@ -527,11 +527,11 @@ export default function SalaryPage() {
                         <CreditCard className="h-5 w-5 text-rose-400" />
                     </div>
                     <p className="text-4xl font-bold text-rose-400">
-                        £{salaryData.totalExpenditure.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        £{budgetData.totalExpenditure.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </p>
                     <p className="mt-2 text-sm font-medium text-rose-300/80">{outgoingLabel}</p>
                     <p className="mt-2 text-xs text-rose-200/90">
-                        Disposable income: £{salaryData.disposableIncome.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        Disposable income: £{budgetData.disposableIncome.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </p>
                 </div>
 
@@ -542,10 +542,10 @@ export default function SalaryPage() {
 
                     <div className="h-[200px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
-                            {salarySplitData.length > 0 ? (
+                            {budgetSplitData.length > 0 ? (
                                 <PieChart>
                                     <Pie
-                                        data={salarySplitData}
+                                        data={budgetSplitData}
                                         cx="50%"
                                         cy="50%"
                                         innerRadius={55}
@@ -554,11 +554,11 @@ export default function SalaryPage() {
                                         dataKey="value"
                                         stroke="none"
                                     >
-                                        {salarySplitData.map((entry, index) => (
-                                            <Cell key={`salary-cell-${index}`} fill={entry.fill} />
+                                        {budgetSplitData.map((entry, index) => (
+                                            <Cell key={`budget-cell-${index}`} fill={entry.fill} />
                                         ))}
                                     </Pie>
-                                    <RechartsTooltip content={<SalaryPieTooltip />} />
+                                    <RechartsTooltip content={<BudgetPieTooltip />} />
                                 </PieChart>
                             ) : (
                                 <div className="flex h-full w-full items-center justify-center text-xs text-cyan-100/70">
@@ -575,7 +575,7 @@ export default function SalaryPage() {
                                 Committed Outgoings
                             </span>
                             <span>
-                                £{salaryData.totalExpenditure.toLocaleString(undefined, {
+                                £{budgetData.totalExpenditure.toLocaleString(undefined, {
                                     minimumFractionDigits: 2,
                                     maximumFractionDigits: 2,
                                 })}
@@ -587,7 +587,7 @@ export default function SalaryPage() {
                                 Disposable Income
                             </span>
                             <span>
-                                £{Math.max(salaryData.disposableIncome, 0).toLocaleString(undefined, {
+                                £{Math.max(budgetData.disposableIncome, 0).toLocaleString(undefined, {
                                     minimumFractionDigits: 2,
                                     maximumFractionDigits: 2,
                                 })}
@@ -608,9 +608,9 @@ export default function SalaryPage() {
                 </button>
             </div>
 
-            {salaryData.loadError ? (
+            {budgetData.loadError ? (
                 <div className="mb-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-                    HTTP 500: could not load salary
+                    HTTP 500: could not load budget
                 </div>
             ) : null}
 
@@ -626,14 +626,14 @@ export default function SalaryPage() {
                                 <tr className="text-white/60">
                                     <th className="px-6 py-3 text-center font-medium">Expenditure</th>
                                     <th className="px-6 py-3 text-center font-medium">Monthly Amount</th>
-                                    <th className="px-6 py-3 text-center font-medium">% Of Salary</th>
+                                    <th className="px-6 py-3 text-center font-medium">% Of Income</th>
                                     <th className="px-6 py-3 text-center font-medium">Edit</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {expenditures.map((expenditure) => {
-                                    const percentageOfSalary = salaryData.profile.monthlyNetSalary > 0
-                                        ? (expenditure.amount / salaryData.profile.monthlyNetSalary) * 100
+                                    const percentageOfIncome = budgetData.profile.monthlyNetSalary > 0
+                                        ? (expenditure.amount / budgetData.profile.monthlyNetSalary) * 100
                                         : 0
 
                                     return (
@@ -643,7 +643,7 @@ export default function SalaryPage() {
                                                 £{expenditure.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                             </td>
                                             <td className="px-6 py-4 text-center text-green-300">
-                                                {percentageOfSalary.toFixed(1)}%
+                                                {percentageOfIncome.toFixed(1)}%
                                             </td>
                                             <td className="px-6 py-4 text-center">
                                                 <button
@@ -663,12 +663,12 @@ export default function SalaryPage() {
                 </div>
             )}
 
-            {isEditSalaryOpen ? (
-                <EditSalaryModal
-                    isOpen={isEditSalaryOpen}
-                    onClose={() => setIsEditSalaryOpen(false)}
-                    initialEmployerName={salaryData.profile.employerName}
-                    initialMonthlySalary={salaryData.profile.monthlyNetSalary}
+            {isEditBudgetOpen ? (
+                <EditBudgetModal
+                    isOpen={isEditBudgetOpen}
+                    onClose={() => setIsEditBudgetOpen(false)}
+                    initialEmployerName={budgetData.profile.employerName}
+                    initialMonthlyIncome={budgetData.profile.monthlyNetSalary}
                 />
             ) : null}
 

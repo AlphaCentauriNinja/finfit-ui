@@ -5,7 +5,7 @@ import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     PieChart, Pie, Cell, BarChart, Bar
 } from 'recharts'
-import { ArrowDownRight, Target, ShoppingBag, Home, Zap, ArrowRight, ExternalLink } from 'lucide-react'
+import { Target, ArrowRight } from 'lucide-react'
 import { babySteps } from '@/lib/baby-steps'
 import { useDashboardData } from '@/app/dashboard/components/providers/DashboardDataProvider'
 
@@ -122,69 +122,6 @@ export function FinFitScoreWidget() {
     )
 }
 
-export function SavingsGauge() {
-    const dashboardData = useDashboardData()
-
-    // Find the Emergency Fund pot across all accounts
-    const allPots = dashboardData.savings.accounts.flatMap(acc => acc.pots)
-    const emergencyFund = allPots.find(p => p.name.toLowerCase().includes('emergency')) || allPots[0]
-
-    if (!emergencyFund) {
-        return (
-            <div className="bg-white/5 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/10 flex flex-col items-center justify-center">
-                <h3 className="text-sm font-bold text-white w-full text-left mb-2">Emergency Fund</h3>
-                <div className="py-8 text-center">
-                    <p className="text-xs text-white/40 italic">No savings pots found.</p>
-                </div>
-            </div>
-        )
-    }
-
-    const saved = emergencyFund.balance
-    const goal = emergencyFund.targetAmount || saved || 1
-    const gaugeData = [
-        { name: 'Saved', value: saved },
-        { name: 'Remaining', value: Math.max(0, goal - saved) },
-    ]
-
-    const formatShortValue = (val: number) => {
-        if (val >= 1000) return `£${(val / 1000).toFixed(1)}k`
-        return `£${val}`
-    }
-
-    return (
-        <div className="bg-white/5 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/10 flex flex-col items-center justify-center">
-            <h3 className="text-sm font-bold text-white w-full text-left mb-2">{emergencyFund.name}</h3>
-            <div className="relative h-[160px] w-full flex items-center justify-center">
-                <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                        <Pie
-                            data={gaugeData}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={55}
-                            outerRadius={70}
-                            startAngle={180}
-                            endAngle={0}
-                            paddingAngle={2}
-                            dataKey="value"
-                            stroke="none"
-                        >
-                            <Cell fill="#a78bfa" />
-                            <Cell fill="#ffffff15" />
-                        </Pie>
-                    </PieChart>
-                </ResponsiveContainer>
-                <div className="absolute flex flex-col items-center justify-center mt-6">
-                    <span className="text-2xl font-bold text-white">{formatShortValue(saved)}</span>
-                    <span className="text-xs text-white/50">
-                        {emergencyFund.targetAmount ? `of ${formatShortValue(goal)} goal` : 'no goal set'}
-                    </span>
-                </div>
-            </div>
-        </div>
-    )
-}
 
 const spendingFallbackData = [
     { name: 'Housing', amount: 1200 },
@@ -194,9 +131,11 @@ const spendingFallbackData = [
     { name: 'Ent.', amount: 400 },
 ]
 
+const SPENDING_COLORS = ['#c084fc', '#818cf8', '#2dd4bf', '#fb923c', '#f472b6', '#a78bfa', '#4ade80']
+
 export function SpendingBreakdown() {
     const dashboardData = useDashboardData()
-    const providerSpendingData = dashboardData.salary.expenditures
+    const providerSpendingData = dashboardData.budget.expenditures
         .slice(0, 7)
         .map((entry) => ({
             name: entry.name.length > 12 ? `${entry.name.slice(0, 12)}...` : entry.name,
@@ -217,7 +156,11 @@ export function SpendingBreakdown() {
                             cursor={{ fill: '#ffffff10' }}
                             contentStyle={{ backgroundColor: '#0f172a', borderColor: '#ffffff20', borderRadius: '12px' }}
                         />
-                        <Bar dataKey="amount" fill="#c084fc" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="amount" radius={[4, 4, 0, 0]}>
+                            {spendingData.map((_entry, index) => (
+                                <Cell key={`cell-${index}`} fill={SPENDING_COLORS[index % SPENDING_COLORS.length]} />
+                            ))}
+                        </Bar>
                     </BarChart>
                 </ResponsiveContainer>
             </div>
@@ -330,40 +273,3 @@ export function GoalTracker() {
     )
 }
 
-const transactions = [
-    { id: 1, title: 'Waitrose & Partners', category: 'Groceries', amount: -65.20, date: 'Today, 2:45 PM', icon: ShoppingBag, color: 'text-amber-400', bg: 'bg-amber-400/10' },
-    { id: 2, title: 'Salary', category: 'Income', amount: 4200.00, date: 'Yesterday', icon: ArrowDownRight, color: 'text-emerald-400', bg: 'bg-emerald-400/10' },
-    { id: 3, title: 'British Gas', category: 'Utilities', amount: -120.50, date: 'Oct 24', icon: Zap, color: 'text-blue-400', bg: 'bg-blue-400/10' },
-    { id: 4, title: 'Mortgage', category: 'Housing', amount: -1100.00, date: 'Oct 22', icon: Home, color: 'text-purple-400', bg: 'bg-purple-400/10' },
-    { id: 5, title: 'Apple Store', category: 'Electronics', amount: -999.00, date: 'Oct 15', icon: ExternalLink, color: 'text-rose-400', bg: 'bg-rose-400/10' },
-]
-
-export function TransactionHistory() {
-    return (
-        <div className="bg-white/5 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/10">
-            <h3 className="text-lg font-bold text-white mb-6">Recent Transactions</h3>
-            <div className="space-y-4">
-                {transactions.map((t) => {
-                    const Icon = t.icon
-                    const isPositive = t.amount > 0
-                    return (
-                        <div key={t.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-white/5 transition-colors">
-                            <div className="flex items-center gap-4">
-                                <div className={`p-2.5 rounded-xl ${t.bg}`}>
-                                    <Icon className={`w-5 h-5 ${t.color}`} />
-                                </div>
-                                <div>
-                                    <p className="text-sm font-semibold text-white">{t.title}</p>
-                                    <p className="text-xs text-white/50">{t.category} • {t.date}</p>
-                                </div>
-                            </div>
-                            <div className={`text-sm font-bold ${isPositive ? 'text-emerald-400' : 'text-white'}`}>
-                                {isPositive ? '+' : ''}£{Math.abs(t.amount).toFixed(2)}
-                            </div>
-                        </div>
-                    )
-                })}
-            </div>
-        </div>
-    )
-}

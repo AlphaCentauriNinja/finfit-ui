@@ -15,11 +15,9 @@ import {
 import {
     PortfolioGraph,
     FinFitScoreWidget,
-    SavingsGauge,
     SpendingBreakdown,
     DebtWidget,
-    GoalTracker,
-    TransactionHistory
+    GoalTracker
 } from '@/app/dashboard/components/DashboardWidgets'
 import { useDashboardData } from '@/app/dashboard/components/providers/DashboardDataProvider'
 
@@ -37,12 +35,12 @@ const getIconForAsset = (name: string) => {
 
 const getRouteForAsset = (name: string) => {
     switch (name) {
-        case 'Pension': return '/dashboard/pension'
-        case 'Savings': return '/dashboard/savings'
-        case 'Investments': return '/dashboard/investments'
-        case 'Crypto': return '/dashboard/crypto'
-        case 'Bullion': return '/dashboard/bullion'
-        case 'Real Estate': return '/dashboard/real-estate'
+        case 'Pension': return '/dashboard/assets/pension'
+        case 'Savings': return '/dashboard/assets/savings'
+        case 'Investments': return '/dashboard/assets/investments'
+        case 'Crypto': return '/dashboard/assets/crypto'
+        case 'Bullion': return '/dashboard/assets/bullion'
+        case 'Real Estate': return '/dashboard/assets/real-estate'
         default: return '/dashboard'
     }
 }
@@ -99,10 +97,6 @@ export default function Overview() {
                     </div>
                 </section>
 
-                {/* Transaction History */}
-                <section>
-                    <TransactionHistory />
-                </section>
             </div>
 
             {/* Right Side Summary Panel */}
@@ -113,10 +107,6 @@ export default function Overview() {
                 {/* Debt */}
                 <DebtWidget />
 
-                {/* Gauge */}
-                <div className="xl:mt-14">
-                    <SavingsGauge />
-                </div>
 
                 {/* Goals */}
                 <GoalTracker />

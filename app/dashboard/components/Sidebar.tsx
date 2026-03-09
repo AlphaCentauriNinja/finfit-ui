@@ -21,17 +21,17 @@ import {
 
 const topLinks = [
     { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Pension', href: '/dashboard/pension', icon: Briefcase },
-    { name: 'Real Estate', href: '/dashboard/real-estate', icon: Home },
-    { name: 'Salary', href: '/dashboard/salary', icon: Wallet },
+    { name: 'Pension', href: '/dashboard/assets/pension', icon: Briefcase },
+    { name: 'Real Estate', href: '/dashboard/assets/real-estate', icon: Home },
+    { name: 'Budget', href: '/dashboard/budget', icon: Wallet },
     { name: 'Debt', href: '/dashboard/debt', icon: CreditCard },
 ]
 
 const assetLinks = [
-    { name: 'Savings', href: '/dashboard/savings', icon: PiggyBank },
-    { name: 'Investments', href: '/dashboard/investments', icon: TrendingUp },
-    { name: 'Crypto', href: '/dashboard/crypto', icon: Coins },
-    { name: 'Bullion', href: '/dashboard/bullion', icon: Gem },
+    { name: 'Savings', href: '/dashboard/assets/savings', icon: PiggyBank },
+    { name: 'Investments', href: '/dashboard/assets/investments', icon: TrendingUp },
+    { name: 'Crypto', href: '/dashboard/assets/crypto', icon: Coins },
+    { name: 'Bullion', href: '/dashboard/assets/bullion', icon: Gem },
 ]
 
 export default function Sidebar() {
@@ -55,7 +55,7 @@ export default function Sidebar() {
                 </div>
 
                 <nav className="space-y-1 text-sm font-medium">
-                    {topLinks.slice(0, 2).map((link) => {
+                    {topLinks.slice(0, 1).map((link) => {
                         const Icon = link.icon
                         const isActive = pathname === link.href
 
@@ -118,7 +118,7 @@ export default function Sidebar() {
                         ) : null}
                     </div>
 
-                    {topLinks.slice(2).map((link) => {
+                    {topLinks.slice(1).map((link) => {
                         const Icon = link.icon
                         const isActive = pathname === link.href
 

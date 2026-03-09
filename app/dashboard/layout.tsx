@@ -9,8 +9,8 @@ import {
     type PensionAccountRow,
     type PensionContributionRow,
     type PensionValueRow,
-    type SalaryExpenditureRow,
-    type SalaryProfileRow,
+    type BudgetExpenditureRow,
+    type BudgetProfileRow,
     type SavingsAccountRow,
     type SavingsPotRow,
     type SavingsHistoryRow,
@@ -82,9 +82,9 @@ export default async function Layout({
             pensionContributionsResult.error ||
             pensionValuesResult.error
         ),
-        salaryProfile: (salaryProfileResult.data as SalaryProfileRow | null) ?? null,
-        salaryExpenditures: (salaryExpendituresResult.data as SalaryExpenditureRow[] | null) ?? [],
-        salaryLoadError: Boolean(
+        budgetProfile: (salaryProfileResult.data as BudgetProfileRow | null) ?? null,
+        budgetExpenditures: (salaryExpendituresResult.data as BudgetExpenditureRow[] | null) ?? [],
+        budgetLoadError: Boolean(
             salaryProfileResult.error ||
             salaryExpendituresResult.error
         ),

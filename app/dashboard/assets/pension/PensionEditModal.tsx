@@ -82,7 +82,7 @@ export default function PensionEditModal({ isOpen, onClose, pensionId, initialNa
             setTimeout(resolve, 450)
         })
         onClose()
-        router.push('/pension')
+        router.push('/dashboard/assets/pension')
     }
 
     return (
