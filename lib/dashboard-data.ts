@@ -164,6 +164,16 @@ type BuildDashboardSnapshotInput = {
 
 const toNumber = (value: number | string | null | undefined): number => {
     if (typeof value === 'number') return value
+    if (typeof value === 'string') {
+        const normalized = value
+            .trim()
+            .replace(/£/g, '')
+            .replace(/,/g, '')
+            .replace(/\s+/g, '')
+
+        const parsed = Number(normalized)
+        if (Number.isFinite(parsed)) return parsed
+    }
     return Number(value ?? 0)
 }
 
@@ -179,6 +189,75 @@ const formatMonthLabel = (monthKey: string, multiYear: boolean): string => {
     if (!multiYear) return monthStr
     // Include short year suffix when data spans multiple calendar years
     return `${monthStr} '${String(year).slice(2)}`
+}
+
+const parseDayKey = (value: string): string | null => {
+    const normalized = value.trim()
+
+    const directMatch = normalized.match(/^(\d{4})-(\d{2})-(\d{2})/)
+    if (directMatch) {
+        const year = Number(directMatch[1])
+        const month = Number(directMatch[2])
+        const day = Number(directMatch[3])
+        if (year >= 1900 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+            return `${directMatch[1]}-${directMatch[2]}-${directMatch[3]}`
+        }
+    }
+
+    const slashMatch = normalized.match(/^(\d{2})\/(\d{2})\/(\d{4})$/)
+    if (slashMatch) {
+        const day = Number(slashMatch[1])
+        const month = Number(slashMatch[2])
+        const year = Number(slashMatch[3])
+        if (year >= 1900 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+            return `${slashMatch[3]}-${slashMatch[2]}-${slashMatch[1]}`
+        }
+    }
+
+    const monthMap: Record<string, string> = {
+        jan: '01',
+        feb: '02',
+        mar: '03',
+        apr: '04',
+        may: '05',
+        jun: '06',
+        jul: '07',
+        aug: '08',
+        sep: '09',
+        oct: '10',
+        nov: '11',
+        dec: '12',
+    }
+    const longMatch = normalized.match(/^(\d{1,2})\s+([A-Za-z]{3,})\s+(\d{4})$/)
+    if (longMatch) {
+        const day = String(Number(longMatch[1])).padStart(2, '0')
+        const monthToken = longMatch[2].slice(0, 3).toLowerCase()
+        const month = monthMap[monthToken]
+        const year = longMatch[3]
+        if (month) {
+            return `${year}-${month}-${day}`
+        }
+    }
+
+    const parsed = new Date(normalized)
+    if (Number.isNaN(parsed.getTime())) return null
+
+    const year = parsed.getUTCFullYear()
+    const month = String(parsed.getUTCMonth() + 1).padStart(2, '0')
+    const day = String(parsed.getUTCDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+}
+
+const formatDayLabel = (dayKey: string, multiYear: boolean): string => {
+    const [yearPart, monthPart, dayPart] = dayKey.split('-')
+    const year = Number(yearPart)
+    const month = Number(monthPart)
+    const day = Number(dayPart)
+    const date = new Date(year, month - 1, day)
+    if (Number.isNaN(date.getTime())) return dayKey
+    const monthStr = new Intl.DateTimeFormat('en-GB', { month: 'short' }).format(date)
+    if (!multiYear) return `${dayPart} ${monthStr}`
+    return `${dayPart} ${monthStr} '${String(year).slice(2)}`
 }
 
 export const buildDashboardSnapshot = ({
@@ -504,18 +583,85 @@ export const buildDashboardSnapshot = ({
     const annualNetSalary = monthlyNetSalary * 12
     const disposableIncome = monthlyNetSalary - totalExpenditure
 
-    // Generate basic 6-month flatline history for Savings using current total
-    // (Until a history table for savings is added)
-    const savingsChartData: DashboardSavingsChartPoint[] = []
-    const currentDate = new Date()
-    for (let i = 5; i >= 0; i--) {
-        const d = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1)
-        const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-        savingsChartData.push({
-            month: monthKey,
-            label: formatMonthLabel(monthKey, false),
-            current: totalSavingsValue
+    // Build savings timeline from individual transactions so each entry can move the line.
+    const activePotIds = new Set((savingsPots ?? []).map((pot) => pot.id))
+    const savingsTransactions = (savingsHistory ?? [])
+        .map((row) => {
+            if (!activePotIds.has(row.pot_id)) return null
+
+            const amount = toNumber(row.amount)
+            if (!Number.isFinite(amount) || amount === 0) return null
+
+            const dayKey = parseDayKey(row.date || row.created_at)
+            if (!dayKey) return null
+
+            return {
+                id: row.id,
+                dayKey,
+                amount,
+                createdAt: row.created_at || '',
+            }
         })
+        .filter((row): row is { id: string; dayKey: string; amount: number; createdAt: string } => Boolean(row))
+        .sort((a, b) => {
+            if (a.dayKey !== b.dayKey) return a.dayKey.localeCompare(b.dayKey)
+            if (a.createdAt !== b.createdAt) return a.createdAt.localeCompare(b.createdAt)
+            return a.id.localeCompare(b.id)
+        })
+
+    const savingsChartData: DashboardSavingsChartPoint[] = []
+    const currentDayKey = getTodayIso()
+    const historyDayKeys = savingsTransactions.map((transaction) => transaction.dayKey)
+
+    if (historyDayKeys.length === 0) {
+        const currentMonthKey = currentDayKey.slice(0, 7)
+        for (let i = 5; i >= 0; i--) {
+            const d = new Date(
+                Number(currentMonthKey.slice(0, 4)),
+                Number(currentMonthKey.slice(5, 7)) - 1 - i,
+                1
+            )
+            const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+            const dayKey = `${monthKey}-01`
+            savingsChartData.push({
+                month: dayKey,
+                label: formatMonthLabel(monthKey, false),
+                current: totalSavingsValue,
+            })
+        }
+    } else {
+        const totalFlow = savingsTransactions.reduce((sum, transaction) => sum + transaction.amount, 0)
+        let runningValue = totalSavingsValue - totalFlow
+
+        const firstDayKey = historyDayKeys[0]
+        const firstDayDate = new Date(`${firstDayKey}T00:00:00`)
+        const dayBeforeFirst = new Date(firstDayDate)
+        dayBeforeFirst.setDate(dayBeforeFirst.getDate() - 1)
+        const dayBeforeFirstKey = `${dayBeforeFirst.getFullYear()}-${String(dayBeforeFirst.getMonth() + 1).padStart(2, '0')}-${String(dayBeforeFirst.getDate()).padStart(2, '0')}`
+
+        savingsChartData.push({
+            month: dayBeforeFirstKey,
+            label: formatDayLabel(dayBeforeFirstKey, firstDayKey.slice(0, 4) !== currentDayKey.slice(0, 4)),
+            current: Number(Math.max(0, runningValue).toFixed(2)),
+        })
+
+        savingsTransactions.forEach((transaction) => {
+            runningValue += transaction.amount
+            savingsChartData.push({
+                month: transaction.dayKey,
+                label: formatDayLabel(transaction.dayKey, transaction.dayKey.slice(0, 4) !== currentDayKey.slice(0, 4)),
+                current: Number(Math.max(0, runningValue).toFixed(2)),
+            })
+        })
+
+        const lastHistoryDay = historyDayKeys[historyDayKeys.length - 1]
+        if (lastHistoryDay !== currentDayKey) {
+            savingsChartData.push({
+                month: currentDayKey,
+                label: formatDayLabel(currentDayKey, currentDayKey.slice(0, 4) !== firstDayKey.slice(0, 4)),
+                current: Number(Math.max(0, totalSavingsValue).toFixed(2)),
+            })
+        }
     }
 
     return {

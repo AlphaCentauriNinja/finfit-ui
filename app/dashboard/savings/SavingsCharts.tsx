@@ -78,8 +78,19 @@ export default function SavingsCharts({ pots, chartData }: Props) {
     const filteredChartData = useMemo(() => {
         if (selectedTimeframe === 'all' || chartData.length === 0) return chartData
 
-        const count = selectedTimeframe === '3m' ? 3 : selectedTimeframe === '6m' ? 6 : 12
-        return chartData.slice(-count)
+        const latestKey = chartData[chartData.length - 1]?.month
+        if (!latestKey) return chartData
+
+        const latestDate = new Date(`${latestKey}T00:00:00`)
+        if (Number.isNaN(latestDate.getTime())) return chartData
+
+        const monthsBack = selectedTimeframe === '3m' ? 3 : selectedTimeframe === '6m' ? 6 : 12
+        const cutoffDate = new Date(latestDate.getFullYear(), latestDate.getMonth() - (monthsBack - 1), 1)
+
+        return chartData.filter((point) => {
+            const pointDate = new Date(`${point.month}T00:00:00`)
+            return !Number.isNaN(pointDate.getTime()) && pointDate >= cutoffDate
+        })
     }, [chartData, selectedTimeframe])
 
     const pieData = useMemo(() => {
