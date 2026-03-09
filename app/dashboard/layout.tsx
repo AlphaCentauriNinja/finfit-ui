@@ -5,6 +5,7 @@ import Navbar from '@/app/dashboard/components/Navbar'
 import { DashboardDataProvider } from '@/app/dashboard/components/providers/DashboardDataProvider'
 import {
     buildDashboardSnapshot,
+    type DebtEntryRow,
     type PensionAccountRow,
     type PensionContributionRow,
     type PensionValueRow,
@@ -34,6 +35,7 @@ export default async function Layout({
         savingsAccountsResult,
         savingsPotsResult,
         savingsHistoryResult,
+        debtEntriesResult,
     ] = await Promise.all([
         supabase
             .from('pension_accounts')
@@ -65,6 +67,10 @@ export default async function Layout({
             .from('savings_history')
             .select('id, pot_id, amount, date, name, created_at')
             .order('date', { ascending: false }),
+        supabase
+            .from('debt_entries')
+            .select('id, amount')
+            .order('created_at', { ascending: false }),
     ])
 
     const dashboardData = buildDashboardSnapshot({
@@ -90,6 +96,8 @@ export default async function Layout({
             savingsPotsResult.error ||
             savingsHistoryResult.error
         ),
+        debtEntries: (debtEntriesResult.data as DebtEntryRow[] | null) ?? [],
+        debtLoadError: Boolean(debtEntriesResult.error),
     })
 
     return (

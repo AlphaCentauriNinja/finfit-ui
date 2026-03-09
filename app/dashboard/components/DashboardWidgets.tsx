@@ -115,17 +115,12 @@ export function FinFitScoreWidget() {
                 href="/dashboard/finfit-levels"
                 className="inline-flex items-center gap-1 text-xs text-indigo-300 hover:text-indigo-200 mt-4 transition-colors"
             >
-                Open FinFit Levels
+                See FinFit Levels
                 <ArrowRight className="w-3.5 h-3.5" />
             </Link>
         </div>
     )
 }
-
-const gaugeData = [
-    { name: 'Saved', value: 21000 },
-    { name: 'Remaining', value: 36000 - 21000 },
-]
 
 export function SavingsGauge() {
     const dashboardData = useDashboardData()
@@ -147,8 +142,6 @@ export function SavingsGauge() {
 
     const saved = emergencyFund.balance
     const goal = emergencyFund.targetAmount || saved || 1
-    const percentage = Math.min((saved / goal) * 100, 100)
-
     const gaugeData = [
         { name: 'Saved', value: saved },
         { name: 'Remaining', value: Math.max(0, goal - saved) },
@@ -228,6 +221,52 @@ export function SpendingBreakdown() {
                     </BarChart>
                 </ResponsiveContainer>
             </div>
+        </div>
+    )
+}
+
+export function DebtWidget() {
+    const dashboardData = useDashboardData()
+    const totalDebt = dashboardData.debt.totalDebt
+    const debtCount = dashboardData.debt.debtCount
+    const hasNoDebt = debtCount === 0 || totalDebt <= 0
+
+    return (
+        <div className="bg-white/5 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/10">
+            <div className="flex items-start justify-between mb-4">
+                <div>
+                    <h3 className="text-sm font-bold text-white">Debt</h3>
+                    <p className="text-xs text-white/50 mt-1">Track liabilities across cards and loans</p>
+                </div>
+                <span className="text-xs font-semibold rounded-lg px-2 py-1 bg-white/5 text-white/70">
+                    {debtCount} account{debtCount === 1 ? '' : 's'}
+                </span>
+            </div>
+
+            {dashboardData.debt.loadError ? (
+                <div className="rounded-xl border border-rose-400/30 bg-rose-500/10 px-3 py-2.5">
+                    <p className="text-xs text-rose-200">Unable to load debt data.</p>
+                </div>
+            ) : hasNoDebt ? (
+                <div className="rounded-xl border border-emerald-400/30 bg-emerald-500/10 px-3 py-2.5">
+                    <p className="text-sm font-semibold text-emerald-300">Well done, no debt</p>
+                </div>
+            ) : (
+                <div>
+                    <p className="text-3xl font-bold text-rose-300">
+                        £{totalDebt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </p>
+                    <p className="text-xs text-white/60 mt-1">Total outstanding debt</p>
+                </div>
+            )}
+
+            <Link
+                href="/dashboard/debt"
+                className="inline-flex items-center gap-1 text-xs text-indigo-300 hover:text-indigo-200 mt-4 transition-colors"
+            >
+                Open debt tracker
+                <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
         </div>
     )
 }

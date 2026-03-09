@@ -54,6 +54,11 @@ export type SavingsHistoryRow = {
     created_at: string
 }
 
+export type DebtEntryRow = {
+    id: string
+    amount: number | string | null
+}
+
 type ValueSnapshot = {
     amount: number
     valueDate: string
@@ -146,6 +151,11 @@ export type DashboardDataSnapshot = {
         chartData: DashboardSavingsChartPoint[]
         loadError: boolean
     }
+    debt: {
+        totalDebt: number
+        debtCount: number
+        loadError: boolean
+    }
 }
 
 type BuildDashboardSnapshotInput = {
@@ -160,6 +170,8 @@ type BuildDashboardSnapshotInput = {
     savingsPots?: SavingsPotRow[] | null
     savingsHistory?: SavingsHistoryRow[] | null
     savingsLoadError?: boolean
+    debtEntries?: DebtEntryRow[] | null
+    debtLoadError?: boolean
 }
 
 const toNumber = (value: number | string | null | undefined): number => {
@@ -272,6 +284,8 @@ export const buildDashboardSnapshot = ({
     savingsPots = [],
     savingsHistory = [],
     savingsLoadError = false,
+    debtEntries = [],
+    debtLoadError = false,
 }: BuildDashboardSnapshotInput): DashboardDataSnapshot => {
     const accountRows = pensionAccounts ?? []
     const contributionRows = pensionContributions ?? []
@@ -664,6 +678,13 @@ export const buildDashboardSnapshot = ({
         }
     }
 
+    const normalizedDebtAmounts = (debtEntries ?? [])
+        .map((entry) => toNumber(entry.amount))
+        .filter((amount) => Number.isFinite(amount))
+        .map((amount) => Math.max(0, amount))
+    const totalDebt = normalizedDebtAmounts.reduce((sum, amount) => sum + amount, 0)
+    const debtCount = normalizedDebtAmounts.filter((amount) => amount > 0).length
+
     return {
         portfolio: {
             totalAssets,
@@ -695,6 +716,11 @@ export const buildDashboardSnapshot = ({
             totalValue: totalSavingsValue,
             chartData: savingsChartData,
             loadError: savingsLoadError,
-        }
+        },
+        debt: {
+            totalDebt,
+            debtCount,
+            loadError: debtLoadError,
+        },
     }
 }

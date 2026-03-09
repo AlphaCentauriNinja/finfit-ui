@@ -17,6 +17,7 @@ import {
     FinFitScoreWidget,
     SavingsGauge,
     SpendingBreakdown,
+    DebtWidget,
     GoalTracker,
     TransactionHistory
 } from '@/app/dashboard/components/DashboardWidgets'
@@ -108,6 +109,9 @@ export default function Overview() {
             <aside className="w-full xl:w-96 space-y-8 flex-shrink-0">
                 {/* FinFit Score */}
                 <FinFitScoreWidget />
+
+                {/* Debt */}
+                <DebtWidget />
 
                 {/* Gauge */}
                 <div className="xl:mt-14">

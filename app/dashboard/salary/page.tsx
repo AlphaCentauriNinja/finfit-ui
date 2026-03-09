@@ -2,9 +2,10 @@
 
 import { FormEvent, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { BriefcaseBusiness, CreditCard, Loader2, Pencil, Plus, ReceiptText, Trash2, Wallet, X } from 'lucide-react'
+import { BriefcaseBusiness, CreditCard, Loader2, Pencil, Plus, Trash2, Wallet, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useDashboardData } from '@/components/providers/DashboardDataProvider'
+import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts'
 
 type BaseModalProps = {
     isOpen: boolean
@@ -132,7 +133,7 @@ function EditSalaryModal({
                             type="button"
                             onClick={onClose}
                             disabled={isSaving}
-                            className="flex-1 rounded-xl border border-white/10 px-4 py-3 text-sm font-semibold text-white/80 hover:bg-white/5"
+                            className="flex-1 rounded-xl bg-red-600 px-4 py-3 text-sm font-semibold text-white hover:bg-red-500 disabled:opacity-60"
                         >
                             Cancel
                         </button>
@@ -430,6 +431,40 @@ function EditExpenditureModal({
     )
 }
 
+type SalaryPieTooltipProps = {
+    active?: boolean
+    payload?: Array<{
+        payload?: {
+            fill?: string
+            name?: string
+            value?: number | string
+        }
+    }>
+}
+
+function SalaryPieTooltip({ active, payload }: SalaryPieTooltipProps) {
+    if (!active || !payload?.length) return null
+    const data = payload[0]?.payload
+    if (!data) return null
+    return (
+        <div className="rounded-lg border border-white/10 bg-[#0e1629] px-4 py-3 shadow-xl text-xs">
+            <div className="flex items-center gap-2 py-0.5">
+                <span
+                    className="inline-block h-2 w-2 rounded-full flex-shrink-0"
+                    style={{ background: data.fill ?? '#94a3b8' }}
+                />
+                <span className="text-slate-400">{data.name ?? 'Value'}:</span>
+                <span className="font-semibold tabular-nums text-white">
+                    £{Number(data.value ?? 0).toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                    })}
+                </span>
+            </div>
+        </div>
+    )
+}
+
 export default function SalaryPage() {
     const dashboardData = useDashboardData()
     const salaryData = dashboardData.salary
@@ -445,12 +480,20 @@ export default function SalaryPage() {
         () => `${salaryData.committedOutgoingRatio.toFixed(1)}% of net income`,
         [salaryData.committedOutgoingRatio]
     )
+    const salarySplitData = useMemo(() => {
+        const split = [
+            { name: 'Committed Outgoings', value: Number(salaryData.totalExpenditure) || 0, fill: '#fbbf24' },
+            { name: 'Disposable Income', value: Math.max(Number(salaryData.disposableIncome) || 0, 0), fill: '#7dd3fc' },
+        ]
+
+        return split.filter((entry) => entry.value > 0)
+    }, [salaryData.disposableIncome, salaryData.totalExpenditure])
 
     return (
         <div className="w-full">
             <h1 className="mb-6 text-2xl font-bold text-white">Income & Outgoings</h1>
 
-            <div className="mb-8 grid gap-6 md:grid-cols-2">
+            <div className="mb-8 grid gap-6 md:grid-cols-3">
                 <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-6 shadow-sm backdrop-blur-sm">
                     <div className="mb-4 flex items-start justify-between gap-3">
                         <h3 className="text-sm font-medium text-emerald-300">Monthly Net Salary</h3>
@@ -473,7 +516,8 @@ export default function SalaryPage() {
                     </p>
                     <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-500/15 px-3 py-1 text-xs text-emerald-200">
                         <BriefcaseBusiness className="h-3.5 w-3.5" />
-                        Current employer: {salaryData.profile.employerName}
+                        <span className="text-emerald-200">Current employer:</span>
+                        <span className="text-white">{salaryData.profile.employerName}</span>
                     </div>
                 </div>
 
@@ -489,6 +533,67 @@ export default function SalaryPage() {
                     <p className="mt-2 text-xs text-rose-200/90">
                         Disposable income: £{salaryData.disposableIncome.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </p>
+                </div>
+
+                <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/10 p-6 shadow-sm backdrop-blur-sm">
+                    <div className="mb-2 flex items-start justify-between">
+                        <h3 className="text-sm font-medium text-cyan-300">Income Split</h3>
+                    </div>
+
+                    <div className="h-[200px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            {salarySplitData.length > 0 ? (
+                                <PieChart>
+                                    <Pie
+                                        data={salarySplitData}
+                                        cx="50%"
+                                        cy="50%"
+                                        innerRadius={55}
+                                        outerRadius={75}
+                                        paddingAngle={4}
+                                        dataKey="value"
+                                        stroke="none"
+                                    >
+                                        {salarySplitData.map((entry, index) => (
+                                            <Cell key={`salary-cell-${index}`} fill={entry.fill} />
+                                        ))}
+                                    </Pie>
+                                    <RechartsTooltip content={<SalaryPieTooltip />} />
+                                </PieChart>
+                            ) : (
+                                <div className="flex h-full w-full items-center justify-center text-xs text-cyan-100/70">
+                                    No income split data
+                                </div>
+                            )}
+                        </ResponsiveContainer>
+                    </div>
+
+                    <div className="mt-2 space-y-1">
+                        <div className="flex items-center justify-between text-xs text-cyan-100/90">
+                            <span className="inline-flex items-center gap-2">
+                                <span className="h-2 w-2 rounded-full bg-amber-400" />
+                                Committed Outgoings
+                            </span>
+                            <span>
+                                £{salaryData.totalExpenditure.toLocaleString(undefined, {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2,
+                                })}
+                            </span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs text-cyan-100/90">
+                            <span className="inline-flex items-center gap-2">
+                                <span className="h-2 w-2 rounded-full bg-sky-300" />
+                                Disposable Income
+                            </span>
+                            <span>
+                                £{Math.max(salaryData.disposableIncome, 0).toLocaleString(undefined, {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2,
+                                })}
+                            </span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -514,39 +619,47 @@ export default function SalaryPage() {
                     No expenditures added yet.
                 </div>
             ) : (
-                <div className="space-y-4">
-                    {expenditures.map((expenditure) => {
-                        const percentageOfSalary = salaryData.profile.monthlyNetSalary > 0
-                            ? (expenditure.amount / salaryData.profile.monthlyNetSalary) * 100
-                            : 0
+                <div className="w-full max-w-none overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-sm backdrop-blur-sm">
+                    <div className="w-full overflow-x-auto">
+                        <table className="w-full min-w-full table-fixed text-sm">
+                            <thead className="bg-white/[0.03]">
+                                <tr className="text-white/60">
+                                    <th className="px-6 py-3 text-center font-medium">Expenditure</th>
+                                    <th className="px-6 py-3 text-center font-medium">Monthly Amount</th>
+                                    <th className="px-6 py-3 text-center font-medium">% Of Salary</th>
+                                    <th className="px-6 py-3 text-center font-medium">Edit</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {expenditures.map((expenditure) => {
+                                    const percentageOfSalary = salaryData.profile.monthlyNetSalary > 0
+                                        ? (expenditure.amount / salaryData.profile.monthlyNetSalary) * 100
+                                        : 0
 
-                        return (
-                            <div
-                                key={expenditure.id}
-                                className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 p-5 shadow-sm backdrop-blur-sm transition-colors hover:bg-white/10"
-                            >
-                                <div className="flex items-center gap-4">
-                                    <div className="rounded-lg border border-white/10 bg-white/5 p-2.5">
-                                        <ReceiptText className="h-5 w-5 text-white/80" />
-                                    </div>
-                                    <div>
-                                        <p className="font-bold text-white">{expenditure.name}</p>
-                                        <p className="text-xs text-green-300">{percentageOfSalary.toFixed(1)}% of monthly salary</p>
-                                    </div>
-                                </div>
-                                <p className="text-lg font-bold text-white">
-                                    £{expenditure.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                </p>
-                                <button
-                                    onClick={() => setEditingExpenditureId(expenditure.id)}
-                                    className="ml-4 inline-flex items-center gap-1 rounded-lg border border-white/15 bg-white/5 px-2.5 py-1.5 text-xs font-semibold text-white/85 hover:bg-white/10"
-                                >
-                                    <Pencil className="h-3.5 w-3.5" />
-                                    Edit
-                                </button>
-                            </div>
-                        )
-                    })}
+                                    return (
+                                        <tr key={expenditure.id} className="border-t border-white/10">
+                                            <td className="px-6 py-4 text-center font-semibold text-white">{expenditure.name}</td>
+                                            <td className="px-6 py-4 text-center text-white/85">
+                                                £{expenditure.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                            </td>
+                                            <td className="px-6 py-4 text-center text-green-300">
+                                                {percentageOfSalary.toFixed(1)}%
+                                            </td>
+                                            <td className="px-6 py-4 text-center">
+                                                <button
+                                                    onClick={() => setEditingExpenditureId(expenditure.id)}
+                                                    className="inline-flex items-center gap-1 rounded-lg border border-white/15 bg-white/5 px-2.5 py-1.5 text-xs font-semibold text-white/85 hover:bg-white/10"
+                                                >
+                                                    <Pencil className="h-3.5 w-3.5" />
+                                                    Edit
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    )
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             )}
 

@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useState } from 'react'
 import LogoutButton from '@/app/dashboard/logout-button'
 import {
     LayoutDashboard,
@@ -11,22 +12,37 @@ import {
     Coins,
     Gem,
     Home,
-    Briefcase
+    Briefcase,
+    CreditCard,
+    Layers,
+    ChevronDown,
+    ChevronRight
 } from 'lucide-react'
 
-const links = [
+const topLinks = [
     { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Pension', href: '/dashboard/pension', icon: Briefcase },
+    { name: 'Real Estate', href: '/dashboard/real-estate', icon: Home },
+    { name: 'Salary', href: '/dashboard/salary', icon: Wallet },
+    { name: 'Debt', href: '/dashboard/debt', icon: CreditCard },
+]
+
+const assetLinks = [
     { name: 'Savings', href: '/dashboard/savings', icon: PiggyBank },
     { name: 'Investments', href: '/dashboard/investments', icon: TrendingUp },
     { name: 'Crypto', href: '/dashboard/crypto', icon: Coins },
     { name: 'Bullion', href: '/dashboard/bullion', icon: Gem },
-    { name: 'Real Estate', href: '/dashboard/real-estate', icon: Home },
-    { name: 'Salary', href: '/dashboard/salary', icon: Wallet },
 ]
 
 export default function Sidebar() {
     const pathname = usePathname()
+    const isAssetsRouteActive =
+        pathname === '/dashboard/assets' || assetLinks.some((link) => pathname === link.href)
+    const [isAssetsExpandedManually, setIsAssetsExpandedManually] = useState(() => isAssetsRouteActive)
+    const isAssetsExpanded =
+        pathname === '/dashboard/assets'
+            ? isAssetsExpandedManually
+            : isAssetsRouteActive || isAssetsExpandedManually
 
     return (
         <aside className="w-64 h-full bg-transparent p-6 flex flex-col">
@@ -39,7 +55,70 @@ export default function Sidebar() {
                 </div>
 
                 <nav className="space-y-1 text-sm font-medium">
-                    {links.map((link) => {
+                    {topLinks.slice(0, 2).map((link) => {
+                        const Icon = link.icon
+                        const isActive = pathname === link.href
+
+                        return (
+                            <Link
+                                key={link.href}
+                                href={link.href}
+                                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${isActive
+                                    ? 'bg-white/10 text-white shadow-md'
+                                    : 'text-white/70 hover:bg-white/5 hover:text-white'
+                                    }`}
+                            >
+                                <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-white/50'}`} />
+                                {link.name}
+                            </Link>
+                        )
+                    })}
+
+                    <div className={`rounded-xl transition-all ${isAssetsRouteActive ? 'bg-white/10 text-white shadow-md' : 'text-white/70 hover:bg-white/5 hover:text-white'}`}>
+                        <div className="flex items-center">
+                            <Link
+                                href="/dashboard/assets"
+                                onClick={() => setIsAssetsExpandedManually(true)}
+                                className="flex flex-1 items-center gap-3 px-3 py-2.5"
+                            >
+                                <Layers className={`w-4 h-4 ${isAssetsRouteActive ? 'text-white' : 'text-white/50'}`} />
+                                Assets
+                            </Link>
+                            <button
+                                type="button"
+                                onClick={() => setIsAssetsExpandedManually((value) => !value)}
+                                aria-label={isAssetsExpanded ? 'Collapse assets links' : 'Expand assets links'}
+                                className="mr-2 inline-flex h-7 w-7 items-center justify-center rounded-md text-white/60 hover:bg-white/10 hover:text-white"
+                            >
+                                {isAssetsExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                            </button>
+                        </div>
+
+                        {isAssetsExpanded ? (
+                            <div className="mb-2 mt-0.5 space-y-1 px-2">
+                                {assetLinks.map((link) => {
+                                    const AssetIcon = link.icon
+                                    const isChildActive = pathname === link.href
+
+                                    return (
+                                        <Link
+                                            key={link.href}
+                                            href={link.href}
+                                            className={`ml-4 flex items-center gap-3 rounded-lg px-3 py-2 text-xs transition-all ${isChildActive
+                                                ? 'bg-white/15 text-white'
+                                                : 'text-white/70 hover:bg-white/5 hover:text-white'
+                                                }`}
+                                        >
+                                            <AssetIcon className={`h-3.5 w-3.5 ${isChildActive ? 'text-white' : 'text-white/50'}`} />
+                                            {link.name}
+                                        </Link>
+                                    )
+                                })}
+                            </div>
+                        ) : null}
+                    </div>
+
+                    {topLinks.slice(2).map((link) => {
                         const Icon = link.icon
                         const isActive = pathname === link.href
 

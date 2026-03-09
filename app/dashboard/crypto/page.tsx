@@ -1,13 +1,14 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { Edit3, Trash2, History, Wifi, WifiOff } from 'lucide-react'
+import { Edit3, History, Wifi, WifiOff, Plus, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 type CryptoRow = {
     id: string
-    ticker: 'BTC' | 'XRP' | 'ADA' | 'SOL' | 'ALGO' | 'ETH'
-    description: string
+    ticker: string
+    name: string
+    description?: string
     amount: number
     usd: number
     marketValueGbp: number
@@ -33,11 +34,20 @@ const CURRENCY_LOCALE: Record<CurrencyCode, string> = {
     CAD: 'en-CA',
 }
 
-const cryptoRows: CryptoRow[] = [
+const DEFAULT_COIN_NAME_BY_TICKER: Record<string, string> = {
+    BTC: 'Bitcoin',
+    XRP: 'Ripple XRP',
+    ADA: 'Cardano',
+    SOL: 'Solana',
+    ALGO: 'Algorand',
+    ETH: 'Ethereum',
+}
+
+const initialCryptoRows: CryptoRow[] = [
     {
         id: 'C.1',
         ticker: 'BTC',
-        description: 'Bitcoin',
+        name: 'Bitcoin',
         amount: 0.238478,
         usd: 67207.08,
         marketValueGbp: 11954.51,
@@ -46,7 +56,7 @@ const cryptoRows: CryptoRow[] = [
     {
         id: 'C.2',
         ticker: 'XRP',
-        description: 'Ripple XRP',
+        name: 'Ripple XRP',
         amount: 2689.15,
         usd: 1.34,
         marketValueGbp: 2687.75,
@@ -55,7 +65,7 @@ const cryptoRows: CryptoRow[] = [
     {
         id: 'C.3',
         ticker: 'ADA',
-        description: 'Cardano',
+        name: 'Cardano',
         amount: 5332.275228,
         usd: 0.2493,
         marketValueGbp: 991.52,
@@ -64,7 +74,7 @@ const cryptoRows: CryptoRow[] = [
     {
         id: 'C.4',
         ticker: 'SOL',
-        description: 'Solana',
+        name: 'Solana',
         amount: 7.59431,
         usd: 81.99,
         marketValueGbp: 464.43,
@@ -73,7 +83,7 @@ const cryptoRows: CryptoRow[] = [
     {
         id: 'C.5',
         ticker: 'ALGO',
-        description: 'Algorand',
+        name: 'Algorand',
         amount: 1055.66,
         usd: 0.08209,
         marketValueGbp: 64.64,
@@ -82,7 +92,7 @@ const cryptoRows: CryptoRow[] = [
     {
         id: 'C.6',
         ticker: 'ETH',
-        description: 'Ethereum',
+        name: 'Ethereum',
         amount: 0.023609,
         usd: 1941.89,
         marketValueGbp: 34.20,
@@ -90,7 +100,7 @@ const cryptoRows: CryptoRow[] = [
     },
 ]
 
-const streamSymbols = cryptoRows.map((row) => `${row.ticker.toLowerCase()}usdt`)
+const streamSymbols = initialCryptoRows.map((row) => `${row.ticker.toLowerCase()}usdt`)
 const binanceCombinedStreamUrl = `wss://stream.binance.com:9443/stream?streams=${streamSymbols
     .map((symbol) => `${symbol}@ticker`)
     .join('/')}`
@@ -123,10 +133,185 @@ function formatUsd(value: number): string {
     return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
+type AddCoinModalProps = {
+    isOpen: boolean
+    onClose: () => void
+    onAdd: (payload: {
+        ticker: string
+        name: string
+        amount: number
+        usd: number
+        investedGbp: number
+    }) => void
+}
+
+function AddCoinModal({ isOpen, onClose, onAdd }: AddCoinModalProps) {
+    const [ticker, setTicker] = useState('')
+    const [name, setName] = useState('')
+    const [amount, setAmount] = useState('')
+    const [usd, setUsd] = useState('')
+    const [invested, setInvested] = useState('')
+    const [error, setError] = useState<string | null>(null)
+
+    if (!isOpen) return null
+
+    const handleSubmit = (event: React.FormEvent) => {
+        event.preventDefault()
+        setError(null)
+
+        const cleanTicker = ticker.trim().toUpperCase()
+        const cleanName = name.trim()
+        const parsedAmount = Number(amount)
+        const parsedUsd = Number(usd)
+        const parsedInvested = Number(invested)
+
+        if (!cleanTicker || !cleanName) {
+            setError('Ticker and name are required.')
+            return
+        }
+
+        if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+            setError('Amount must be greater than 0.')
+            return
+        }
+
+        if (!Number.isFinite(parsedUsd) || parsedUsd < 0) {
+            setError('USD price must be 0 or greater.')
+            return
+        }
+
+        if (!Number.isFinite(parsedInvested) || parsedInvested < 0) {
+            setError('Invested amount must be 0 or greater.')
+            return
+        }
+
+        onAdd({
+            ticker: cleanTicker,
+            name: cleanName,
+            amount: parsedAmount,
+            usd: parsedUsd,
+            investedGbp: parsedInvested,
+        })
+
+        setTicker('')
+        setName('')
+        setAmount('')
+        setUsd('')
+        setInvested('')
+        setError(null)
+        onClose()
+    }
+
+    return (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" onClick={onClose} />
+            <div className="relative w-full max-w-md overflow-hidden rounded-2xl border border-white/10 bg-[#0f172a] shadow-xl">
+                <div className="flex items-center justify-between border-b border-white/10 p-6">
+                    <h3 className="text-lg font-bold text-white">Add Crypto Coin</h3>
+                    <button onClick={onClose} className="p-1 text-white/60 hover:text-white" aria-label="Close add coin modal">
+                        <X className="h-5 w-5" />
+                    </button>
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-4 p-6">
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-white/80">Ticker</label>
+                            <input
+                                type="text"
+                                value={ticker}
+                                onChange={(event) => setTicker(event.target.value)}
+                                className="h-12 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-sm text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                                placeholder="e.g. BTC"
+                                maxLength={10}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-white/80">Amount</label>
+                            <input
+                                type="number"
+                                min="0"
+                                step="any"
+                                value={amount}
+                                onChange={(event) => setAmount(event.target.value)}
+                                className="h-12 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-sm text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                                placeholder="0.00"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-white/80">Name</label>
+                        <input
+                            type="text"
+                            value={name}
+                            onChange={(event) => setName(event.target.value)}
+                            className="h-12 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-sm text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                            placeholder="e.g. Bitcoin"
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-white/80">USD Price</label>
+                            <input
+                                type="number"
+                                min="0"
+                                step="any"
+                                value={usd}
+                                onChange={(event) => setUsd(event.target.value)}
+                                className="h-12 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-sm text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                                placeholder="0.00"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-white/80">Invested (GBP)</label>
+                            <input
+                                type="number"
+                                min="0"
+                                step="any"
+                                value={invested}
+                                onChange={(event) => setInvested(event.target.value)}
+                                className="h-12 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-sm text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                                placeholder="0.00"
+                            />
+                        </div>
+                    </div>
+
+                    {error ? (
+                        <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
+                            {error}
+                        </div>
+                    ) : null}
+
+                    <div className="flex gap-3 pt-1">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="flex-1 rounded-xl bg-red-600 px-4 py-3 text-sm font-semibold text-white hover:bg-red-500"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white hover:bg-indigo-500"
+                        >
+                            <Plus className="h-4 w-4" />
+                            Add Coin
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    )
+}
+
 export default function CryptoPage() {
-    const [liveUsdByTicker, setLiveUsdByTicker] = useState<Partial<Record<CryptoRow['ticker'], number>>>({})
+    const [cryptoAssets, setCryptoAssets] = useState<CryptoRow[]>(initialCryptoRows)
+    const [liveUsdByTicker, setLiveUsdByTicker] = useState<Record<string, number>>({})
     const [isSocketConnected, setIsSocketConnected] = useState(false)
     const [preferredCurrency, setPreferredCurrency] = useState<CurrencyCode>('GBP')
+    const [isAddCoinOpen, setIsAddCoinOpen] = useState(false)
 
     useEffect(() => {
         let isMounted = true
@@ -172,7 +357,7 @@ export default function CryptoPage() {
                     const close = parsed.data?.c
                     if (!symbol || !close) return
 
-                    const ticker = symbol.replace('USDT', '') as CryptoRow['ticker']
+                    const ticker = symbol.replace('USDT', '')
                     const nextUsd = Number(close)
                     if (!Number.isFinite(nextUsd)) return
 
@@ -203,16 +388,23 @@ export default function CryptoPage() {
     }, [])
 
     const calculatedRows = useMemo(() => {
-        return cryptoRows.map((row) => {
+        return cryptoAssets.map((row) => {
             const liveUsd = liveUsdByTicker[row.ticker] ?? row.usd
             const marketValueGbp = row.amount * liveUsd * USD_TO_GBP
+            const normalizedName =
+                row.name?.trim() ||
+                row.description?.trim() ||
+                DEFAULT_COIN_NAME_BY_TICKER[row.ticker.toUpperCase()] ||
+                row.ticker
+
             return {
                 ...row,
+                name: normalizedName,
                 usd: liveUsd,
                 marketValueGbp,
             }
         })
-    }, [liveUsdByTicker])
+    }, [cryptoAssets, liveUsdByTicker])
 
     const totalInvested = useMemo(
         () => calculatedRows.reduce((sum, row) => sum + row.investedGbp, 0),
@@ -226,6 +418,29 @@ export default function CryptoPage() {
     const pnlPct = totalInvested > 0 ? (pnl / totalInvested) * 100 : 0
     const isUp = pnl > 0
     const isDown = pnl < 0
+    const handleAddCoin = (payload: {
+        ticker: string
+        name: string
+        amount: number
+        usd: number
+        investedGbp: number
+    }) => {
+        setCryptoAssets((previous) => {
+            const nextId = `C.${previous.length + 1}`
+            return [
+                ...previous,
+                {
+                    id: nextId,
+                    ticker: payload.ticker,
+                    name: payload.name,
+                    amount: payload.amount,
+                    usd: payload.usd,
+                    marketValueGbp: payload.amount * payload.usd * USD_TO_GBP,
+                    investedGbp: payload.investedGbp,
+                },
+            ]
+        })
+    }
 
     return (
         <div className="w-full">
@@ -236,9 +451,19 @@ export default function CryptoPage() {
                         Live updates powered by Binance
                     </p>
                 </div>
-                <div className={`inline-flex items-center gap-2 text-xs px-3 py-2 rounded-lg border ${isSocketConnected ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300' : 'border-amber-500/30 bg-amber-500/10 text-amber-300'}`}>
-                    {isSocketConnected ? <Wifi className="w-3.5 h-3.5" /> : <WifiOff className="w-3.5 h-3.5" />}
-                    {isSocketConnected ? 'Connected' : 'Reconnecting'}
+                <div className="flex items-center gap-2">
+                    <button
+                        type="button"
+                        onClick={() => setIsAddCoinOpen(true)}
+                        className="inline-flex items-center gap-2 rounded-lg border border-indigo-400/30 bg-indigo-500/15 px-3 py-2 text-xs font-semibold text-indigo-200 hover:bg-indigo-500/25"
+                    >
+                        <Plus className="h-3.5 w-3.5" />
+                        Add Coin
+                    </button>
+                    <div className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs ${isSocketConnected ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300' : 'border-amber-500/30 bg-amber-500/10 text-amber-300'}`}>
+                        {isSocketConnected ? <Wifi className="w-3.5 h-3.5" /> : <WifiOff className="w-3.5 h-3.5" />}
+                        {isSocketConnected ? 'Connected' : 'Reconnecting'}
+                    </div>
                 </div>
             </div>
 
@@ -273,7 +498,7 @@ export default function CryptoPage() {
                         <thead className="bg-white/[0.03]">
                             <tr className="text-white/60">
                                 <th className="text-center font-medium px-4 py-3">Ticker</th>
-                                <th className="text-center font-medium px-4 py-3">Description</th>
+                                <th className="text-center font-medium px-4 py-3">Name</th>
                                 <th className="text-center font-medium px-4 py-3">Amount</th>
                                 <th className="text-center font-medium px-4 py-3">USD</th>
                                 <th className="text-center font-medium px-4 py-3">{preferredCurrency}</th>
@@ -281,7 +506,6 @@ export default function CryptoPage() {
                                 <th className="text-center font-medium px-4 py-3">PNL %</th>
                                 <th className="text-center font-medium px-4 py-3">PNL</th>
                                 <th className="text-center font-medium px-4 py-3">Edit</th>
-                                <th className="text-center font-medium px-4 py-3">Delete</th>
                                 <th className="text-center font-medium px-4 py-3">History</th>
                             </tr>
                         </thead>
@@ -298,7 +522,7 @@ export default function CryptoPage() {
                                 return (
                                     <tr key={row.id} className="border-t border-white/10">
                                         <td className="px-4 py-4 text-center text-white font-semibold">{row.ticker}</td>
-                                        <td className="px-4 py-4 text-center text-white/80">{row.description}</td>
+                                        <td className="px-4 py-4 text-center text-white/80">{row.name}</td>
                                         <td className="px-4 py-4 text-center text-white/80">{row.amount.toLocaleString('en-GB', { maximumFractionDigits: 8 })}</td>
                                         <td className="px-4 py-4 text-center text-white/80">${formatUsd(row.usd)}</td>
                                         <td className="px-4 py-4 text-center text-white/90">
@@ -325,15 +549,6 @@ export default function CryptoPage() {
                                         <td className="px-4 py-4 text-center">
                                             <button
                                                 type="button"
-                                                className="inline-flex items-center justify-center h-9 px-3 rounded-lg bg-rose-500/15 text-rose-300 hover:bg-rose-500/25 transition-colors"
-                                                aria-label={`Delete ${row.ticker}`}
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
-                                        </td>
-                                        <td className="px-4 py-4 text-center">
-                                            <button
-                                                type="button"
                                                 className="inline-flex items-center gap-1.5 justify-center h-9 px-3 rounded-lg bg-indigo-500/15 text-indigo-200 hover:bg-indigo-500/25 transition-colors"
                                                 aria-label={`History for ${row.ticker}`}
                                             >
@@ -348,6 +563,12 @@ export default function CryptoPage() {
                     </table>
                 </div>
             </div>
+
+            <AddCoinModal
+                isOpen={isAddCoinOpen}
+                onClose={() => setIsAddCoinOpen(false)}
+                onAdd={handleAddCoin}
+            />
         </div>
     )
 }
