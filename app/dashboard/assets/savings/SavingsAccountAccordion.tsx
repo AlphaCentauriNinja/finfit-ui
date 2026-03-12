@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { ChevronDown, Pencil, Plus, MoreVertical, Trash2 } from 'lucide-react'
+import { ChevronDown, Pencil, Plus, Trash2 } from 'lucide-react'
 import type { DashboardSavingsAccount, DashboardSavingsPot } from '@/lib/dashboard-data'
 import EditAccountModal from './EditAccountModal'
 import PotOperationModal from './PotOperationModal'

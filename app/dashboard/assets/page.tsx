@@ -60,13 +60,26 @@ export default function AssetsPage() {
                         <Link
                             key={route.href}
                             href={route.href}
-                            className={`block rounded-2xl border p-6 shadow-sm backdrop-blur-sm transition-all hover:translate-y-[-1px] hover:brightness-110 ${route.tone}`}
+                            className="group relative overflow-hidden block rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/60 transition-transform active:scale-95 hover:-translate-y-1"
                         >
-                            <div className="mb-3 inline-flex rounded-lg border border-white/15 bg-white/10 p-2">
-                                <Icon className="h-5 w-5" />
+                            <div className={`absolute inset-0 bg-gradient-to-br ${route.tone} opacity-10 group-hover:opacity-20 transition-opacity`} />
+                            <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <div className="relative border border-white/10 p-6 rounded-2xl h-full shadow-sm group-hover:border-white/20 transition-colors bg-slate-900/40 backdrop-blur-md">
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className={`p-3 rounded-xl bg-gradient-to-br ${route.tone} shadow-inner`}>
+                                        <Icon className="h-6 w-6 text-white" />
+                                    </div>
+                                    <div className="h-8 w-8 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-colors">
+                                        <svg className="w-4 h-4 text-white/50 group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                        </svg>
+                                    </div>
+                                </div>
+                                <h2 className="text-xl font-bold text-white mb-2">{route.name}</h2>
+                                <p className="text-sm text-white/60 line-clamp-2">
+                                    {route.description}
+                                </p>
                             </div>
-                            <h2 className="text-lg font-bold text-white">{route.name}</h2>
-                            <p className="mt-1 text-sm text-white/80">{route.description}</p>
                         </Link>
                     )
                 })}

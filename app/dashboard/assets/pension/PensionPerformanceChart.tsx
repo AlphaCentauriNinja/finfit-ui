@@ -24,7 +24,6 @@ type ChartPoint = {
 
 type Props = {
     data: ChartPoint[]
-    comparisonLabel: string
 }
 
 type TooltipProps = {
@@ -63,7 +62,7 @@ function CustomTooltip({ active, payload, label }: TooltipProps) {
     )
 }
 
-export default function PensionPerformanceChart({ data, comparisonLabel: _comparisonLabel }: Props) {
+export default function PensionPerformanceChart({ data }: Props) {
     const [selectedTimeframe, setSelectedTimeframe] = useState<TimeframeOption>('all')
 
     const filteredData = useMemo(() => {

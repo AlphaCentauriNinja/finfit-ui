@@ -8,7 +8,6 @@ import {
     Tooltip as RechartsTooltip,
     XAxis,
     YAxis,
-    Legend,
     PieChart,
     Pie,
     Cell
@@ -32,12 +31,24 @@ const COLORS = ['#6366f1', '#fbbf24', '#10b981', '#f43f5e', '#22d3ee', '#d946ef'
 const formatGBP = (value: number): string =>
     `£${value.toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
 
-function LineTooltip({ active, payload, label }: any) {
+type TooltipProps = {
+    active?: boolean;
+    payload?: Array<{
+        color?: string;
+        name?: string;
+        value?: number | string;
+        dataKey?: string;
+        payload?: unknown;
+    }>;
+    label?: string;
+}
+
+function LineTooltip({ active, payload, label }: TooltipProps) {
     if (!active || !payload?.length) return null
     return (
         <div className="rounded-lg border border-white/10 bg-[#0e1629] px-4 py-3 shadow-xl text-xs">
             <p className="text-slate-400 mb-2 font-medium">{label}</p>
-            {payload.map((entry: any) => (
+            {payload.map((entry) => (
                 <div key={entry.dataKey} className="flex items-center gap-2 py-0.5">
                     <span
                         className="inline-block w-2 h-2 rounded-full flex-shrink-0"
@@ -53,7 +64,7 @@ function LineTooltip({ active, payload, label }: any) {
     )
 }
 
-function PieTooltip({ active, payload }: any) {
+function PieTooltip({ active, payload }: TooltipProps) {
     if (!active || !payload?.length) return null
     const data = payload[0].payload
     return (

@@ -4,106 +4,16 @@ import { useEffect, useMemo, useState } from 'react'
 import { Edit3, History, Wifi, WifiOff, Plus, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
-type CryptoRow = {
-    id: string
-    ticker: string
-    name: string
-    description?: string
-    amount: number
-    usd: number
-    marketValueGbp: number
-    investedGbp: number
-}
-
-type CurrencyCode = 'GBP' | 'EUR' | 'USD' | 'CHF' | 'CAD'
-
-const USD_TO_GBP = 0.746
-const GBP_TO_CURRENCY_RATE: Record<CurrencyCode, number> = {
-    GBP: 1,
-    EUR: 1.17,
-    USD: 1.28,
-    CHF: 1.13,
-    CAD: 1.74,
-}
-
-const CURRENCY_LOCALE: Record<CurrencyCode, string> = {
-    GBP: 'en-GB',
-    EUR: 'de-DE',
-    USD: 'en-US',
-    CHF: 'de-CH',
-    CAD: 'en-CA',
-}
-
-const DEFAULT_COIN_NAME_BY_TICKER: Record<string, string> = {
-    BTC: 'Bitcoin',
-    XRP: 'Ripple XRP',
-    ADA: 'Cardano',
-    SOL: 'Solana',
-    ALGO: 'Algorand',
-    ETH: 'Ethereum',
-}
-
-const initialCryptoRows: CryptoRow[] = [
-    {
-        id: 'C.1',
-        ticker: 'BTC',
-        name: 'Bitcoin',
-        amount: 0.238478,
-        usd: 67207.08,
-        marketValueGbp: 11954.51,
-        investedGbp: 11929.00,
-    },
-    {
-        id: 'C.2',
-        ticker: 'XRP',
-        name: 'Ripple XRP',
-        amount: 2689.15,
-        usd: 1.34,
-        marketValueGbp: 2687.75,
-        investedGbp: 2667.75,
-    },
-    {
-        id: 'C.3',
-        ticker: 'ADA',
-        name: 'Cardano',
-        amount: 5332.275228,
-        usd: 0.2493,
-        marketValueGbp: 991.52,
-        investedGbp: 984.70,
-    },
-    {
-        id: 'C.4',
-        ticker: 'SOL',
-        name: 'Solana',
-        amount: 7.59431,
-        usd: 81.99,
-        marketValueGbp: 464.43,
-        investedGbp: 461.46,
-    },
-    {
-        id: 'C.5',
-        ticker: 'ALGO',
-        name: 'Algorand',
-        amount: 1055.66,
-        usd: 0.08209,
-        marketValueGbp: 64.64,
-        investedGbp: 63.81,
-    },
-    {
-        id: 'C.6',
-        ticker: 'ETH',
-        name: 'Ethereum',
-        amount: 0.023609,
-        usd: 1941.89,
-        marketValueGbp: 34.20,
-        investedGbp: 33.86,
-    },
-]
-
-const streamSymbols = initialCryptoRows.map((row) => `${row.ticker.toLowerCase()}usdt`)
-const binanceCombinedStreamUrl = `wss://stream.binance.com:9443/stream?streams=${streamSymbols
-    .map((symbol) => `${symbol}@ticker`)
-    .join('/')}`
+import {
+    CryptoRow,
+    CurrencyCode,
+    USD_TO_GBP,
+    GBP_TO_CURRENCY_RATE,
+    CURRENCY_LOCALE,
+    DEFAULT_COIN_NAME_BY_TICKER,
+    initialCryptoRows,
+    binanceCombinedStreamUrl
+} from '@/lib/crypto-data'
 
 function normalizeCurrency(value: string | null | undefined): CurrencyCode {
     if (value === 'GBP' || value === 'EUR' || value === 'USD' || value === 'CHF' || value === 'CAD') {
@@ -500,8 +410,8 @@ export default function CryptoPage() {
                                 <th className="text-center font-medium px-4 py-3">Ticker</th>
                                 <th className="text-center font-medium px-4 py-3">Name</th>
                                 <th className="text-center font-medium px-4 py-3">Amount</th>
-                                <th className="text-center font-medium px-4 py-3">USD</th>
-                                <th className="text-center font-medium px-4 py-3">{preferredCurrency}</th>
+                                <th className="text-center font-medium px-4 py-3">Price (USD)</th>
+                                <th className="text-center font-medium px-4 py-3">Value ({preferredCurrency})</th>
                                 <th className="text-center font-medium px-4 py-3">Invested</th>
                                 <th className="text-center font-medium px-4 py-3">PNL %</th>
                                 <th className="text-center font-medium px-4 py-3">PNL</th>

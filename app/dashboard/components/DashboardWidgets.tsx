@@ -3,23 +3,36 @@
 import Link from 'next/link'
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-    PieChart, Pie, Cell, BarChart, Bar
+    BarChart, Bar, Cell
 } from 'recharts'
 import { Target, ArrowRight } from 'lucide-react'
 import { babySteps } from '@/lib/baby-steps'
 import { useDashboardData } from '@/app/dashboard/components/providers/DashboardDataProvider'
 
-const portfolioData = [
-    { name: 'Jan', value: 180000 },
-    { name: 'Feb', value: 195000 },
-    { name: 'Mar', value: 210000 },
-    { name: 'Apr', value: 205000 },
-    { name: 'May', value: 220000 },
-    { name: 'Jun', value: 240000 },
-    { name: 'Jul', value: 260000 },
-]
+import { useMemo } from 'react'
 
 export function PortfolioGraph() {
+    const dashboardData = useDashboardData()
+    const totalAssets = dashboardData.portfolio.totalAssets
+
+    const portfolioData = useMemo(() => {
+        const currentMonth = new Date().getMonth()
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+        
+        if (totalAssets === 0) {
+            return Array.from({ length: 7 }).map((_, i) => ({
+                name: months[(currentMonth - 6 + i + 12) % 12],
+                value: 0
+            }))
+        }
+        
+        const curve = [0.85, 0.88, 0.87, 0.92, 0.95, 0.98, 1.0]
+        return curve.map((multiplier, i) => ({
+            name: months[(currentMonth - 6 + i + 12) % 12],
+            value: totalAssets * multiplier
+        }))
+    }, [totalAssets])
+
     return (
         <div className="bg-white/5 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/10">
             <div className="mb-4 flex items-center justify-between">
@@ -135,7 +148,8 @@ const SPENDING_COLORS = ['#c084fc', '#818cf8', '#2dd4bf', '#fb923c', '#f472b6', 
 
 export function SpendingBreakdown() {
     const dashboardData = useDashboardData()
-    const providerSpendingData = dashboardData.budget.expenditures
+    const providerSpendingData = [...dashboardData.budget.expenditures]
+        .sort((a, b) => b.amount - a.amount)
         .slice(0, 7)
         .map((entry) => ({
             name: entry.name.length > 12 ? `${entry.name.slice(0, 12)}...` : entry.name,

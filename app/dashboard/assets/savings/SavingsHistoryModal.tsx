@@ -81,21 +81,30 @@ export default function SavingsHistoryModal({ isOpen, onClose, account }: Props)
         if (error) {
             setLoadError(error.message)
         } else {
-            setEntries((data || []).map((entry: any) => ({
-                id: entry.id,
-                pot_id: entry.pot_id,
-                pot_name: entry.savings_pots?.name || 'Unknown Pot',
-                amount: Number(entry.amount),
-                date: entry.date,
-                name: entry.name || 'Deposit',
-                created_at: entry.created_at
-            })))
+            type RawEntry = { id: string; pot_id: string; savings_pots?: { name: string } | { name: string }[]; amount: string | number; date: string; name: string; created_at: string }
+            setEntries((data || []).map((entry: RawEntry) => {
+                const potName = Array.isArray(entry.savings_pots) 
+                    ? entry.savings_pots[0]?.name 
+                    : entry.savings_pots?.name
+                return {
+                    id: entry.id,
+                    pot_id: entry.pot_id,
+                    pot_name: potName || 'Unknown Pot',
+                    amount: Number(entry.amount),
+                    date: entry.date,
+                    name: entry.name || 'Deposit',
+                    created_at: entry.created_at
+                }
+            }))
         }
         setIsLoading(false)
     }, [account.pots])
 
     useEffect(() => {
-        if (isOpen) fetchHistory()
+        if (isOpen) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            fetchHistory().catch(error => console.error(error))
+        }
     }, [isOpen, fetchHistory])
 
     const handleEditSave = async (e: FormEvent) => {

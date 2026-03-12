@@ -3,11 +3,11 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import type { DashboardDataSnapshot } from '@/lib/dashboard-data'
 
-type DashboardDataContextValue = {
+export type DashboardDataContextValue = {
     data: DashboardDataSnapshot
 }
 
-const DashboardDataContext = createContext<DashboardDataContextValue | undefined>(undefined)
+export const DashboardDataContext = createContext<DashboardDataContextValue | undefined>(undefined)
 
 export function DashboardDataProvider({
     initialData,

@@ -9,10 +9,19 @@ import {
     MessageSquare,
     User,
     Settings,
-    LogOut
+    LogOut,
+    Menu
 } from 'lucide-react'
 
-export default function Navbar({ userEmail, userFullName }: { userEmail?: string; userFullName?: string }) {
+export default function Navbar({ 
+    userEmail, 
+    userFullName,
+    onMobileMenuToggle
+}: { 
+    userEmail?: string; 
+    userFullName?: string;
+    onMobileMenuToggle?: () => void;
+}) {
     const [isProfileOpen, setIsProfileOpen] = useState(false)
     const router = useRouter()
     const supabase = createClient()
@@ -29,9 +38,16 @@ export default function Navbar({ userEmail, userFullName }: { userEmail?: string
         <header className="sticky top-0 z-40 w-full bg-transparent px-8 py-4">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                    {/* Mobile menu toggle could go here if implemented later */}
-                    <div className="hidden lg:block text-purple/50 text-sm font-medium">
-                        Welcome back, {displayName}
+                    {onMobileMenuToggle && (
+                        <button 
+                            onClick={onMobileMenuToggle}
+                            className="lg:hidden p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                        >
+                            <Menu className="w-6 h-6" />
+                        </button>
+                    )}
+                    <div className="hidden lg:block text-white/50 text-sm font-medium">
+                        Welcome back, <span className="text-emerald-400">{displayName}</span>
                     </div>
                 </div>
 

@@ -35,7 +35,7 @@ export default function FaqSection() {
                 <p className="text-[11px] uppercase tracking-widest text-blue-400 mb-4">FAQ</p>
                 <h2 className="text-3xl sm:text-4xl font-bold text-white">Frequently Asked Questions</h2>
                 <p className="text-slate-400 mt-3 max-w-2xl">
-                    Everything you need to know about FinFit. Can't find the answer you're looking for? Reach out to our support team.
+                    Everything you need to know about FinFit. Can&apos;t find the answer you&apos;re looking for? Reach out to our support team.
                 </p>
             </div>
 

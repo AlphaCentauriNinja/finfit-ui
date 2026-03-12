@@ -1,6 +1,6 @@
 'use client'
 
-import { FormEvent, useState, useEffect } from 'react'
+import { FormEvent, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Loader2, Trash2, X } from 'lucide-react'
@@ -20,13 +20,13 @@ export default function EditAccountModal({ isOpen, onClose, accountId, initialNa
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
     const router = useRouter()
 
-    useEffect(() => {
-        if (isOpen) {
-            setName(initialName)
-            setError(null)
-            setShowDeleteConfirm(false)
-        }
-    }, [isOpen, initialName])
+    // Sync initial state when modal opens via a custom trick or rely on parent using `key`.
+    // We will just update state when `initialName` changes naturally without an effect if closed
+    if (!isOpen && name !== initialName) {
+        setName(initialName)
+        setError(null)
+        setShowDeleteConfirm(false)
+    }
 
     const handleSave = async (e: FormEvent) => {
         e.preventDefault()

@@ -7,7 +7,6 @@ import EditAccountModal from './EditAccountModal'
 import SavingsTransactionModal from './SavingsTransactionModal'
 import SavingsHistoryModal from './SavingsHistoryModal'
 import SavingsPotsModal from './SavingsPotsModal'
-import { useRouter } from 'next/navigation'
 
 type Props = {
     account: DashboardSavingsAccount
@@ -19,7 +18,6 @@ export default function SavingsAccountCard({ account, totalSavingsValue }: Props
     const [isDepositOpen, setIsDepositOpen] = useState(false)
     const [isHistoryOpen, setIsHistoryOpen] = useState(false)
     const [isPotsOpen, setIsPotsOpen] = useState(false)
-    const router = useRouter()
 
     return (
         <>

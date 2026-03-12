@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Sidebar from '@/app/dashboard/components/Sidebar'
-import Navbar from '@/app/dashboard/components/Navbar'
+import DashboardHeader from '@/app/dashboard/components/mobile/DashboardHeader'
 import { DashboardDataProvider } from '@/app/dashboard/components/providers/DashboardDataProvider'
 import {
     buildDashboardSnapshot,
@@ -117,7 +117,7 @@ export default async function Layout({
                     </div>
                     <DashboardDataProvider initialData={dashboardData}>
                         <div className="flex-1 flex flex-col min-h-[calc(100vh-2rem)] overflow-hidden">
-                            <Navbar userEmail={user?.email} userFullName={user?.user_metadata?.full_name} />
+                            <DashboardHeader userEmail={user?.email} userFullName={user?.user_metadata?.full_name} />
                             <main className="flex-1 p-8 pb-10 overflow-y-auto">
                                 {children}
                             </main>

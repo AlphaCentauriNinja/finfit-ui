@@ -56,7 +56,6 @@ export default function PensionPage() {
 
             <PensionPerformanceChart
                 data={dashboardData.pension.chartData}
-                comparisonLabel={dashboardData.pension.comparisonLabel}
             />
 
             {dashboardData.pension.loadError ? (

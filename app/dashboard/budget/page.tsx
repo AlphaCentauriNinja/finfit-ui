@@ -6,6 +6,7 @@ import { BriefcaseBusiness, CreditCard, Loader2, Pencil, Plus, Trash2, Wallet, X
 import { createClient } from '@/lib/supabase/client'
 import { useDashboardData } from '@/components/providers/DashboardDataProvider'
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts'
+import ConfirmActionModal from '@/app/components/ConfirmActionModal'
 
 type BaseModalProps = {
     isOpen: boolean
@@ -298,6 +299,7 @@ function EditExpenditureModal({
     const [amount, setAmount] = useState(String(initialAmount))
     const [isSaving, setIsSaving] = useState(false)
     const [isDeleting, setIsDeleting] = useState(false)
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const router = useRouter()
     const supabase = createClient()
@@ -354,10 +356,12 @@ function EditExpenditureModal({
         if (deleteError) {
             setError(deleteError.message)
             setIsDeleting(false)
+            setShowDeleteConfirm(false)
             return
         }
 
         setIsDeleting(false)
+        setShowDeleteConfirm(false)
         onClose()
         router.refresh()
     }
@@ -409,12 +413,12 @@ function EditExpenditureModal({
                     <div className="flex gap-3 pt-1">
                         <button
                             type="button"
-                            onClick={handleDelete}
+                            onClick={() => setShowDeleteConfirm(true)}
                             disabled={isSaving || isDeleting}
                             className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-sm font-semibold text-white hover:bg-red-500 disabled:opacity-60"
                         >
-                            {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                            {isDeleting ? 'Deleting...' : 'Delete'}
+                            <Trash2 className="h-4 w-4" />
+                            Delete
                         </button>
                         <button
                             type="submit"
@@ -427,6 +431,16 @@ function EditExpenditureModal({
                     </div>
                 </form>
             </div>
+
+            <ConfirmActionModal
+                isOpen={showDeleteConfirm}
+                onClose={() => setShowDeleteConfirm(false)}
+                onConfirm={handleDelete}
+                title="Delete Expenditure"
+                message="Are you sure you want to delete this expenditure? This action cannot be undone."
+                confirmText="Delete Expenditure"
+                isProcessing={isDeleting}
+            />
         </div>
     )
 }
@@ -482,18 +496,32 @@ export default function BudgetPage() {
     )
     const budgetSplitData = useMemo(() => {
         const split = [
-            { name: 'Committed Outgoings', value: Number(budgetData.totalExpenditure) || 0, fill: '#fbbf24' },
-            { name: 'Disposable Income', value: Math.max(Number(budgetData.disposableIncome) || 0, 0), fill: '#7dd3fc' },
+            { name: 'Committed Outgoings', value: Number(budgetData.totalExpenditure) || 0, fill: '#6366f1' },
+            { name: 'Disposable Income', value: Math.max(Number(budgetData.disposableIncome) || 0, 0), fill: '#fbbf24' },
         ]
 
         return split.filter((entry) => entry.value > 0)
     }, [budgetData.disposableIncome, budgetData.totalExpenditure])
 
+    const expenditureGraphData = useMemo(() => {
+        const colors = [
+            '#f43f5e', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', 
+            '#ec4899', '#14b8a6', '#f97316', '#06b6d4', '#84cc16', 
+            '#6366f1', '#d946ef', '#eab308', '#ef4444', '#0ea5e9', 
+            '#22c55e', '#64748b', '#a855f7', '#fb923c', '#c084fc'
+        ]
+        return budgetData.expenditures.map((exp, index) => ({
+            name: exp.name,
+            value: exp.amount,
+            fill: colors[index % colors.length]
+        }))
+    }, [budgetData.expenditures])
+
     return (
         <div className="w-full">
             <h1 className="mb-6 text-2xl font-bold text-white">Income & Outgoings</h1>
 
-            <div className="mb-8 grid gap-6 md:grid-cols-3">
+            <div className="mb-8 grid gap-6 md:grid-cols-2">
                 <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-6 shadow-sm backdrop-blur-sm">
                     <div className="mb-4 flex items-start justify-between gap-3">
                         <h3 className="text-sm font-medium text-emerald-300">Monthly Net Income</h3>
@@ -533,67 +561,6 @@ export default function BudgetPage() {
                     <p className="mt-2 text-xs text-rose-200/90">
                         Disposable income: £{budgetData.disposableIncome.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </p>
-                </div>
-
-                <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/10 p-6 shadow-sm backdrop-blur-sm">
-                    <div className="mb-2 flex items-start justify-between">
-                        <h3 className="text-sm font-medium text-cyan-300">Income Split</h3>
-                    </div>
-
-                    <div className="h-[200px] w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                            {budgetSplitData.length > 0 ? (
-                                <PieChart>
-                                    <Pie
-                                        data={budgetSplitData}
-                                        cx="50%"
-                                        cy="50%"
-                                        innerRadius={55}
-                                        outerRadius={75}
-                                        paddingAngle={4}
-                                        dataKey="value"
-                                        stroke="none"
-                                    >
-                                        {budgetSplitData.map((entry, index) => (
-                                            <Cell key={`budget-cell-${index}`} fill={entry.fill} />
-                                        ))}
-                                    </Pie>
-                                    <RechartsTooltip content={<BudgetPieTooltip />} />
-                                </PieChart>
-                            ) : (
-                                <div className="flex h-full w-full items-center justify-center text-xs text-cyan-100/70">
-                                    No income split data
-                                </div>
-                            )}
-                        </ResponsiveContainer>
-                    </div>
-
-                    <div className="mt-2 space-y-1">
-                        <div className="flex items-center justify-between text-xs text-cyan-100/90">
-                            <span className="inline-flex items-center gap-2">
-                                <span className="h-2 w-2 rounded-full bg-amber-400" />
-                                Committed Outgoings
-                            </span>
-                            <span>
-                                £{budgetData.totalExpenditure.toLocaleString(undefined, {
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2,
-                                })}
-                            </span>
-                        </div>
-                        <div className="flex items-center justify-between text-xs text-cyan-100/90">
-                            <span className="inline-flex items-center gap-2">
-                                <span className="h-2 w-2 rounded-full bg-sky-300" />
-                                Disposable Income
-                            </span>
-                            <span>
-                                £{Math.max(budgetData.disposableIncome, 0).toLocaleString(undefined, {
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2,
-                                })}
-                            </span>
-                        </div>
-                    </div>
                 </div>
             </div>
 
@@ -662,6 +629,120 @@ export default function BudgetPage() {
                     </div>
                 </div>
             )}
+
+            <div className="mt-8 grid gap-6 md:grid-cols-2">
+                <div className="rounded-2xl border border-purple-500/20 bg-purple-500/10 p-6 shadow-sm backdrop-blur-sm">
+                    <div className="mb-2 flex items-start justify-between">
+                        <h3 className="text-sm font-medium text-purple-300">Income Split</h3>
+                    </div>
+
+                    <div className="h-[200px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            {budgetSplitData.length > 0 ? (
+                                <PieChart>
+                                    <Pie
+                                        data={budgetSplitData}
+                                        cx="50%"
+                                        cy="50%"
+                                        innerRadius={55}
+                                        outerRadius={75}
+                                        paddingAngle={4}
+                                        dataKey="value"
+                                        stroke="none"
+                                    >
+                                        {budgetSplitData.map((entry, index) => (
+                                            <Cell key={`budget-cell-${index}`} fill={entry.fill} />
+                                        ))}
+                                    </Pie>
+                                    <RechartsTooltip content={<BudgetPieTooltip />} />
+                                </PieChart>
+                            ) : (
+                                <div className="flex h-full w-full items-center justify-center text-xs text-purple-100/70">
+                                    No income split data
+                                </div>
+                            )}
+                        </ResponsiveContainer>
+                    </div>
+
+                    <div className="mt-2 space-y-1">
+                        <div className="flex items-center justify-between text-xs text-purple-100/90">
+                            <span className="inline-flex items-center gap-2">
+                                <span className="h-2 w-2 rounded-full bg-[#6366f1]" />
+                                Committed Outgoings
+                            </span>
+                            <span>
+                                £{budgetData.totalExpenditure.toLocaleString(undefined, {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2,
+                                })}
+                            </span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs text-purple-100/90">
+                            <span className="inline-flex items-center gap-2">
+                                <span className="h-2 w-2 rounded-full bg-[#fbbf24]" />
+                                Disposable Income
+                            </span>
+                            <span>
+                                £{Math.max(budgetData.disposableIncome, 0).toLocaleString(undefined, {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2,
+                                })}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/10 p-6 shadow-sm backdrop-blur-sm">
+                    <div className="mb-2 flex items-start justify-between">
+                        <h3 className="text-sm font-medium text-cyan-300">Expenditure Breakdown</h3>
+                    </div>
+
+                    <div className="h-[200px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            {expenditureGraphData.length > 0 ? (
+                                <PieChart>
+                                    <Pie
+                                        data={expenditureGraphData}
+                                        cx="50%"
+                                        cy="50%"
+                                        innerRadius={55}
+                                        outerRadius={75}
+                                        paddingAngle={4}
+                                        dataKey="value"
+                                        stroke="none"
+                                    >
+                                        {expenditureGraphData.map((entry, index) => (
+                                            <Cell key={`expenditure-cell-${index}`} fill={entry.fill} />
+                                        ))}
+                                    </Pie>
+                                    <RechartsTooltip content={<BudgetPieTooltip />} />
+                                </PieChart>
+                            ) : (
+                                <div className="flex h-full w-full items-center justify-center text-xs text-cyan-100/70">
+                                    No expenditure data
+                                </div>
+                            )}
+                        </ResponsiveContainer>
+                    </div>
+
+                    <div className="mt-2 max-h-24 overflow-y-auto space-y-1 pr-2">
+                        {expenditureGraphData.map((exp, idx) => (
+                            <div key={`exp-${idx}`} className="flex items-center justify-between text-xs text-cyan-100/90">
+                                <span className="inline-flex items-center gap-2 truncate max-w-[70%]">
+                                    <span className="h-2 w-2 rounded-full flex-shrink-0" style={{ backgroundColor: exp.fill }} />
+                                    <span className="truncate">{exp.name}</span>
+                                </span>
+                                <span>
+                                    £{exp.value.toLocaleString(undefined, {
+                                        minimumFractionDigits: 2,
+                                        maximumFractionDigits: 2,
+                                    })}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
 
             {isEditBudgetOpen ? (
                 <EditBudgetModal

@@ -1,6 +1,6 @@
 'use client'
 
-import { FormEvent, useState, useEffect } from 'react'
+import { FormEvent, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Loader2, X } from 'lucide-react'
@@ -31,14 +31,13 @@ export default function PotOperationModal({
     const [error, setError] = useState<string | null>(null)
     const router = useRouter()
 
-    useEffect(() => {
-        if (isOpen) {
-            setName(initialName)
-            setBalance(initialBalance === 0 ? '' : initialBalance.toString())
-            setTarget(initialTarget?.toString() || '')
-            setError(null)
-        }
-    }, [isOpen, initialName, initialBalance, initialTarget])
+    // Sync state when modal is closed to prep for next open
+    if (!isOpen && (name !== initialName || error !== null)) {
+        setName(initialName)
+        setBalance(initialBalance === 0 ? '' : initialBalance.toString())
+        setTarget(initialTarget?.toString() || '')
+        setError(null)
+    }
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault()
