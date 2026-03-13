@@ -1,7 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Sidebar from '@/app/dashboard/components/Sidebar'
-import DashboardHeader from '@/app/dashboard/components/mobile/DashboardHeader'
+import Navbar from '@/app/dashboard/components/Navbar'
+import MobileNav from '@/app/dashboard/components/mobile/MobileNav'
 import { DashboardDataProvider } from '@/app/dashboard/components/providers/DashboardDataProvider'
 import {
     buildDashboardSnapshot,
@@ -109,15 +110,18 @@ export default async function Layout({
             {/* Subtle Grid Pattern Overlay */}
             <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay pointer-events-none"></div>
 
+            {/* Mobile hamburger + drawer — rendered OUTSIDE overflow containers */}
+            <MobileNav />
+
             <div className="relative z-10 flex w-full min-h-screen p-4">
                 <div className="flex w-full min-h-[calc(100vh-2rem)] overflow-hidden rounded-3xl border border-white/10 bg-slate-900/45 backdrop-blur-xl shadow-[0_20px_80px_rgba(2,6,23,0.45)]">
-                    {/* The sidebar and navbar remain separate components but share one visual shell */}
+                    {/* Desktop sidebar — hidden below lg */}
                     <div className="hidden lg:block">
                         <Sidebar />
                     </div>
                     <DashboardDataProvider initialData={dashboardData}>
                         <div className="flex-1 flex flex-col min-h-[calc(100vh-2rem)] overflow-hidden">
-                            <DashboardHeader userEmail={user?.email} userFullName={user?.user_metadata?.full_name} />
+                            <Navbar userEmail={user?.email} userFullName={user?.user_metadata?.full_name} />
                             <main className="flex-1 p-8 pb-10 overflow-y-auto">
                                 {children}
                             </main>

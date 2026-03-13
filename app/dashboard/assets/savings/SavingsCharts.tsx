@@ -66,7 +66,7 @@ function LineTooltip({ active, payload, label }: TooltipProps) {
 
 function PieTooltip({ active, payload }: TooltipProps) {
     if (!active || !payload?.length) return null
-    const data = payload[0].payload
+    const data = payload[0].payload as { fill: string; name: string; value: number }
     return (
         <div className="rounded-lg border border-white/10 bg-[#0e1629] px-4 py-3 shadow-xl text-xs">
             <div className="flex items-center gap-2 py-0.5">

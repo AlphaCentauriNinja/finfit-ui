@@ -10,18 +10,9 @@ import {
     User,
     Settings,
     LogOut,
-    Menu
 } from 'lucide-react'
 
-export default function Navbar({ 
-    userEmail, 
-    userFullName,
-    onMobileMenuToggle
-}: { 
-    userEmail?: string; 
-    userFullName?: string;
-    onMobileMenuToggle?: () => void;
-}) {
+export default function Navbar({ userEmail, userFullName }: { userEmail?: string; userFullName?: string }) {
     const [isProfileOpen, setIsProfileOpen] = useState(false)
     const router = useRouter()
     const supabase = createClient()
@@ -38,14 +29,6 @@ export default function Navbar({
         <header className="sticky top-0 z-40 w-full bg-transparent px-8 py-4">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                    {onMobileMenuToggle && (
-                        <button 
-                            onClick={onMobileMenuToggle}
-                            className="lg:hidden p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-                        >
-                            <Menu className="w-6 h-6" />
-                        </button>
-                    )}
                     <div className="hidden lg:block text-white/50 text-sm font-medium">
                         Welcome back, <span className="text-emerald-400">{displayName}</span>
                     </div>
@@ -80,7 +63,7 @@ export default function Navbar({
                         </button>
 
                         {isProfileOpen && (
-                            <div className="absolute right-0 mt-2 w-48 bg-slate-900 border border-white/10 rounded-2xl shadow-xl py-2 overflow-hidden animate-in fade-in slide-in-from-top-4 duration-200">
+                            <div className="absolute right-0 mt-2 w-48 bg-slate-900 border border-white/10 rounded-2xl shadow-xl py-2 overflow-hidden">
                                 <Link
                                     href="/dashboard/user/settings"
                                     onClick={() => setIsProfileOpen(false)}
