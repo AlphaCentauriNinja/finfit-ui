@@ -565,7 +565,23 @@ export default function DebtPage() {
 
     return (
         <div className="w-full">
-            <h1 className="mb-6 text-2xl font-bold text-white">Debt</h1>
+            <div className="mb-6 flex flex-wrap items-start justify-between gap-6">
+                <div>
+                    <h1 className="text-2xl font-bold text-white">Debt</h1>
+                    <p className="text-sm text-white/65 mt-1">
+                        Manage and track your liabilities
+                    </p>
+                </div>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => setIsAddDebtOpen(true)}
+                        className="inline-flex items-center gap-2 rounded-lg border border-indigo-400/30 bg-indigo-500/15 px-3 py-2 text-xs font-semibold text-indigo-200 hover:bg-indigo-500/25"
+                    >
+                        <Plus className="h-3.5 w-3.5" />
+                        Add Debt
+                    </button>
+                </div>
+            </div>
 
             <div className="mb-8 grid gap-6 md:grid-cols-2">
                 <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 p-6 shadow-sm backdrop-blur-sm">
@@ -593,13 +609,6 @@ export default function DebtPage() {
 
             <div className="mb-4 flex items-center justify-between gap-4">
                 <h2 className="text-lg font-bold text-white/90">Debt Breakdown</h2>
-                <button
-                    onClick={() => setIsAddDebtOpen(true)}
-                    className="inline-flex items-center gap-2 rounded-lg border border-indigo-400/30 bg-indigo-500/15 px-3 py-2 text-xs font-semibold text-indigo-200 hover:bg-indigo-500/25"
-                >
-                    <Plus className="h-3.5 w-3.5" />
-                    Add Debt
-                </button>
             </div>
 
             {loadError ? (

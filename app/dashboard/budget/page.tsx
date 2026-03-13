@@ -2,7 +2,7 @@
 
 import { FormEvent, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { BriefcaseBusiness, CreditCard, Loader2, Pencil, Plus, Trash2, Wallet, X } from 'lucide-react'
+import { AlertTriangle, BriefcaseBusiness, CreditCard, Loader2, Pencil, Plus, Trash2, Wallet, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useDashboardData } from '@/components/providers/DashboardDataProvider'
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts'
@@ -90,7 +90,7 @@ function EditBudgetModal({
             <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" onClick={onClose} />
             <div className="relative w-full max-w-md overflow-hidden rounded-2xl border border-green bg-[#0f172a] shadow-xl">
                 <div className="flex items-center justify-between border-b border-green/10 p-6">
-                    <h3 className="text-lg font-bold text-white">Edit Budget Details</h3>
+                    <h3 className="text-lg font-bold text-white">Edit Salary</h3>
                     <button onClick={onClose} className="p-1 text-white/60 hover:text-white">
                         <X className="h-5 w-5" />
                     </button>
@@ -517,22 +517,49 @@ export default function BudgetPage() {
         }))
     }, [budgetData.expenditures])
 
+    const isOverspending = budgetData.totalExpenditure > budgetData.profile.monthlyNetSalary
+
     return (
         <div className="w-full">
-            <h1 className="mb-6 text-2xl font-bold text-white">Income & Outgoings</h1>
+            <div className="mb-6 flex flex-wrap items-start justify-between gap-6">
+                <div>
+                    <h1 className="text-2xl font-bold text-white">Budget Tool</h1>
+                    <p className="text-sm text-white/65 mt-1">
+                        Track your income and committed outgoings
+                    </p>
+                </div>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => setIsAddExpenditureOpen(true)}
+                        className="inline-flex items-center gap-2 rounded-lg border border-indigo-400/30 bg-indigo-500/15 px-3 py-2 text-xs font-semibold text-indigo-200 hover:bg-indigo-500/25"
+                    >
+                        <Plus className="h-3.5 w-3.5" />
+                        Add Expenditure
+                    </button>
+                    <button
+                        onClick={() => setIsEditBudgetOpen(true)}
+                        className="inline-flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/20"
+                    >
+                        <Pencil className="h-3.5 w-3.5" />
+                        Edit Salary
+                    </button>
+                </div>
+            </div>
+
+            {isOverspending && (
+                <div className="mb-6 flex items-center gap-3 rounded-2xl border border-rose-500/30 bg-rose-500/10 p-4 text-rose-200">
+                    <AlertTriangle className="h-5 w-5 flex-shrink-0 text-rose-400" />
+                    <p className="text-sm font-medium">
+                        Your monthly committed outgoings exceed your monthly net income. Consider reviewing your expenses.
+                    </p>
+                </div>
+            )}
 
             <div className="mb-8 grid gap-6 md:grid-cols-2">
                 <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-6 shadow-sm backdrop-blur-sm">
                     <div className="mb-4 flex items-start justify-between gap-3">
                         <h3 className="text-sm font-medium text-emerald-300">Monthly Net Income</h3>
                         <div className="flex items-center gap-2">
-                            <button
-                                onClick={() => setIsEditBudgetOpen(true)}
-                                aria-label="Edit budget details"
-                                className="inline-flex items-center justify-center rounded-lg border border-purple-400/40 bg-purple-500/20 p-2 text-purple-200 hover:bg-purple-500/30 hover:text-purple-100"
-                            >
-                                <Pencil className="h-3.5 w-3.5" />
-                            </button>
                             <Wallet className="h-5 w-5 text-emerald-400" />
                         </div>
                     </div>
@@ -566,13 +593,6 @@ export default function BudgetPage() {
 
             <div className="mb-4 flex items-center justify-between gap-4">
                 <h2 className="text-lg font-bold text-white/90">Core Expenses Breakdown</h2>
-                <button
-                    onClick={() => setIsAddExpenditureOpen(true)}
-                    className="inline-flex items-center gap-2 rounded-lg border border-indigo-400/30 bg-indigo-500/15 px-3 py-2 text-xs font-semibold text-indigo-200 hover:bg-indigo-500/25"
-                >
-                    <Plus className="h-3.5 w-3.5" />
-                    Add Expenditure
-                </button>
             </div>
 
             {budgetData.loadError ? (

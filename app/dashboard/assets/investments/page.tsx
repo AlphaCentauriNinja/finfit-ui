@@ -1,7 +1,17 @@
 'use client'
 
-import { useMemo, useState } from 'react'
-import { CandlestickChart, ArrowUpRight, ArrowDownRight, Minus } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { 
+    CandlestickChart, 
+    ArrowUpRight, 
+    ArrowDownRight, 
+    Minus, 
+    Plus, 
+    Edit3, 
+    History, 
+    X 
+} from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 import {
     ResponsiveContainer,
     LineChart,
@@ -11,6 +21,8 @@ import {
     YAxis,
     Tooltip,
 } from 'recharts'
+
+// --- Types & Constants ---
 
 type InstrumentKey =
     | 'combined'
@@ -45,6 +57,16 @@ type TooltipProps = {
     payload?: Array<{ payload: OhlcPoint }>
 }
 
+type CurrencyCode = 'GBP' | 'EUR' | 'USD' | 'CHF' | 'CAD'
+
+const CURRENCY_LOCALE: Record<CurrencyCode, string> = {
+    GBP: 'en-GB',
+    EUR: 'de-DE',
+    USD: 'en-US',
+    CHF: 'de-CH',
+    CAD: 'en-CA',
+}
+
 const instrumentOptions: { label: string; value: InstrumentKey }[] = [
     { label: 'Combined Portfolio', value: 'combined' },
     { label: 'Apple (AAPL)', value: 'AAPL' },
@@ -67,7 +89,7 @@ const timeframeOptions: { label: string; value: TimeframeOption }[] = [
     { label: 'All Time', value: 'all-time' },
 ]
 
-const positionRows: Array<{ ticker: Exclude<InstrumentKey, 'combined'>; invested: number; value: number }> = [
+const initialPositionRows: Array<{ ticker: Exclude<InstrumentKey, 'combined'>; invested: number; value: number }> = [
     { ticker: 'AAPL', invested: 9200, value: 10850 },
     { ticker: 'AMZN', invested: 7800, value: 8340 },
     { ticker: 'NVDA', invested: 12100, value: 17880 },
@@ -102,6 +124,8 @@ const instrumentSeed: Record<InstrumentKey, number> = {
     SMH: 41,
 }
 
+// --- Helper Functions ---
+
 const round = (value: number) => Math.round(value * 100) / 100
 
 function parseDate(dateValue: string): Date {
@@ -120,6 +144,28 @@ function formatShortDate(dateValue: string): string {
     const date = parseDate(dateValue)
     return `${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')}`
 }
+
+function normalizeCurrency(value: string | null | undefined): CurrencyCode {
+    if (value === 'GBP' || value === 'EUR' || value === 'USD' || value === 'CHF' || value === 'CAD') {
+        return value
+    }
+    return 'GBP'
+}
+
+function formatCurrency(value: number, currency: CurrencyCode): string {
+    return new Intl.NumberFormat(CURRENCY_LOCALE[currency], {
+        style: 'currency',
+        currency,
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    }).format(value)
+}
+
+function formatSignedCurrency(value: number, currency: CurrencyCode): string {
+    return `${value >= 0 ? '+' : '-'}${formatCurrency(Math.abs(value), currency)}`
+}
+
+// --- Mock Data Generation ---
 
 function createMockOhlcSeries(basePrice: number, seed: number, startDate: string, points = 420): OhlcPoint[] {
     const data: OhlcPoint[] = []
@@ -152,7 +198,6 @@ function createMockOhlcSeries(basePrice: number, seed: number, startDate: string
     return data
 }
 
-// Mocked OHLC data for all stocks, ETFs, and the combined portfolio. >= 1 year per series.
 const mockedOhlcByInstrument: Record<InstrumentKey, OhlcPoint[]> = {
     combined: createMockOhlcSeries(instrumentBasePrice.combined, instrumentSeed.combined, '2025-01-01'),
     AAPL: createMockOhlcSeries(instrumentBasePrice.AAPL, instrumentSeed.AAPL, '2025-01-01'),
@@ -207,6 +252,158 @@ function filterByTimeframe(data: OhlcPoint[], timeframe: TimeframeOption): OhlcP
     })
 
     return filtered.length > 0 ? filtered : data
+}
+
+// --- Components ---
+
+type AddInvestmentModalProps = {
+    isOpen: boolean
+    onClose: () => void
+    onAdd: (payload: {
+        ticker: string
+        name: string
+        invested: number
+        currentValue: number
+    }) => void
+}
+
+function AddInvestmentModal({ isOpen, onClose, onAdd }: AddInvestmentModalProps) {
+    const [ticker, setTicker] = useState('')
+    const [name, setName] = useState('')
+    const [invested, setInvested] = useState('')
+    const [currentValue, setCurrentValue] = useState('')
+    const [error, setError] = useState<string | null>(null)
+
+    if (!isOpen) return null
+
+    const handleSubmit = (event: React.FormEvent) => {
+        event.preventDefault()
+        setError(null)
+
+        const cleanTicker = ticker.trim().toUpperCase()
+        const cleanName = name.trim()
+        const parsedInvested = Number(invested)
+        const parsedCurrentValue = Number(currentValue)
+
+        if (!cleanTicker || !cleanName) {
+            setError('Ticker and name are required.')
+            return
+        }
+
+        if (!Number.isFinite(parsedInvested) || parsedInvested < 0) {
+            setError('Invested amount must be 0 or greater.')
+            return
+        }
+
+        if (!Number.isFinite(parsedCurrentValue) || parsedCurrentValue < 0) {
+            setError('Current value must be 0 or greater.')
+            return
+        }
+
+        onAdd({
+            ticker: cleanTicker,
+            name: cleanName,
+            invested: parsedInvested,
+            currentValue: parsedCurrentValue,
+        })
+
+        setTicker('')
+        setName('')
+        setInvested('')
+        setCurrentValue('')
+        setError(null)
+        onClose()
+    }
+
+    return (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" onClick={onClose} />
+            <div className="relative w-full max-w-md overflow-hidden rounded-2xl border border-white/10 bg-[#0f172a] shadow-xl">
+                <div className="flex items-center justify-between border-b border-white/10 p-6">
+                    <h3 className="text-lg font-bold text-white">Add Investment</h3>
+                    <button onClick={onClose} className="p-1 text-white/60 hover:text-white" aria-label="Close add investment modal">
+                        <X className="h-5 w-5" />
+                    </button>
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-4 p-6">
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-white/80">Ticker</label>
+                            <input
+                                type="text"
+                                value={ticker}
+                                onChange={(event) => setTicker(event.target.value)}
+                                className="h-12 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-sm text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                                placeholder="e.g. AAPL"
+                                maxLength={10}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-white/80">Name</label>
+                            <input
+                                type="text"
+                                value={name}
+                                onChange={(event) => setName(event.target.value)}
+                                className="h-12 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-sm text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                                placeholder="e.g. Apple Inc."
+                            />
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-white/80">Invested (GBP)</label>
+                            <input
+                                type="number"
+                                min="0"
+                                step="any"
+                                value={invested}
+                                onChange={(event) => setInvested(event.target.value)}
+                                className="h-12 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-sm text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                                placeholder="0.00"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-white/80">Current Value (GBP)</label>
+                            <input
+                                type="number"
+                                min="0"
+                                step="any"
+                                value={currentValue}
+                                onChange={(event) => setCurrentValue(event.target.value)}
+                                className="h-12 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-sm text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                                placeholder="0.00"
+                            />
+                        </div>
+                    </div>
+
+                    {error ? (
+                        <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
+                            {error}
+                        </div>
+                    ) : null}
+
+                    <div className="flex gap-3 pt-1">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="flex-1 rounded-xl bg-red-600 px-4 py-3 text-sm font-semibold text-white hover:bg-red-500"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white hover:bg-indigo-500"
+                        >
+                            <Plus className="h-4 w-4" />
+                            Add Investment
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    )
 }
 
 function OhlcTooltip({ active, payload }: TooltipProps) {
@@ -273,111 +470,117 @@ function InvestmentLineChart({ data }: { data: OhlcPoint[] }) {
     )
 }
 
+// --- Main Page Component ---
+
 export default function InvestmentsPage() {
     const [selectedInstrument, setSelectedInstrument] = useState<InstrumentKey>('combined')
     const [selectedTimeframe, setSelectedTimeframe] = useState<TimeframeOption>('this-month')
+    const [preferredCurrency, setPreferredCurrency] = useState<CurrencyCode>('GBP')
+    const [isAddInvestmentOpen, setIsAddInvestmentOpen] = useState(false)
+    const [positionRows, setPositionRows] = useState(initialPositionRows)
+
+    useEffect(() => {
+        let isMounted = true
+        const loadPreferredCurrency = async () => {
+            const supabase = createClient()
+            const { data } = await supabase
+                .from('user_settings')
+                .select('preferred_currency')
+                .maybeSingle()
+
+            if (!isMounted) return
+            setPreferredCurrency(normalizeCurrency(data?.preferred_currency))
+        }
+        void loadPreferredCurrency()
+        return () => { isMounted = false }
+    }, [])
 
     const allData = mockedOhlcByInstrument[selectedInstrument]
     const chartData = useMemo(() => filterByTimeframe(allData, selectedTimeframe), [allData, selectedTimeframe])
-    const portfolioDeposit = useMemo(
+    
+    const totalInvested = useMemo(
         () => positionRows.reduce((sum, row) => sum + row.invested, 0),
-        []
+        [positionRows]
     )
-    const portfolioCurrentValue = useMemo(
+    const totalCurrent = useMemo(
         () => positionRows.reduce((sum, row) => sum + row.value, 0),
-        []
+        [positionRows]
     )
-    const portfolioPnl = portfolioCurrentValue - portfolioDeposit
-    const portfolioPnlPct = portfolioDeposit > 0 ? (portfolioPnl / portfolioDeposit) * 100 : 0
-    const referenceValue = Math.max(portfolioDeposit, portfolioCurrentValue, 1)
-    const investedWidthPct = (portfolioDeposit / referenceValue) * 100
-    const currentWidthPct = (portfolioCurrentValue / referenceValue) * 100
+    const pnl = totalCurrent - totalInvested
+    const pnlPct = totalInvested > 0 ? (pnl / totalInvested) * 100 : 0
+    const isUp = pnl > 0
+    const isDown = pnl < 0
 
     const instrumentLabel = instrumentOptions.find((option) => option.value === selectedInstrument)?.label ?? selectedInstrument
-    const portfolioPnlClassName = portfolioPnl > 0
-        ? 'text-emerald-300'
-        : portfolioPnl < 0
-            ? 'text-rose-300'
-            : 'text-amber-300'
-    const currentValueBarClassName = portfolioPnl > 0
-        ? 'bg-emerald-500'
-        : portfolioPnl < 0
-            ? 'bg-rose-500'
-            : 'bg-amber-500'
-    const referenceLabel = portfolioCurrentValue >= portfolioDeposit ? 'Current Value' : 'Invested'
+
+    const handleAddInvestment = (payload: {
+        ticker: string
+        name: string
+        invested: number
+        currentValue: number
+    }) => {
+        setPositionRows((prev) => [
+            ...prev,
+            {
+                ticker: payload.ticker as Exclude<InstrumentKey, 'combined'>,
+                invested: payload.invested,
+                value: payload.currentValue,
+            },
+        ])
+    }
 
     return (
-        <div className="w-full space-y-16">
-            <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="w-full">
+            <div className="mb-6 flex flex-wrap items-start justify-between gap-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-white">Investments</h1>
+                    <h1 className="text-2xl font-bold text-white">Investments Portfolio</h1>
                     <p className="text-sm text-white/65 mt-1">
                         Mocked OHLC data per ticker/ETF with a guaranteed line chart render.
                     </p>
                 </div>
-            </div>
-
-            <div className="bg-white/5 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/10 hover:shadow-md hover:bg-white/10 transition-all">
-                <div className="flex flex-wrap items-start justify-between gap-6">
-                    <div>
-                        <p className="text-sm font-medium text-white/60">Deposit</p>
-                        <h2 className="text-3xl font-bold mt-2 text-white">
-                            £{portfolioDeposit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </h2>
-                    </div>
-
-                    <div className="text-left md:text-right">
-                        <p className="text-sm font-medium text-white/60">Current Value</p>
-                        <h2 className="text-3xl font-bold mt-2 text-white">
-                            £{portfolioCurrentValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </h2>
+                <div className="flex items-center gap-2">
+                    <button
+                        type="button"
+                        onClick={() => setIsAddInvestmentOpen(true)}
+                        className="inline-flex items-center gap-2 rounded-lg border border-indigo-400/30 bg-indigo-500/15 px-3 py-2 text-xs font-semibold text-indigo-200 hover:bg-indigo-500/25"
+                    >
+                        <Plus className="h-3.5 w-3.5" />
+                        Add Investment
+                    </button>
+                    <div className="inline-flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 px-3 py-2 text-xs">
+                        <CandlestickChart className="w-3.5 h-3.5" />
+                        Live Data (Mock)
                     </div>
                 </div>
-
-                <div className="mt-5 space-y-3">
-                    <p className="text-xs text-white/55">
-                        100% reference: {referenceLabel}
-                    </p>
-
-                    <div>
-                        <div className="flex items-center justify-between text-xs text-white/65 mb-1.5">
-                            <span>Invested</span>
-                            <span>£{portfolioDeposit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                        </div>
-                        <div className="h-2.5 w-full rounded-full bg-white/10 overflow-hidden">
-                            <div
-                                className="h-full rounded-full bg-white/60"
-                                style={{ width: `${investedWidthPct}%` }}
-                            />
-                        </div>
-                    </div>
-
-                    <div>
-                        <div className="flex items-center justify-between text-xs text-white/65 mb-1.5">
-                            <span>Current Value</span>
-                            <span>£{portfolioCurrentValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                        </div>
-                        <div className="h-2.5 w-full rounded-full bg-white/10 overflow-hidden">
-                            <div
-                                className={`h-full rounded-full ${currentValueBarClassName}`}
-                                style={{ width: `${currentWidthPct}%` }}
-                            />
-                        </div>
-                    </div>
-                </div>
-
-                <p className={`text-xs font-medium mt-4 flex items-center ${portfolioPnlClassName}`}>
-                    <span className={`px-2 py-1 rounded-md ${portfolioPnl > 0 ? 'bg-emerald-500/10' : portfolioPnl < 0 ? 'bg-rose-500/10' : 'bg-amber-500/10'}`}>
-                        PNL {portfolioPnl >= 0 ? '+' : ''}£{portfolioPnl.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ({portfolioPnlPct.toFixed(2)}%)
-                    </span>
-                </p>
             </div>
 
-            <div className="bg-white/5 backdrop-blur-sm p-6 pb-10 rounded-2xl shadow-sm border border-white/10 mt-2">
+            <div className="mb-8 grid gap-6 md:grid-cols-3">
+                <div className="bg-white/5 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/10">
+                    <p className="text-sm font-medium text-white/60">Current Value</p>
+                    <p className="text-3xl font-bold text-white mt-2">{formatCurrency(totalCurrent, preferredCurrency)}</p>
+                </div>
+                <div className="bg-white/5 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/10">
+                    <p className="text-sm font-medium text-white/60">Total Invested</p>
+                    <p className="text-3xl font-bold text-white mt-2">{formatCurrency(totalInvested, preferredCurrency)}</p>
+                </div>
+                <div className="bg-white/5 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/10">
+                    <p className="text-sm font-medium text-white/60">PNL</p>
+                    <div className="flex items-center gap-2 mt-2">
+                        <p className={`text-3xl font-bold ${isUp ? 'text-emerald-400' : isDown ? 'text-rose-400' : 'text-white'}`}>
+                            {formatSignedCurrency(pnl, preferredCurrency)}
+                        </p>
+                        <span className={`text-xs px-2 py-1 rounded-md ${isUp ? 'text-emerald-300 bg-emerald-500/10' : isDown ? 'text-rose-300 bg-rose-500/10' : 'text-white/70 bg-white/10'}`}>
+                            {pnl >= 0 ? '+' : ''}{pnlPct.toFixed(2)}%
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div className="bg-white/5 backdrop-blur-sm p-6 pb-10 rounded-2xl shadow-sm border border-white/10 mb-8 mt-2">
                 <div className="flex flex-wrap items-center justify-between gap-4 mb-14">
                     <div className="flex items-center gap-2">
                         <CandlestickChart className="w-4 h-4 text-indigo-300" />
-                        <h2 className="text-sm font-semibold text-white">{instrumentLabel}</h2>
+                        <h2 className="text-sm font-semibold text-white">Performance: {instrumentLabel}</h2>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-3">
@@ -418,60 +621,92 @@ export default function InvestmentsPage() {
                 <InvestmentLineChart data={chartData} />
             </div>
 
-            <div className="pt-4 w-full self-stretch">
-                <div className="w-full max-w-none bg-white/5 backdrop-blur-sm rounded-2xl shadow-sm border border-white/10 overflow-hidden">
-                    <div className="px-6 py-4 border-b border-white/10">
-                        <h3 className="text-sm font-semibold text-white">Portfolio Holdings</h3>
-                    </div>
-                    <div className="w-full overflow-x-auto">
-                        <table className="w-full min-w-full table-fixed text-sm">
-                            <thead className="bg-white/[0.03]">
-                                <tr className="text-white/60">
-                                    <th className="text-center font-medium px-6 py-3">Ticker</th>
-                                    <th className="text-center font-medium px-6 py-3">Invested</th>
-                                    <th className="text-center font-medium px-6 py-3">Value</th>
-                                    <th className="text-center font-medium px-6 py-3">PNL</th>
-                                    <th className="text-center font-medium px-6 py-3">Trend</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {positionRows.map((row) => {
-                                    const pnl = row.value - row.invested
-                                    const pnlPct = (pnl / row.invested) * 100
-                                    const isUp = pnl > 0
-                                    const isDown = pnl < 0
+            <div className="w-full max-w-none bg-white/5 backdrop-blur-sm rounded-2xl shadow-sm border border-white/10 overflow-hidden">
+                <div className="px-6 py-4 border-b border-white/10">
+                    <h3 className="text-sm font-semibold text-white">Portfolio Holdings</h3>
+                </div>
+                <div className="w-full overflow-x-auto">
+                    <table className="w-full min-w-[1000px] table-fixed text-sm">
+                        <thead className="bg-white/[0.03]">
+                            <tr className="text-white/60">
+                                <th className="text-center font-medium px-4 py-3">Ticker</th>
+                                <th className="text-center font-medium px-4 py-3">Invested</th>
+                                <th className="text-center font-medium px-4 py-3">Value</th>
+                                <th className="text-center font-medium px-4 py-3">PNL %</th>
+                                <th className="text-center font-medium px-4 py-3">PNL</th>
+                                <th className="text-center font-medium px-4 py-3">Trend</th>
+                                <th className="text-center font-medium px-4 py-3">Edit</th>
+                                <th className="text-center font-medium px-4 py-3">History</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {positionRows.map((row) => {
+                                const rowPnl = row.value - row.invested
+                                const rowPnlPct = row.invested > 0 ? (rowPnl / row.invested) * 100 : 0
+                                const rowPnlClassName = rowPnl > 0
+                                    ? 'text-emerald-400'
+                                    : rowPnl < 0
+                                        ? 'text-rose-400'
+                                        : 'text-amber-400'
 
-                                    return (
-                                        <tr key={row.ticker} className="border-t border-white/10">
-                                            <td className="px-6 py-4 text-center text-white font-semibold">{row.ticker}</td>
-                                            <td className="px-6 py-4 text-center text-white/80">
-                                                £{row.invested.toLocaleString(undefined, { maximumFractionDigits: 2 })}
-                                            </td>
-                                            <td className="px-6 py-4 text-center text-white/80">
-                                                £{row.value.toLocaleString(undefined, { maximumFractionDigits: 2 })}
-                                            </td>
-                                            <td className={`px-6 py-4 text-center font-semibold ${isUp ? 'text-emerald-400' : isDown ? 'text-rose-400' : 'text-white/70'}`}>
-                                                {pnl >= 0 ? '+' : ''}£{pnl.toLocaleString(undefined, { maximumFractionDigits: 2 })} ({pnlPct.toFixed(2)}%)
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center justify-center">
-                                                    {isUp ? (
-                                                        <ArrowUpRight className="w-4 h-4 text-emerald-400" />
-                                                    ) : isDown ? (
-                                                        <ArrowDownRight className="w-4 h-4 text-rose-400" />
-                                                    ) : (
-                                                        <Minus className="w-4 h-4 text-white/60" />
-                                                    )}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    )
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
+                                return (
+                                    <tr key={row.ticker} className="border-t border-white/10">
+                                        <td className="px-4 py-4 text-center text-white font-semibold">{row.ticker}</td>
+                                        <td className="px-4 py-4 text-center text-white/80">
+                                            {formatCurrency(row.invested, preferredCurrency)}
+                                        </td>
+                                        <td className="px-4 py-4 text-center text-white/80">
+                                            {formatCurrency(row.value, preferredCurrency)}
+                                        </td>
+                                        <td className={`px-4 py-4 text-center font-semibold ${rowPnlClassName}`}>
+                                            {rowPnlPct >= 0 ? '+' : ''}{rowPnlPct.toFixed(2)}%
+                                        </td>
+                                        <td className={`px-4 py-4 text-center font-semibold ${rowPnlClassName}`}>
+                                            {formatSignedCurrency(rowPnl, preferredCurrency)}
+                                        </td>
+                                        <td className="px-4 py-4 text-center">
+                                            <div className="flex items-center justify-center">
+                                                {rowPnl > 0 ? (
+                                                    <ArrowUpRight className="w-4 h-4 text-emerald-400" />
+                                                ) : rowPnl < 0 ? (
+                                                    <ArrowDownRight className="w-4 h-4 text-rose-400" />
+                                                ) : (
+                                                    <Minus className="w-4 h-4 text-white/60" />
+                                                )}
+                                            </div>
+                                        </td>
+                                        <td className="px-4 py-4 text-center">
+                                            <button
+                                                type="button"
+                                                className="inline-flex items-center justify-center h-9 px-3 rounded-lg bg-white/10 text-white/80 hover:bg-white/15 transition-colors"
+                                                aria-label={`Edit ${row.ticker}`}
+                                            >
+                                                <Edit3 className="w-4 h-4" />
+                                            </button>
+                                        </td>
+                                        <td className="px-4 py-4 text-center">
+                                            <button
+                                                type="button"
+                                                className="inline-flex items-center gap-1.5 justify-center h-9 px-3 rounded-lg bg-indigo-500/15 text-indigo-200 hover:bg-indigo-500/25 transition-colors"
+                                                aria-label={`History for ${row.ticker}`}
+                                            >
+                                                <History className="w-4 h-4" />
+                                                History
+                                            </button>
+                                        </td>
+                                    </tr>
+                                )
+                            })}
+                        </tbody>
+                    </table>
                 </div>
             </div>
+
+            <AddInvestmentModal
+                isOpen={isAddInvestmentOpen}
+                onClose={() => setIsAddInvestmentOpen(false)}
+                onAdd={handleAddInvestment}
+            />
         </div>
     )
 }
