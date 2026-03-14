@@ -13,6 +13,179 @@ type BaseModalProps = {
     onClose: () => void
 }
 
+type ExpenditureDetailModalProps = BaseModalProps & {
+    onEditExpenditure: (id: string) => void
+}
+
+function ExpenditureDetailModal({ isOpen, onClose, onEditExpenditure }: ExpenditureDetailModalProps) {
+    const dashboardData = useDashboardData()
+    const budgetData = dashboardData.budget
+    const expenditures = useMemo(
+        () => [...budgetData.expenditures].sort((a, b) => b.amount - a.amount),
+        [budgetData.expenditures]
+    )
+
+    if (!isOpen) return null
+
+    return (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" onClick={onClose} />
+            <div className="relative w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-2xl border border-white/10 bg-[#0f172a] shadow-xl">
+                <div className="flex items-center justify-between border-b border-white/10 p-6">
+                    <h3 className="text-lg font-bold text-white">Core Expenses Breakdown</h3>
+                    <button onClick={onClose} className="p-1 text-white/60 hover:text-white">
+                        <X className="h-5 w-5" />
+                    </button>
+                </div>
+                <div className="p-6">
+                    {expenditures.length === 0 ? (
+                        <div className="text-center py-8">
+                            <p className="text-white/60">No expenditures added yet.</p>
+                        </div>
+                    ) : (
+                        <div className="w-full overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-sm backdrop-blur-sm">
+                            <div className="w-full overflow-x-auto">
+                                <table className="w-full min-w-full table-fixed text-sm">
+                                    <thead className="bg-white/[0.03]">
+                                        <tr className="text-white/60">
+                                            <th className="px-6 py-3 text-left font-medium">Expenditure</th>
+                                            <th className="px-6 py-3 text-right font-medium">Monthly Amount</th>
+                                            <th className="px-6 py-3 text-right font-medium">% Of Income</th>
+                                            <th className="px-6 py-3 text-center font-medium">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {expenditures.map((expenditure) => {
+                                            const percentageOfIncome = budgetData.profile.monthlyNetSalary > 0
+                                                ? (expenditure.amount / budgetData.profile.monthlyNetSalary) * 100
+                                                : 0
+
+                                            return (
+                                                <tr key={expenditure.id} className="border-t border-white/10">
+                                                    <td className="px-6 py-4 font-semibold text-white">{expenditure.name}</td>
+                                                    <td className="px-6 py-4 text-right text-white/85">
+                                                        £{expenditure.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                    </td>
+                                                    <td className="px-6 py-4 text-right text-green-300">
+                                                        {percentageOfIncome.toFixed(1)}%
+                                                    </td>
+                                                    <td className="px-6 py-4 text-center">
+                                                        <button
+                                                            onClick={() => {
+                                                                onClose()
+                                                                onEditExpenditure(expenditure.id)
+                                                            }}
+                                                            className="inline-flex items-center gap-1 rounded-lg border border-white/15 bg-white/5 px-2.5 py-1.5 text-xs font-semibold text-white/85 hover:bg-white/10"
+                                                        >
+                                                            <Pencil className="h-3.5 w-3.5" />
+                                                            Edit
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            )
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    )
+}
+
+type CapitalDetailModalProps = BaseModalProps & {
+    onEditCapital: (id: string) => void
+    onDeleteCapital: (id: string) => void
+}
+
+function CapitalDetailModal({ isOpen, onClose, onEditCapital, onDeleteCapital }: CapitalDetailModalProps) {
+    const dashboardData = useDashboardData()
+    const budgetData = dashboardData.budget
+
+    if (!isOpen) return null
+
+    return (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" onClick={onClose} />
+            <div className="relative w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-2xl border border-white/10 bg-[#0f172a] shadow-xl">
+                <div className="flex items-center justify-between border-b border-white/10 p-6">
+                    <h3 className="text-lg font-bold text-white">Saving and Investments</h3>
+                    <button onClick={onClose} className="p-1 text-white/60 hover:text-white">
+                        <X className="h-5 w-5" />
+                    </button>
+                </div>
+                <div className="p-6">
+                    {budgetData.capital.length === 0 ? (
+                        <div className="text-center py-8">
+                            <p className="text-white/60">No capital expenditures added yet.</p>
+                        </div>
+                    ) : (
+                        <div className="w-full overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-sm backdrop-blur-sm">
+                            <div className="w-full overflow-x-auto">
+                                <table className="w-full min-w-full table-fixed text-sm">
+                                    <thead className="bg-white/[0.03]">
+                                        <tr className="text-white/60">
+                                            <th className="px-6 py-3 text-left font-medium">Capital Item</th>
+                                            <th className="px-6 py-3 text-right font-medium">Monthly Amount</th>
+                                            <th className="px-6 py-3 text-right font-medium">% Of Income</th>
+                                            <th className="px-6 py-3 text-center font-medium">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {budgetData.capital.map((capital) => {
+                                            const percentageOfIncome = budgetData.profile.monthlyNetSalary > 0
+                                                ? (capital.amount / budgetData.profile.monthlyNetSalary) * 100
+                                                : 0
+
+                                            return (
+                                                <tr key={capital.id} className="border-t border-white/10">
+                                                    <td className="px-6 py-4 font-semibold text-white">{capital.name}</td>
+                                                    <td className="px-6 py-4 text-right text-white/85">
+                                                        £{capital.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                    </td>
+                                                    <td className="px-6 py-4 text-right text-amber-300">
+                                                        {percentageOfIncome.toFixed(1)}%
+                                                    </td>
+                                                    <td className="px-6 py-4 text-center">
+                                                        <div className="flex items-center justify-center gap-2">
+                                                            <button
+                                                                onClick={() => {
+                                                                    onClose()
+                                                                    onEditCapital(capital.id)
+                                                                }}
+                                                                className="inline-flex items-center gap-1 rounded-lg border border-white/15 bg-white/5 px-2.5 py-1.5 text-xs font-semibold text-white/85 hover:bg-white/10"
+                                                            >
+                                                                <Pencil className="h-3.5 w-3.5" />
+                                                                Edit
+                                                            </button>
+                                                            <button
+                                                                onClick={() => {
+                                                                    onClose()
+                                                                    onDeleteCapital(capital.id)
+                                                                }}
+                                                                className="inline-flex items-center gap-1 rounded-lg border border-red-500/30 bg-red-500/10 px-2.5 py-1.5 text-xs font-semibold text-red-200 hover:bg-red-500/20"
+                                                            >
+                                                                <Trash2 className="h-3.5 w-3.5" />
+                                                                Delete
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            )
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    )
+}
+
 type EditBudgetModalProps = BaseModalProps & {
     initialEmployerName: string
     initialMonthlyIncome: number
@@ -282,6 +455,135 @@ function AddExpenditureModal({ isOpen, onClose }: AddExpenditureModalProps) {
     )
 }
 
+type AddCapitalModalProps = BaseModalProps
+
+function AddCapitalModal({ isOpen, onClose }: AddCapitalModalProps) {
+    const [name, setName] = useState('')
+    const [amount, setAmount] = useState('')
+    const [isSaving, setIsSaving] = useState(false)
+    const [error, setError] = useState<string | null>(null)
+    const router = useRouter()
+    const supabase = createClient()
+
+    if (!isOpen) return null
+
+    const handleSubmit = async (event: FormEvent) => {
+        event.preventDefault()
+        setError(null)
+
+        const cleanName = name.trim()
+        const parsedAmount = Number(amount)
+
+        if (!cleanName) {
+            setError('Capital name is required.')
+            return
+        }
+
+        if (!Number.isFinite(parsedAmount) || parsedAmount < 0) {
+            setError('Monthly amount must be a valid number.')
+            return
+        }
+
+        setIsSaving(true)
+
+        const {
+            data: { user },
+            error: userError,
+        } = await supabase.auth.getUser()
+
+        if (userError || !user) {
+            setError('Session not found. Please sign in again.')
+            setIsSaving(false)
+            return
+        }
+
+        const { error: insertError } = await supabase
+            .from('salary_capital')
+            .insert({
+                user_id: user.id,
+                capital_name: cleanName,
+                monthly_amount: parsedAmount,
+            })
+
+        if (insertError) {
+            setError(insertError.message)
+            setIsSaving(false)
+            return
+        }
+
+        setIsSaving(false)
+        onClose()
+        router.refresh()
+    }
+
+    return (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" onClick={onClose} />
+            <div className="relative w-full max-w-md overflow-hidden rounded-2xl border border-white/10 bg-[#0f172a] shadow-xl">
+                <div className="flex items-center justify-between border-b border-white/10 p-6">
+                    <h3 className="text-lg font-bold text-white">Add Capital</h3>
+                    <button onClick={onClose} className="p-1 text-white/60 hover:text-white">
+                        <X className="h-5 w-5" />
+                    </button>
+                </div>
+                <form onSubmit={handleSubmit} className="space-y-4 p-6">
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-white/80">Capital Name</label>
+                        <input
+                            type="text"
+                            value={name}
+                            onChange={(event) => setName(event.target.value)}
+                            required
+                            disabled={isSaving}
+                            className="w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-sm text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                            placeholder="e.g. Emergency Fund"
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-white/80">Monthly Amount (£)</label>
+                        <input
+                            type="number"
+                            min="0"
+                            step="any"
+                            value={amount}
+                            onChange={(event) => setAmount(event.target.value)}
+                            required
+                            disabled={isSaving}
+                            className="w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-sm text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                            placeholder="0.00"
+                        />
+                    </div>
+
+                    {error ? (
+                        <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
+                            {error}
+                        </div>
+                    ) : null}
+
+                    <div className="flex gap-3 pt-1">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            disabled={isSaving}
+                            className="flex-1 rounded-xl border border-white/10 px-4 py-3 text-sm font-semibold text-white/80 hover:bg-white/5"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={isSaving}
+                            className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-amber-600 px-4 py-3 text-sm font-semibold text-white hover:bg-amber-500 disabled:opacity-60"
+                        >
+                            {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                            {isSaving ? 'Adding...' : 'Add Capital'}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    )
+}
+
 type EditExpenditureModalProps = BaseModalProps & {
     expenditureId: string
     initialName: string
@@ -445,6 +747,169 @@ function EditExpenditureModal({
     )
 }
 
+type EditCapitalModalProps = BaseModalProps & {
+    capitalId: string
+    initialName: string
+    initialAmount: number
+}
+
+function EditCapitalModal({
+    isOpen,
+    onClose,
+    capitalId,
+    initialName,
+    initialAmount,
+}: EditCapitalModalProps) {
+    const [name, setName] = useState(initialName)
+    const [amount, setAmount] = useState(String(initialAmount))
+    const [isSaving, setIsSaving] = useState(false)
+    const [isDeleting, setIsDeleting] = useState(false)
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+    const [error, setError] = useState<string | null>(null)
+    const router = useRouter()
+    const supabase = createClient()
+
+    if (!isOpen) return null
+
+    const handleSave = async (event: FormEvent) => {
+        event.preventDefault()
+        setError(null)
+
+        const cleanName = name.trim()
+        const parsedAmount = Number(amount)
+
+        if (!cleanName) {
+            setError('Capital name is required.')
+            return
+        }
+
+        if (!Number.isFinite(parsedAmount) || parsedAmount < 0) {
+            setError('Monthly amount must be a valid number.')
+            return
+        }
+
+        setIsSaving(true)
+
+        const { error: updateError } = await supabase
+            .from('salary_capital')
+            .update({
+                capital_name: cleanName,
+                monthly_amount: parsedAmount,
+            })
+            .eq('id', capitalId)
+
+        if (updateError) {
+            setError(updateError.message)
+            setIsSaving(false)
+            return
+        }
+
+        setIsSaving(false)
+        onClose()
+        router.refresh()
+    }
+
+    const handleDelete = async () => {
+        setError(null)
+        setIsDeleting(true)
+
+        const { error: deleteError } = await supabase
+            .from('salary_capital')
+            .delete()
+            .eq('id', capitalId)
+
+        if (deleteError) {
+            setError(deleteError.message)
+            setIsDeleting(false)
+            setShowDeleteConfirm(false)
+            return
+        }
+
+        setIsDeleting(false)
+        setShowDeleteConfirm(false)
+        onClose()
+        router.refresh()
+    }
+
+    return (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" onClick={onClose} />
+            <div className="relative w-full max-w-md overflow-hidden rounded-2xl border border-white/10 bg-[#0f172a] shadow-xl">
+                <div className="flex items-center justify-between border-b border-white/10 p-6">
+                    <h3 className="text-lg font-bold text-white">Edit Capital</h3>
+                    <button onClick={onClose} className="p-1 text-white/60 hover:text-white">
+                        <X className="h-5 w-5" />
+                    </button>
+                </div>
+                <form onSubmit={handleSave} className="space-y-4 p-6">
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-white/80">Capital Name</label>
+                        <input
+                            type="text"
+                            value={name}
+                            onChange={(event) => setName(event.target.value)}
+                            required
+                            disabled={isSaving || isDeleting}
+                            className="w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-sm text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                            placeholder="e.g. Emergency Fund"
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-white/80">Monthly Amount (£)</label>
+                        <input
+                            type="number"
+                            min="0"
+                            step="any"
+                            value={amount}
+                            onChange={(event) => setAmount(event.target.value)}
+                            required
+                            disabled={isSaving || isDeleting}
+                            className="w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-sm text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                            placeholder="0.00"
+                        />
+                    </div>
+
+                    {error ? (
+                        <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
+                            {error}
+                        </div>
+                    ) : null}
+
+                    <div className="flex gap-3 pt-1">
+                        <button
+                            type="button"
+                            onClick={() => setShowDeleteConfirm(true)}
+                            disabled={isSaving || isDeleting}
+                            className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-sm font-semibold text-white hover:bg-red-500 disabled:opacity-60"
+                        >
+                            <Trash2 className="h-4 w-4" />
+                            Delete
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={isSaving || isDeleting}
+                            className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-amber-600 px-4 py-3 text-sm font-semibold text-white hover:bg-amber-500 disabled:opacity-60"
+                        >
+                            {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                            {isSaving ? 'Saving...' : 'Save Changes'}
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <ConfirmActionModal
+                isOpen={showDeleteConfirm}
+                onClose={() => setShowDeleteConfirm(false)}
+                onConfirm={handleDelete}
+                title="Delete Capital"
+                message="Are you sure you want to delete this capital item? This action cannot be undone."
+                confirmText="Delete Capital"
+                isProcessing={isDeleting}
+            />
+        </div>
+    )
+}
+
 type SalaryPieTooltipProps = {
     active?: boolean
     payload?: Array<{
@@ -482,13 +947,19 @@ function BudgetPieTooltip({ active, payload }: SalaryPieTooltipProps) {
 export default function BudgetPage() {
     const dashboardData = useDashboardData()
     const budgetData = dashboardData.budget
+    const router = useRouter()
     const expenditures = useMemo(
         () => [...budgetData.expenditures].sort((a, b) => b.amount - a.amount),
         [budgetData.expenditures]
     )
     const [isEditBudgetOpen, setIsEditBudgetOpen] = useState(false)
     const [isAddExpenditureOpen, setIsAddExpenditureOpen] = useState(false)
+    const [isAddCapitalOpen, setIsAddCapitalOpen] = useState(false)
     const [editingExpenditureId, setEditingExpenditureId] = useState<string | null>(null)
+    const [isExpenditureDetailOpen, setIsExpenditureDetailOpen] = useState(false)
+    const [isCapitalDetailOpen, setIsCapitalDetailOpen] = useState(false)
+    const [editingCapitalId, setEditingCapitalId] = useState<string | null>(null)
+    const [deletingCapitalId, setDeletingCapitalId] = useState<string | null>(null)
 
     const outgoingLabel = useMemo(
         () => `${budgetData.committedOutgoingRatio.toFixed(1)}% of net income`,
@@ -505,9 +976,9 @@ export default function BudgetPage() {
 
     const expenditureGraphData = useMemo(() => {
         const colors = [
-            '#f43f5e', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', 
-            '#ec4899', '#14b8a6', '#f97316', '#06b6d4', '#84cc16', 
-            '#6366f1', '#d946ef', '#eab308', '#ef4444', '#0ea5e9', 
+            '#f43f5e', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6',
+            '#ec4899', '#14b8a6', '#f97316', '#06b6d4', '#84cc16',
+            '#6366f1', '#d946ef', '#eab308', '#ef4444', '#0ea5e9',
             '#22c55e', '#64748b', '#a855f7', '#fb923c', '#c084fc'
         ]
         return budgetData.expenditures.map((exp, index) => ({
@@ -519,8 +990,25 @@ export default function BudgetPage() {
 
     const isOverspending = budgetData.totalExpenditure > budgetData.profile.monthlyNetSalary
 
+    const handleDeleteCapital = async () => {
+        if (!deletingCapitalId) return
+
+        const supabase = createClient()
+        const { error } = await supabase
+            .from('salary_capital')
+            .delete()
+            .eq('id', deletingCapitalId)
+
+        if (error) {
+            console.error('Error deleting capital:', error)
+        } else {
+            setDeletingCapitalId(null)
+            router.refresh()
+        }
+    }
+
     return (
-        <div className="w-full">
+        <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-6">
             <div className="mb-6 flex flex-wrap items-start justify-between gap-6">
                 <div>
                     <h1 className="text-2xl font-bold text-white">Budget Tool</h1>
@@ -535,6 +1023,13 @@ export default function BudgetPage() {
                     >
                         <Plus className="h-3.5 w-3.5" />
                         Add Expenditure
+                    </button>
+                    <button
+                        onClick={() => setIsAddCapitalOpen(true)}
+                        className="inline-flex items-center gap-2 rounded-lg border border-amber-400/30 bg-amber-500/15 px-3 py-2 text-xs font-semibold text-amber-200 hover:bg-amber-500/25"
+                    >
+                        <Plus className="h-3.5 w-3.5" />
+                        Add Capital
                     </button>
                     <button
                         onClick={() => setIsEditBudgetOpen(true)}
@@ -591,64 +1086,11 @@ export default function BudgetPage() {
                 </div>
             </div>
 
-            <div className="mb-4 flex items-center justify-between gap-4">
-                <h2 className="text-lg font-bold text-white/90">Core Expenses Breakdown</h2>
-            </div>
-
             {budgetData.loadError ? (
                 <div className="mb-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
                     HTTP 500: could not load budget
                 </div>
             ) : null}
-
-            {expenditures.length === 0 ? (
-                <div className="rounded-xl border border-white/10 bg-white/5 p-5 text-sm text-white/65">
-                    No expenditures added yet.
-                </div>
-            ) : (
-                <div className="w-full max-w-none overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-sm backdrop-blur-sm">
-                    <div className="w-full overflow-x-auto">
-                        <table className="w-full min-w-full table-fixed text-sm">
-                            <thead className="bg-white/[0.03]">
-                                <tr className="text-white/60">
-                                    <th className="px-6 py-3 text-center font-medium">Expenditure</th>
-                                    <th className="px-6 py-3 text-center font-medium">Monthly Amount</th>
-                                    <th className="px-6 py-3 text-center font-medium">% Of Income</th>
-                                    <th className="px-6 py-3 text-center font-medium">Edit</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {expenditures.map((expenditure) => {
-                                    const percentageOfIncome = budgetData.profile.monthlyNetSalary > 0
-                                        ? (expenditure.amount / budgetData.profile.monthlyNetSalary) * 100
-                                        : 0
-
-                                    return (
-                                        <tr key={expenditure.id} className="border-t border-white/10">
-                                            <td className="px-6 py-4 text-center font-semibold text-white">{expenditure.name}</td>
-                                            <td className="px-6 py-4 text-center text-white/85">
-                                                £{expenditure.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                            </td>
-                                            <td className="px-6 py-4 text-center text-green-300">
-                                                {percentageOfIncome.toFixed(1)}%
-                                            </td>
-                                            <td className="px-6 py-4 text-center">
-                                                <button
-                                                    onClick={() => setEditingExpenditureId(expenditure.id)}
-                                                    className="inline-flex items-center gap-1 rounded-lg border border-white/15 bg-white/5 px-2.5 py-1.5 text-xs font-semibold text-white/85 hover:bg-white/10"
-                                                >
-                                                    <Pencil className="h-3.5 w-3.5" />
-                                                    Edit
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    )
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            )}
 
             <div className="mt-8 grid gap-6 md:grid-cols-2">
                 <div className="rounded-2xl border border-purple-500/20 bg-purple-500/10 p-6 shadow-sm backdrop-blur-sm">
@@ -764,6 +1206,135 @@ export default function BudgetPage() {
                 </div>
             </div>
 
+            <div className="mt-8 grid gap-6 md:grid-cols-2">
+                {/* Core Expenses Card */}
+                <div className="bg-white/5 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/10 hover:bg-white/10 transition-colors flex flex-col h-full group/card">
+                    <div className="flex items-start justify-between mb-4">
+                        <div>
+                            <h3 className="text-lg font-semibold text-white">Core Expenses</h3>
+                            <p className="text-sm text-white/60 mt-1">Monthly committed outgoings</p>
+                        </div>
+                        <div className="w-10 h-10 rounded-full bg-rose-500/10 flex items-center justify-center text-rose-400 font-bold border border-rose-500/20 group-hover/card:scale-110 transition-transform">
+                            <CreditCard className="w-5 h-5" />
+                        </div>
+                    </div>
+
+                    <div className="flex-1 space-y-4">
+                        <div className="text-center">
+                            <p className="text-3xl font-bold text-rose-400">
+                                £{budgetData.totalExpenditure.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </p>
+                            <p className="text-sm text-rose-300/80 mt-1">{outgoingLabel}</p>
+                        </div>
+
+                        <div className="space-y-2">
+                            {expenditures.slice(0, 3).map((exp) => (
+                                <div key={exp.id} className="flex items-center justify-between text-sm">
+                                    <span className="text-white/80 truncate max-w-[60%]">{exp.name}</span>
+                                    <span className="text-rose-300 font-medium">
+                                        £{exp.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </span>
+                                </div>
+                            ))}
+                            {expenditures.length > 3 && (
+                                <p className="text-xs text-white/50 text-center">
+                                    +{expenditures.length - 3} more expenses
+                                </p>
+                            )}
+                        </div>
+
+                        <div className="flex gap-2 pt-2">
+                            <button
+                                onClick={() => setIsAddExpenditureOpen(true)}
+                                className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg border border-indigo-500/30 bg-indigo-500/10 px-3 py-2 text-xs font-semibold text-indigo-200 hover:bg-indigo-500/20 transition-colors"
+                            >
+                                <Plus className="h-3.5 w-3.5" />
+                                Add
+                            </button>
+                            <button
+                                onClick={() => setIsExpenditureDetailOpen(true)}
+                                className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-white/80 hover:bg-white/10 transition-colors"
+                            >
+                                <Pencil className="h-3.5 w-3.5" />
+                                View All
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Saving and Investments Card */}
+                <div className="bg-white/5 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/10 hover:bg-white/10 transition-colors flex flex-col h-full group/card">
+                    <div className="flex items-start justify-between mb-4">
+                        <div>
+                            <h3 className="text-lg font-semibold text-white">Saving & Investments</h3>
+                            <p className="text-sm text-white/60 mt-1">Capital expenditures</p>
+                        </div>
+                        <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-400 font-bold border border-amber-500/20 group-hover/card:scale-110 transition-transform">
+                            <Wallet className="w-5 h-5" />
+                        </div>
+                    </div>
+
+                    <div className="flex-1 space-y-4">
+                        <div className="text-center">
+                            <p className="text-3xl font-bold text-amber-400">
+                                £{budgetData.capital.reduce((sum, cap) => sum + cap.amount, 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </p>
+                            <p className="text-sm text-amber-300/80 mt-1">Monthly capital</p>
+                        </div>
+
+                        <div className="space-y-2">
+                            {budgetData.capital.slice(0, 3).map((cap) => (
+                                <div key={cap.id} className="flex items-center justify-between text-sm">
+                                    <span className="text-white/80 truncate max-w-[60%]">{cap.name}</span>
+                                    <span className="text-amber-300 font-medium">
+                                        £{cap.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </span>
+                                </div>
+                            ))}
+                            {budgetData.capital.length > 3 && (
+                                <p className="text-xs text-white/50 text-center">
+                                    +{budgetData.capital.length - 3} more items
+                                </p>
+                            )}
+                        </div>
+
+                        <div className="flex gap-2 pt-2">
+                            <button
+                                onClick={() => setIsAddCapitalOpen(true)}
+                                className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-200 hover:bg-amber-500/20 transition-colors"
+                            >
+                                <Plus className="h-3.5 w-3.5" />
+                                Add
+                            </button>
+                            <button
+                                onClick={() => setIsCapitalDetailOpen(true)}
+                                className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-white/80 hover:bg-white/10 transition-colors"
+                            >
+                                <Pencil className="h-3.5 w-3.5" />
+                                View All
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {isExpenditureDetailOpen ? (
+                <ExpenditureDetailModal
+                    isOpen={isExpenditureDetailOpen}
+                    onClose={() => setIsExpenditureDetailOpen(false)}
+                    onEditExpenditure={setEditingExpenditureId}
+                />
+            ) : null}
+
+            {isCapitalDetailOpen ? (
+                <CapitalDetailModal
+                    isOpen={isCapitalDetailOpen}
+                    onClose={() => setIsCapitalDetailOpen(false)}
+                    onEditCapital={setEditingCapitalId}
+                    onDeleteCapital={setDeletingCapitalId}
+                />
+            ) : null}
+
             {isEditBudgetOpen ? (
                 <EditBudgetModal
                     isOpen={isEditBudgetOpen}
@@ -787,6 +1358,34 @@ export default function BudgetPage() {
                     expenditureId={editingExpenditureId}
                     initialName={expenditures.find((item) => item.id === editingExpenditureId)?.name ?? ''}
                     initialAmount={expenditures.find((item) => item.id === editingExpenditureId)?.amount ?? 0}
+                />
+            ) : null}
+
+            {editingCapitalId ? (
+                <EditCapitalModal
+                    isOpen={Boolean(editingCapitalId)}
+                    onClose={() => setEditingCapitalId(null)}
+                    capitalId={editingCapitalId}
+                    initialName={budgetData.capital.find((item) => item.id === editingCapitalId)?.name ?? ''}
+                    initialAmount={budgetData.capital.find((item) => item.id === editingCapitalId)?.amount ?? 0}
+                />
+            ) : null}
+
+            {deletingCapitalId ? (
+                <ConfirmActionModal
+                    isOpen={Boolean(deletingCapitalId)}
+                    onClose={() => setDeletingCapitalId(null)}
+                    title="Delete Capital Item"
+                    message={`Are you sure you want to delete "${budgetData.capital.find((item) => item.id === deletingCapitalId)?.name ?? 'this item'}"? This action cannot be undone.`}
+                    confirmText="Delete"
+                    onConfirm={handleDeleteCapital}
+                />
+            ) : null}
+
+            {isAddCapitalOpen ? (
+                <AddCapitalModal
+                    isOpen={isAddCapitalOpen}
+                    onClose={() => setIsAddCapitalOpen(false)}
                 />
             ) : null}
         </div>

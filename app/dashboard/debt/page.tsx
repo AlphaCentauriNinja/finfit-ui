@@ -583,29 +583,31 @@ export default function DebtPage() {
                 </div>
             </div>
 
-            <div className="mb-8 grid gap-6 md:grid-cols-2">
-                <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 p-6 shadow-sm backdrop-blur-sm">
-                    <div className="mb-4 flex items-start justify-between">
-                        <h3 className="text-sm font-medium text-rose-300">Total Debt</h3>
-                        <CreditCard className="h-5 w-5 text-rose-400" />
+            {totalDebt > 0 ? (
+                <div className="mb-8 grid gap-6 md:grid-cols-2">
+                    <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 p-6 shadow-sm backdrop-blur-sm">
+                        <div className="mb-4 flex items-start justify-between">
+                            <h3 className="text-sm font-medium text-rose-300">Total Debt</h3>
+                            <CreditCard className="h-5 w-5 text-rose-400" />
+                        </div>
+                        <p className="text-4xl font-bold text-rose-400">{formatGbp(totalDebt)}</p>
+                        <p className="mt-2 text-sm font-medium text-rose-300/80">
+                            {debts.length} debt account{debts.length === 1 ? '' : 's'}
+                        </p>
                     </div>
-                    <p className="text-4xl font-bold text-rose-400">{formatGbp(totalDebt)}</p>
-                    <p className="mt-2 text-sm font-medium text-rose-300/80">
-                        {debts.length} debt account{debts.length === 1 ? '' : 's'}
-                    </p>
-                </div>
 
-                <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-6 shadow-sm backdrop-blur-sm">
-                    <div className="mb-4 flex items-start justify-between">
-                        <h3 className="text-sm font-medium text-amber-300">Debt-to-Income Ratio</h3>
-                        <AlertTriangle className="h-5 w-5 text-amber-400" />
+                    <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-6 shadow-sm backdrop-blur-sm">
+                        <div className="mb-4 flex items-start justify-between">
+                            <h3 className="text-sm font-medium text-amber-300">Debt-to-Income Ratio</h3>
+                            <AlertTriangle className="h-5 w-5 text-amber-400" />
+                        </div>
+                        <p className="text-4xl font-bold text-amber-300">{debtToIncomeRatio.toFixed(1)}%</p>
+                        <p className="mt-2 text-sm font-medium text-amber-200/80">
+                            Monthly net salary: {formatGbp(monthlyNetSalary)}
+                        </p>
                     </div>
-                    <p className="text-4xl font-bold text-amber-300">{debtToIncomeRatio.toFixed(1)}%</p>
-                    <p className="mt-2 text-sm font-medium text-amber-200/80">
-                        Monthly net salary: {formatGbp(monthlyNetSalary)}
-                    </p>
                 </div>
-            </div>
+            ) : null}
 
             <div className="mb-4 flex items-center justify-between gap-4">
                 <h2 className="text-lg font-bold text-white/90">Debt Breakdown</h2>

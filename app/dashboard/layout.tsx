@@ -12,6 +12,7 @@ import {
     type PensionValueRow,
     type BudgetExpenditureRow,
     type BudgetProfileRow,
+    type BudgetCapitalRow,
     type SavingsAccountRow,
     type SavingsPotRow,
     type SavingsHistoryRow,
@@ -33,6 +34,7 @@ export default async function Layout({
         pensionValuesResult,
         salaryProfileResult,
         salaryExpendituresResult,
+        salaryCapitalResult,
         savingsAccountsResult,
         savingsPotsResult,
         savingsHistoryResult,
@@ -55,6 +57,10 @@ export default async function Layout({
         supabase
             .from('salary_expenditures')
             .select('id, expenditure_name, monthly_amount')
+            .order('created_at', { ascending: false }),
+        supabase
+            .from('salary_capital')
+            .select('id, capital_name, monthly_amount')
             .order('created_at', { ascending: false }),
         supabase
             .from('savings_accounts')
@@ -85,9 +91,11 @@ export default async function Layout({
         ),
         budgetProfile: (salaryProfileResult.data as BudgetProfileRow | null) ?? null,
         budgetExpenditures: (salaryExpendituresResult.data as BudgetExpenditureRow[] | null) ?? [],
+        budgetCapital: (salaryCapitalResult.data as BudgetCapitalRow[] | null) ?? [],
         budgetLoadError: Boolean(
             salaryProfileResult.error ||
-            salaryExpendituresResult.error
+            salaryExpendituresResult.error ||
+            salaryCapitalResult.error
         ),
         savingsAccounts: (savingsAccountsResult.data as SavingsAccountRow[] | null) ?? [],
         savingsPots: (savingsPotsResult.data as SavingsPotRow[] | null) ?? [],

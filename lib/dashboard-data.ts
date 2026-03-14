@@ -30,6 +30,12 @@ export type BudgetExpenditureRow = {
     monthly_amount: number | string | null
 }
 
+export type BudgetCapitalRow = {
+    id: string
+    capital_name: string | null
+    monthly_amount: number | string | null
+}
+
 export type SavingsAccountRow = {
     id: string
     name: string
@@ -100,6 +106,12 @@ export type DashboardBudgetExpenditure = {
     amount: number
 }
 
+export type DashboardBudgetCapital = {
+    id: string
+    name: string
+    amount: number
+}
+
 export type DashboardSavingsPot = {
     id: string
     name: string
@@ -139,7 +151,9 @@ export type DashboardDataSnapshot = {
     budget: {
         profile: DashboardBudgetProfile
         expenditures: DashboardBudgetExpenditure[]
+        capital: DashboardBudgetCapital[]
         totalExpenditure: number
+        totalCapital: number
         committedOutgoingRatio: number
         annualNetSalary: number
         disposableIncome: number
@@ -165,6 +179,7 @@ type BuildDashboardSnapshotInput = {
     pensionLoadError?: boolean
     budgetProfile?: BudgetProfileRow | null
     budgetExpenditures?: BudgetExpenditureRow[] | null
+    budgetCapital?: BudgetCapitalRow[] | null
     budgetLoadError?: boolean
     savingsAccounts?: SavingsAccountRow[] | null
     savingsPots?: SavingsPotRow[] | null
@@ -279,6 +294,7 @@ export const buildDashboardSnapshot = ({
     pensionLoadError = false,
     budgetProfile,
     budgetExpenditures,
+    budgetCapital,
     budgetLoadError = false,
     savingsAccounts = [],
     savingsPots = [],
@@ -590,12 +606,30 @@ export const buildDashboardSnapshot = ({
         })
         .filter((entry): entry is DashboardBudgetExpenditure => Boolean(entry))
 
+    const capital = (budgetCapital ?? [])
+        .map<DashboardBudgetCapital | null>((cap) => {
+            const amount = toNumber(cap.monthly_amount)
+            const name = (cap.capital_name ?? '').trim()
+
+            if (!cap.id || !name || !Number.isFinite(amount) || amount < 0) {
+                return null
+            }
+
+            return {
+                id: cap.id,
+                name,
+                amount,
+            }
+        })
+        .filter((entry): entry is DashboardBudgetCapital => Boolean(entry))
+
     const totalExpenditure = expenditures.reduce((sum, expenditure) => sum + expenditure.amount, 0)
+    const totalCapital = capital.reduce((sum, cap) => sum + cap.amount, 0)
     const committedOutgoingRatio = monthlyNetSalary > 0
-        ? (totalExpenditure / monthlyNetSalary) * 100
+        ? ((totalExpenditure + totalCapital) / monthlyNetSalary) * 100
         : 0
     const annualNetSalary = monthlyNetSalary * 12
-    const disposableIncome = monthlyNetSalary - totalExpenditure
+    const disposableIncome = monthlyNetSalary - totalExpenditure - totalCapital
 
     // Build savings timeline from individual transactions so each entry can move the line.
     const activePotIds = new Set((savingsPots ?? []).map((pot) => pot.id))
@@ -705,7 +739,9 @@ export const buildDashboardSnapshot = ({
                 monthlyNetSalary,
             },
             expenditures,
+            capital,
             totalExpenditure,
+            totalCapital,
             committedOutgoingRatio,
             annualNetSalary,
             disposableIncome,
