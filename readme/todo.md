@@ -1,23 +1,32 @@
-- Ensure that all pop ups such as delete are the same modal asking are you sure, it should be a common module, alwats ask before deleting and confirm on all modals
+## Todo
 
-- ensure that when we hover over the side bar on dashboard, we hover and show the link in yellow
+# Delete Confirmation Modal - Common
+- [X] Created Common Modal in /dashboard/components
+- [ ] Apply to all delete confirmations under /dashboard routes
 
-- when opening assets, I need to close the assets in the sidebar at any time, sometimes it does not want to close
+# Types and constant in /route/page.tsx should go into components
 
-- Fix all issues on the code base
+# Card Layouts make it consistant
 
-- /assets page, make the cards more appealing. It is not at the moment
+# When a route has nothing inside, we need to hide all cards and show an alert 
 
-- http://localhost:3000/dashboard/budget route needs change on the income split, the yellow needs to be purple.
+# Hide Values option
+- [X] on the /dashboard route
+- [ ] ensure all routes have it
 
-- Monthly Spending widget should be a bar chart with different colours and from high to low
-
-- on the /dashboard route update the Asset Allocation cards with percentages from white to green
-
-- update the graph of the /dashboard page based on total assets from supabase / static data
-
-- change the following on /dashboard : Welcome back, Test User , where Test User is the name and should be in yellow
-
-- on the route /dashboard/budget , make the cards Monthly Net Income and Monthly Commited Outgoings be on the same row, move the Income Split underneath the table (just like the cards 50%) and add another pie chart of 50% that shows all the expenditures as part of a pie chart as well in different colours
-
+# Budget
+- [ ] Ensure that the Financials and Expenses are calculated properly
+- [ ] Make the cards look like /savings 
+- [ ] Expenditure Breakdown, 
+    - Mortgage £1,100.00
+- Change button Add Expenditre to + Expense
+- Change button Add Capital to + Capital
+- Remove Income Split card and move Expenditure Breakwodn below the cards Expenses and Saving & Innvestments and make it wide, with the legenda : do not show the list
+    - Nanny £1,600.00
+    - Apple £0.99
+    - Butcher £400.00
+    - Car £250.00
+    - Amazon £8.99
+    - Common £350.00
+    - Weekly £1,250.00 to the right
 

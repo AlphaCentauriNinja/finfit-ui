@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Loader2, Trash2, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import PensionOperationModal from './PensionOperationModal'
+import ConfirmActionModal from '@/app/components/ConfirmActionModal'
 
 type Props = {
     isOpen: boolean
@@ -137,45 +138,16 @@ export default function PensionEditModal({ isOpen, onClose, pensionId, initialNa
                 </form>
             </div>
 
-            {isDeleteConfirmOpen ? (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-                    <div
-                        className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm"
-                        onClick={() => {
-                            handleCancelDeleteOperation()
-                        }}
-                    />
-                    <div className="relative w-full max-w-md bg-[#0f172a] border border-white/10 rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                        <div className="p-6 border-b border-white/10">
-                            <h3 className="text-lg font-bold text-white">Delete Pension Account</h3>
-                            <p className="text-sm text-white/70 mt-2">
-                                This pension and all its data will be deleted permanently.
-                            </p>
-                        </div>
-                        <div className="p-6 flex gap-3">
-                            <button
-                                type="button"
-                                onClick={handleDelete}
-                                disabled={isDeleting || isCancelling}
-                                className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-colors shadow-lg shadow-green-500/30 disabled:opacity-60 disabled:cursor-not-allowed"
-                                style={{ backgroundColor: '#22c55e', color: '#ffffff' }}
-                            >
-                                {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                                YES
-                            </button>
-                            <button
-                                type="button"
-                                onClick={handleCancelDeleteOperation}
-                                disabled={isDeleting || isCancelling}
-                                className="flex-1 rounded-xl px-4 py-3 text-sm font-semibold transition-colors shadow-lg shadow-red-500/30 disabled:opacity-60 disabled:cursor-not-allowed"
-                                style={{ backgroundColor: '#ef4444', color: '#ffffff' }}
-                            >
-                                CANCEL
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            ) : null}
+            <ConfirmActionModal
+                isOpen={isDeleteConfirmOpen}
+                onClose={handleCancelDeleteOperation}
+                onConfirm={handleDelete}
+                title="Delete Pension Account"
+                message="This pension and all its data will be deleted permanently."
+                confirmText="YES"
+                cancelText="CANCEL"
+                isProcessing={isDeleting}
+            />
 
             <PensionOperationModal
                 isOpen={isSaving || isDeleting || isCancelling}

@@ -11,7 +11,9 @@ import {
     TrendingUp,
     PiggyBank,
     Coins,
-    Gem
+    Gem,
+    Eye,
+    EyeOff
 } from 'lucide-react'
 import {
     PortfolioGraph,
@@ -21,7 +23,9 @@ import {
     GoalTracker
 } from '@/app/dashboard/components/DashboardWidgets'
 import { useDashboardData } from '@/app/dashboard/components/providers/DashboardDataProvider'
+import { usePrivacy } from '@/app/dashboard/components/providers/PrivacyProvider'
 import { initialCryptoRows, USD_TO_GBP, binanceCombinedStreamUrl, CryptoRow } from '@/lib/crypto-data'
+import { formatCurrency } from '@/lib/utils'
 
 const getIconForAsset = (name: string) => {
     switch (name) {
@@ -49,7 +53,8 @@ const getRouteForAsset = (name: string) => {
 
 export default function Overview() {
     const dashboardData = useDashboardData()
-    
+    const { hideValues, toggleHideValues } = usePrivacy()
+
     // Crypto Websocket Logic
     const [cryptoAssets] = useState<CryptoRow[]>(initialCryptoRows)
     const [liveUsdByTicker, setLiveUsdByTicker] = useState<Record<string, number>>({})
@@ -117,7 +122,7 @@ export default function Overview() {
             return asset
         })
         const finalTotal = updatedAssets.reduce((sum, asset) => sum + asset.value, 0)
-        
+
         return updatedAssets.map(asset => ({
             ...asset,
             allocation: finalTotal > 0 ? (asset.value / finalTotal) * 100 : 0
@@ -132,10 +137,22 @@ export default function Overview() {
             <div className="flex-1 space-y-8 xl:max-w-[calc(100%-26rem)]">
                 {/* Header KPI */}
                 <section>
-                    <h1 className="text-2xl font-bold mb-6 text-white">Portfolio Overview</h1>
+                    <div className="flex items-center justify-between mb-6">
+                        <h1 className="text-2xl font-bold text-white">Portfolio Overview</h1>
+                        <button
+                            onClick={toggleHideValues}
+                            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 hover:text-emerald-200 transition-colors"
+                            title={hideValues ? "Show values" : "Hide values"}
+                        >
+                            {hideValues ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                            <span className="text-sm font-medium">
+                                {hideValues ? "Show Values" : "Hide Values"}
+                            </span>
+                        </button>
+                    </div>
                     <StatCard
                         title="Total Net Assets"
-                        value={`£${totalAssets.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                        value={formatCurrency(totalAssets, hideValues)}
                         change="+12.5% YTD"
                         icon={Wallet}
                     />
@@ -166,6 +183,7 @@ export default function Overview() {
                                         value={asset.value}
                                         allocation={asset.allocation}
                                         icon={getIconForAsset(asset.name)}
+                                        hideValues={hideValues}
                                     />
                                 </Link>
                             )

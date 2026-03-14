@@ -43,7 +43,7 @@ export default function ConfirmActionModal({
                         type="button"
                         onClick={onClose}
                         disabled={isProcessing}
-                        className="flex-1 rounded-xl border border-white/10 px-4 py-2.5 text-sm font-semibold text-white/80 hover:bg-white/5 disabled:opacity-60"
+                        className="flex-1 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-500 disabled:opacity-60"
                     >
                         {cancelText}
                     </button>
@@ -51,7 +51,7 @@ export default function ConfirmActionModal({
                         type="button"
                         onClick={onConfirm}
                         disabled={isProcessing}
-                        className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-500 disabled:opacity-60"
+                        className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-60"
                     >
                         {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                         {confirmText}

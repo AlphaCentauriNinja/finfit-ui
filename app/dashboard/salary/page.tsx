@@ -432,7 +432,7 @@ function EditExpenditureModal({
 
 export default function SalaryPage() {
     const dashboardData = useDashboardData()
-    const salaryData = dashboardData.salary
+    const salaryData = dashboardData.budget
     const expenditures = useMemo(
         () => [...salaryData.expenditures].sort((a, b) => b.amount - a.amount),
         [salaryData.expenditures]

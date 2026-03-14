@@ -3,6 +3,9 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import { AlertTriangle, CreditCard, Edit3, Loader2, Plus, Trash2, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import ConfirmActionModal from '@/app/components/ConfirmActionModal'
+import { usePrivacy } from '@/app/dashboard/components/providers/PrivacyProvider'
+import { formatCurrency } from '@/lib/utils'
 
 type DebtTypeValue = 'credit_card' | 'private_loan' | 'student_loan' | 'car_finance' | 'mortgage' | 'other'
 
@@ -332,6 +335,7 @@ function EditDebtModal({ onClose, entry, onSubmit }: EditDebtModalProps) {
 
 export default function DebtPage() {
     const supabase = useMemo(() => createClient(), [])
+    const { hideValues } = usePrivacy()
     const [userId, setUserId] = useState<string | null>(null)
     const [debts, setDebts] = useState<DebtEntry[]>([])
     const [monthlyNetSalary, setMonthlyNetSalary] = useState(0)
@@ -340,6 +344,7 @@ export default function DebtPage() {
     const [isAddDebtOpen, setIsAddDebtOpen] = useState(false)
     const [editingDebtId, setEditingDebtId] = useState<string | null>(null)
     const [deletingDebtId, setDeletingDebtId] = useState<string | null>(null)
+    const [confirmDeleteDebtId, setConfirmDeleteDebtId] = useState<string | null>(null)
 
     useEffect(() => {
         let isActive = true
@@ -551,12 +556,16 @@ export default function DebtPage() {
     )
 
     const handleDeleteFromTable = async (id: string) => {
-        const confirmed = window.confirm('Delete this debt entry?')
-        if (!confirmed) return
+        setConfirmDeleteDebtId(id)
+    }
 
-        setDeletingDebtId(id)
-        const result = await deleteDebt(id)
+    const confirmDeleteDebt = async () => {
+        if (!confirmDeleteDebtId) return
+
+        setDeletingDebtId(confirmDeleteDebtId)
+        const result = await deleteDebt(confirmDeleteDebtId)
         setDeletingDebtId(null)
+        setConfirmDeleteDebtId(null)
 
         if (!result.ok) {
             setLoadError(result.error ?? 'Unable to delete debt.')
@@ -603,7 +612,7 @@ export default function DebtPage() {
                         </div>
                         <p className="text-4xl font-bold text-amber-300">{debtToIncomeRatio.toFixed(1)}%</p>
                         <p className="mt-2 text-sm font-medium text-amber-200/80">
-                            Monthly net salary: {formatGbp(monthlyNetSalary)}
+                            Monthly net salary: {hideValues ? "****" : `£${monthlyNetSalary.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                         </p>
                     </div>
                 </div>
@@ -650,7 +659,7 @@ export default function DebtPage() {
                                         <tr key={debt.id} className="border-t border-white/10">
                                             <td className="px-6 py-4 text-center text-white/85">{formatDebtTypeLabel(debt.debtType)}</td>
                                             <td className="px-6 py-4 text-center font-semibold text-white">{debt.debtName}</td>
-                                            <td className="px-6 py-4 text-center text-white/85">{formatGbp(debt.amount)}</td>
+                                            <td className="px-6 py-4 text-center text-white/85">{hideValues ? "****" : `£${debt.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</td>
                                             <td className="px-6 py-4 text-center text-amber-300">{shareOfTotal.toFixed(1)}%</td>
                                             <td className="px-6 py-4 text-center">
                                                 <button
@@ -694,6 +703,17 @@ export default function DebtPage() {
                     onSubmit={updateDebt}
                 />
             ) : null}
+
+            <ConfirmActionModal
+                isOpen={Boolean(confirmDeleteDebtId)}
+                onClose={() => setConfirmDeleteDebtId(null)}
+                title="Delete debt entry"
+                message={`Are you sure you want to delete "${debts.find((d) => d.id === confirmDeleteDebtId)?.debtName ?? 'this debt entry'}"?`}
+                confirmText="Delete"
+                cancelText="Cancel"
+                onConfirm={confirmDeleteDebt}
+                isProcessing={Boolean(deletingDebtId)}
+            />
         </div>
     )
 }

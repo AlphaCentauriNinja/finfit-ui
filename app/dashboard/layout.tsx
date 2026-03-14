@@ -4,6 +4,7 @@ import Sidebar from '@/app/dashboard/components/Sidebar'
 import Navbar from '@/app/dashboard/components/Navbar'
 import MobileNav from '@/app/dashboard/components/mobile/MobileNav'
 import { DashboardDataProvider } from '@/app/dashboard/components/providers/DashboardDataProvider'
+import { PrivacyProvider } from '@/app/dashboard/components/providers/PrivacyProvider'
 import {
     buildDashboardSnapshot,
     type DebtEntryRow,
@@ -127,14 +128,16 @@ export default async function Layout({
                     <div className="hidden lg:block">
                         <Sidebar />
                     </div>
-                    <DashboardDataProvider initialData={dashboardData}>
-                        <div className="flex-1 flex flex-col min-h-[calc(100vh-2rem)] overflow-hidden">
-                            <Navbar userEmail={user?.email} userFullName={user?.user_metadata?.full_name} />
-                            <main className="flex-1 p-8 pb-10 overflow-y-auto">
-                                {children}
-                            </main>
-                        </div>
-                    </DashboardDataProvider>
+                    <PrivacyProvider>
+                        <DashboardDataProvider initialData={dashboardData}>
+                            <div className="flex-1 flex flex-col min-h-[calc(100vh-2rem)] overflow-hidden">
+                                <Navbar userEmail={user?.email} userFullName={user?.user_metadata?.full_name} />
+                                <main className="flex-1 p-8 pb-10 overflow-y-auto">
+                                    {children}
+                                </main>
+                            </div>
+                        </DashboardDataProvider>
+                    </PrivacyProvider>
                 </div>
             </div>
         </div>

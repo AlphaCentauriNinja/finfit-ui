@@ -6,6 +6,8 @@ import PensionEditModal from './PensionEditModal'
 import PensionContributionModal from './PensionContributionModal'
 import PensionValueModal from './PensionValueModal'
 import PensionHistoryModal from './PensionHistoryModal'
+import { usePrivacy } from '@/app/dashboard/components/providers/PrivacyProvider'
+import { formatCurrency } from '@/lib/utils'
 
 type Props = {
     pension: {
@@ -30,6 +32,7 @@ const getPnlState = (value: number): PnlState => {
 }
 
 export default function PensionAccountCard({ pension, total }: Props) {
+    const { hideValues } = usePrivacy()
     const [isEditOpen, setIsEditOpen] = useState(false)
     const [isContributionOpen, setIsContributionOpen] = useState(false)
     const [isValueOpen, setIsValueOpen] = useState(false)
@@ -42,7 +45,7 @@ export default function PensionAccountCard({ pension, total }: Props) {
         return new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(date)
     })()
 
-    const pnlLabel = `${pension.pnl >= 0 ? '+' : ''}£${pension.pnl.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    const pnlLabel = hideValues ? (pension.pnl >= 0 ? "+****" : "****") : `${pension.pnl >= 0 ? '+' : ''}£${pension.pnl.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
     const pnlPctLabel = `${pension.pnlPercentage >= 0 ? '+' : ''}${pension.pnlPercentage.toFixed(2)}%`
     const pnlState = getPnlState(pension.pnl)
     const PnlIcon = pnlState === 'positive' ? ArrowUpRight : pnlState === 'negative' ? ArrowDownRight : Minus
@@ -57,7 +60,7 @@ export default function PensionAccountCard({ pension, total }: Props) {
             <div className="bg-white/5 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/10 hover:bg-white/10 transition-colors">
                 <h3 className="text-sm font-medium text-white/60">{pension.name}</h3>
                 <p className="text-2xl font-bold text-white mt-2">
-                    £{pension.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {formatCurrency(pension.value, hideValues)}
                 </p>
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                     <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${pnlPillTone}`}>
@@ -74,7 +77,7 @@ export default function PensionAccountCard({ pension, total }: Props) {
 
                 {pension.contributionTotal > 0 ? (
                     <p className="text-xs text-indigo-200/85 mt-1">
-                        Contributions added: £{pension.contributionTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        Contributions added: {hideValues ? "****" : `£${pension.contributionTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                     </p>
                 ) : null}
 

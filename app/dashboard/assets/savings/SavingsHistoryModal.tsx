@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Loader2, Pencil, Trash2, X, History } from 'lucide-react'
 import DatePickerField from '@/app/dashboard/components/DatePickerField'
+import DeleteActionModal from '@/app/dashboard/components/DeleteActionModal'
+import { usePrivacy } from '@/app/dashboard/components/providers/PrivacyProvider'
+import { formatCurrency } from '@/lib/utils'
 import type { DashboardSavingsAccount } from '@/lib/dashboard-data'
 
 type Props = {
@@ -26,6 +29,13 @@ type HistoryEntry = {
 const formatAmount = (value: number): string =>
     `£${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
+const formatAmountWithPrivacy = (value: number, hideValues: boolean): string => {
+    if (hideValues) {
+        return value > 0 ? "+****" : "****"
+    }
+    return `${value > 0 ? '+' : ''}£${Math.abs(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+}
+
 const formatDate = (isoDate: string): string => {
     const date = new Date(`${isoDate}T00:00:00`)
     if (Number.isNaN(date.getTime())) return isoDate
@@ -37,6 +47,7 @@ const formatDate = (isoDate: string): string => {
 }
 
 export default function SavingsHistoryModal({ isOpen, onClose, account }: Props) {
+    const { hideValues } = usePrivacy()
     const [entries, setEntries] = useState<HistoryEntry[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [loadError, setLoadError] = useState<string | null>(null)
@@ -83,8 +94,8 @@ export default function SavingsHistoryModal({ isOpen, onClose, account }: Props)
         } else {
             type RawEntry = { id: string; pot_id: string; savings_pots?: { name: string } | { name: string }[]; amount: string | number; date: string; name: string; created_at: string }
             setEntries((data || []).map((entry: RawEntry) => {
-                const potName = Array.isArray(entry.savings_pots) 
-                    ? entry.savings_pots[0]?.name 
+                const potName = Array.isArray(entry.savings_pots)
+                    ? entry.savings_pots[0]?.name
                     : entry.savings_pots?.name
                 return {
                     id: entry.id,
@@ -235,7 +246,7 @@ export default function SavingsHistoryModal({ isOpen, onClose, account }: Props)
                                             </td>
                                             <td className="px-6 py-4 text-white/70">{entry.name}</td>
                                             <td className={`px-6 py-4 font-semibold ${entry.amount > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                                                {entry.amount > 0 ? '+' : ''} {formatAmount(entry.amount)}
+                                                {formatAmountWithPrivacy(entry.amount, hideValues)}
                                             </td>
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center justify-center gap-2">
@@ -314,26 +325,16 @@ export default function SavingsHistoryModal({ isOpen, onClose, account }: Props)
                     </div>
                 )}
 
-                {/* Delete Confirmation */}
-                {deletingEntry && (
-                    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-                        <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-md" onClick={() => setDeletingEntry(null)} />
-                        <div className="relative w-full max-w-sm bg-[#0f172a] border border-white/10 rounded-2xl shadow-2xl p-6 text-center animate-in fade-in zoom-in-95 duration-200">
-                            <div className="w-12 h-12 rounded-full bg-rose-500/10 flex items-center justify-center text-rose-400 border border-rose-500/20 mx-auto mb-4">
-                                <Trash2 className="w-6 h-6" />
-                            </div>
-                            <h3 className="text-lg font-bold text-white mb-2">Delete Entry?</h3>
-                            <p className="text-sm text-white/60 mb-6">Are you sure you want to delete this history entry? The pot balance will be updated accordingly.</p>
-                            <div className="flex gap-3">
-                                <button type="button" onClick={() => setDeletingEntry(null)} className="flex-1 px-4 py-2.5 rounded-xl border border-rose-500/35 text-rose-300 text-sm font-semibold hover:bg-rose-500/10 transition-colors">Cancel</button>
-                                <button type="button" onClick={handleDelete} disabled={isDeletingEntry} className="flex-1 bg-rose-600 hover:bg-rose-500 text-white px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2">
-                                    {isDeletingEntry && <Loader2 className="w-4 h-4 animate-spin" />}
-                                    Delete
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
+                <DeleteActionModal
+                    isOpen={!!deletingEntry}
+                    onClose={() => setDeletingEntry(null)}
+                    onConfirm={handleDelete}
+                    title="Delete Entry?"
+                    message="Are you sure you want to delete this history entry? The pot balance will be updated accordingly."
+                    confirmText="Delete"
+                    cancelText="Cancel"
+                    isProcessing={isDeletingEntry}
+                />
             </div>
         </div>
     )

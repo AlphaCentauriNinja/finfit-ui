@@ -2,9 +2,11 @@
 
 import { ArrowDownRight, ArrowUpRight, Minus } from 'lucide-react'
 import { useDashboardData } from '@/app/dashboard/components/providers/DashboardDataProvider'
+import { usePrivacy } from '@/app/dashboard/components/providers/PrivacyProvider'
 import AddPensionButton from './AddPensionButton'
 import PensionAccountCard from './PensionAccountCard'
 import PensionPerformanceChart from './PensionPerformanceChart'
+import { formatCurrency } from '@/lib/utils'
 
 type PnlState = 'positive' | 'negative' | 'neutral'
 
@@ -17,11 +19,12 @@ const getPnlState = (value: number): PnlState => {
 
 export default function PensionPage() {
     const dashboardData = useDashboardData()
+    const { hideValues } = usePrivacy()
     const pensions = dashboardData.pension.accounts
     const total = dashboardData.pension.totalValue
     const totalPnlPerformance = dashboardData.pension.totalPnl
     const totalPnlPercentage = dashboardData.pension.totalPnlPercentage
-    const totalPnlLabel = `${totalPnlPerformance >= 0 ? '+' : ''}£${totalPnlPerformance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    const totalPnlLabel = hideValues ? (totalPnlPerformance >= 0 ? "+****" : "****") : `${totalPnlPerformance >= 0 ? '+' : ''}£${totalPnlPerformance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
     const totalPnlPctLabel = `${totalPnlPercentage >= 0 ? '+' : ''}${totalPnlPercentage.toFixed(2)}%`
     const totalPnlState = getPnlState(totalPnlPerformance)
     const TotalPnlIcon = totalPnlState === 'positive' ? ArrowUpRight : totalPnlState === 'negative' ? ArrowDownRight : Minus
@@ -41,7 +44,7 @@ export default function PensionPage() {
             <div className="mb-8 rounded-2xl border border-white/10 bg-white/5 p-6 shadow-sm backdrop-blur-sm">
                 <p className="text-sm font-medium text-white/60">Total Value</p>
                 <p className="mt-2 text-3xl font-bold text-white">
-                    £{total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {formatCurrency(total, hideValues)}
                 </p>
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                     <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${totalPnlPillTone}`}>

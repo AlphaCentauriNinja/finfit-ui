@@ -7,6 +7,8 @@ import EditAccountModal from './EditAccountModal'
 import SavingsTransactionModal from './SavingsTransactionModal'
 import SavingsHistoryModal from './SavingsHistoryModal'
 import SavingsPotsModal from './SavingsPotsModal'
+import { usePrivacy } from '@/app/dashboard/components/providers/PrivacyProvider'
+import { formatCurrency } from '@/lib/utils'
 
 type Props = {
     account: DashboardSavingsAccount
@@ -14,6 +16,7 @@ type Props = {
 }
 
 export default function SavingsAccountCard({ account, totalSavingsValue }: Props) {
+    const { hideValues } = usePrivacy()
     const [isEditOpen, setIsEditOpen] = useState(false)
     const [isDepositOpen, setIsDepositOpen] = useState(false)
     const [isHistoryOpen, setIsHistoryOpen] = useState(false)
@@ -26,7 +29,7 @@ export default function SavingsAccountCard({ account, totalSavingsValue }: Props
                     <div>
                         <h3 className="text-sm font-medium text-white/60">{account.name}</h3>
                         <p className="text-2xl font-bold text-white mt-1">
-                            £{account.totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            {formatCurrency(account.totalValue, hideValues)}
                         </p>
                     </div>
                     <div className="w-10 h-10 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-400 font-bold border border-indigo-500/20 group-hover/card:scale-110 transition-transform">
