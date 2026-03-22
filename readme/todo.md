@@ -30,3 +30,13 @@
     - Common £350.00
     - Weekly £1,250.00 to the right
 
+# Security
+- [ ] When adding Debt it should immeditaely show in the main page /dashboard with the message instead of Well done, no debt to in red the amount of debt and deduct from total net assets as it is a liability
+
+
+# Security
+- I want MFA
+- I want after 10 min of inactivity that it auto logs out 
+
+# Overview main page
+- the bar of the cards should be purple instead from white to green 

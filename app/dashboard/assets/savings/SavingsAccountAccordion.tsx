@@ -8,7 +8,7 @@ import PotOperationModal from './PotOperationModal'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import PensionOperationModal from '../pension/PensionOperationModal'
-
+import DeleteActionModal from '@/app/dashboard/components/DeleteActionModal'
 type Props = {
     accounts: DashboardSavingsAccount[]
 }
@@ -48,11 +48,15 @@ export default function SavingsAccountAccordion({ accounts }: Props) {
         setPotModalOpen(true)
     }
 
-    const handleDeletePot = async (potId: string, e: React.MouseEvent) => {
+    const handleDeletePot = (potId: string, e: React.MouseEvent) => {
         e.stopPropagation()
-        if (!confirm('Are you sure you want to delete this pot?')) return
-
         setDeletingPotId(potId)
+    }
+
+    const confirmDeletePot = async () => {
+        if (!deletingPotId) return
+
+        const potId = deletingPotId
         const supabase = createClient()
 
         await supabase.from('savings_pots').delete().eq('id', potId)
@@ -230,11 +234,14 @@ export default function SavingsAccountAccordion({ accounts }: Props) {
                 />
             )}
 
-            {/* Spinner for fast pot deletions */}
-            <PensionOperationModal
+            <DeleteActionModal
                 isOpen={!!deletingPotId}
-                title="Deleting Pot"
-                message="Please wait..."
+                onClose={() => setDeletingPotId(null)}
+                onConfirm={confirmDeletePot}
+                title="Delete Pot?"
+                message="Are you sure you want to delete this pot?"
+                confirmText="Delete"
+                isProcessing={false}
             />
         </div>
     )

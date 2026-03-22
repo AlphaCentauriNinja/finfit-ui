@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Loader2, Pencil, Trash2, X } from 'lucide-react'
 import PensionOperationModal from './PensionOperationModal'
 import DatePickerField from '@/app/dashboard/components/DatePickerField'
+import DeleteActionModal from '@/app/dashboard/components/DeleteActionModal'
 
 type Props = {
     isOpen: boolean
@@ -439,45 +440,15 @@ export default function PensionHistoryModal({ isOpen, onClose, pensionId, pensio
                 </div>
             ) : null}
 
-            {deletingEntry ? (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" onClick={() => setDeletingEntry(null)} />
-                    <div className="relative w-full max-w-md bg-[#0f172a] border border-white/10 rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                        <div className="p-6 border-b border-white/10">
-                            <h3 className="text-lg font-bold text-white">Delete Entry</h3>
-                            <p className="text-sm text-white/70 mt-2">
-                                This {deletingEntry.kind} entry will be deleted permanently.
-                            </p>
-                        </div>
-                        <div className="p-6 space-y-3">
-                            {deleteError ? (
-                                <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
-                                    {deleteError}
-                                </div>
-                            ) : null}
-                            <div className="flex gap-3">
-                                <button
-                                    type="button"
-                                    onClick={handleDelete}
-                                    disabled={isDeletingEntry}
-                                    className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 text-white px-4 py-3 text-sm font-semibold hover:bg-red-500 disabled:opacity-60 disabled:cursor-not-allowed"
-                                >
-                                    {isDeletingEntry ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                                    {isDeletingEntry ? 'Deleting...' : 'Delete'}
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setDeletingEntry(null)}
-                                    disabled={isDeletingEntry}
-                                    className="flex-1 rounded-xl border border-rose-500/35 text-rose-300 px-4 py-3 text-sm font-semibold hover:bg-rose-500/10 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-                                >
-                                    Cancel
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            ) : null}
+            <DeleteActionModal
+                isOpen={!!deletingEntry}
+                onClose={() => setDeletingEntry(null)}
+                onConfirm={handleDelete}
+                title="Delete Entry?"
+                message={deletingEntry ? `This ${deletingEntry.kind} entry will be deleted permanently.` : ''}
+                confirmText="Delete"
+                isProcessing={isDeletingEntry}
+            />
 
             <PensionOperationModal
                 isOpen={isSavingEdit || isDeletingEntry}

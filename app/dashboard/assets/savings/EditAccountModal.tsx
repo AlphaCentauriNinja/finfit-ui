@@ -4,6 +4,7 @@ import { FormEvent, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Loader2, Trash2, X } from 'lucide-react'
+import DeleteActionModal from '@/app/dashboard/components/DeleteActionModal'
 
 type Props = {
     isOpen: boolean
@@ -93,8 +94,7 @@ export default function EditAccountModal({ isOpen, onClose, accountId, initialNa
                     </button>
                 </div>
 
-                {!showDeleteConfirm ? (
-                    <form onSubmit={handleSave} className="p-6 space-y-4">
+                <form onSubmit={handleSave} className="p-6 space-y-4">
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-white/80">Account Name</label>
                             <input
@@ -143,44 +143,17 @@ export default function EditAccountModal({ isOpen, onClose, accountId, initialNa
                             </div>
                         </div>
                     </form>
-                ) : (
-                    <div className="p-6 space-y-4">
-                        <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-4">
-                            <h3 className="text-rose-400 font-bold mb-2">Delete this account?</h3>
-                            <p className="text-sm text-rose-200">
-                                Are you sure you want to permanently delete <strong>{initialName}</strong>?
-                                This will also delete all of the pots inside. This action cannot be undone.
-                            </p>
-                        </div>
-
-                        {error && (
-                            <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
-                                {error}
-                            </div>
-                        )}
-
-                        <div className="flex gap-3 pt-2">
-                            <button
-                                type="button"
-                                onClick={() => setShowDeleteConfirm(false)}
-                                disabled={isDeleting}
-                                className="flex-1 rounded-xl border border-rose-500/35 text-rose-300 px-4 py-3 text-sm font-semibold hover:bg-rose-500/10 transition-colors"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                type="button"
-                                onClick={handleDelete}
-                                disabled={isDeleting}
-                                className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-rose-600 text-white px-4 py-3 text-sm font-semibold hover:bg-rose-500 disabled:opacity-60 disabled:cursor-not-allowed"
-                            >
-                                {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                                {isDeleting ? 'Deleting...' : 'Delete Permanently'}
-                            </button>
-                        </div>
-                    </div>
-                )}
             </div>
+
+            <DeleteActionModal
+                isOpen={showDeleteConfirm}
+                onClose={() => setShowDeleteConfirm(false)}
+                onConfirm={handleDelete}
+                title="Delete Account?"
+                message={`Are you sure you want to permanently delete "${initialName}"? This will also delete all of the pots inside. This action cannot be undone.`}
+                confirmText="Delete Permanently"
+                isProcessing={isDeleting}
+            />
         </div>
     )
 }

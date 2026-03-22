@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Loader2, Trash2, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import PensionOperationModal from './PensionOperationModal'
-import ConfirmActionModal from '@/app/components/ConfirmActionModal'
+import DeleteActionModal from '@/app/dashboard/components/DeleteActionModal'
 
 type Props = {
     isOpen: boolean
@@ -138,14 +138,13 @@ export default function PensionEditModal({ isOpen, onClose, pensionId, initialNa
                 </form>
             </div>
 
-            <ConfirmActionModal
+            <DeleteActionModal
                 isOpen={isDeleteConfirmOpen}
                 onClose={handleCancelDeleteOperation}
                 onConfirm={handleDelete}
-                title="Delete Pension Account"
+                title="Delete Pension Account?"
                 message="This pension and all its data will be deleted permanently."
-                confirmText="YES"
-                cancelText="CANCEL"
+                confirmText="Delete"
                 isProcessing={isDeleting}
             />
 

@@ -22,7 +22,6 @@ import {
 const topLinks = [
     { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Pension', href: '/dashboard/assets/pension', icon: Briefcase },
-    { name: 'Real Estate', href: '/dashboard/assets/real-estate', icon: Home },
     { name: 'Budget', href: '/dashboard/budget', icon: Wallet },
     { name: 'Debt', href: '/dashboard/debt', icon: CreditCard },
 ]
@@ -32,6 +31,7 @@ const assetLinks = [
     { name: 'Investments', href: '/dashboard/assets/investments', icon: TrendingUp },
     { name: 'Crypto', href: '/dashboard/assets/crypto', icon: Coins },
     { name: 'Bullion', href: '/dashboard/assets/bullion', icon: Gem },
+    { name: 'Real Estate', href: '/dashboard/assets/real-estate', icon: Home },
 ]
 
 export default function Sidebar() {

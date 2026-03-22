@@ -3,7 +3,7 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import { AlertTriangle, CreditCard, Edit3, Loader2, Plus, Trash2, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import ConfirmActionModal from '@/app/components/ConfirmActionModal'
+import DeleteActionModal from '@/app/dashboard/components/DeleteActionModal'
 import { usePrivacy } from '@/app/dashboard/components/providers/PrivacyProvider'
 import { formatCurrency } from '@/lib/utils'
 
@@ -704,14 +704,13 @@ export default function DebtPage() {
                 />
             ) : null}
 
-            <ConfirmActionModal
+            <DeleteActionModal
                 isOpen={Boolean(confirmDeleteDebtId)}
                 onClose={() => setConfirmDeleteDebtId(null)}
-                title="Delete debt entry"
+                onConfirm={confirmDeleteDebt}
+                title="Delete Debt Entry?"
                 message={`Are you sure you want to delete "${debts.find((d) => d.id === confirmDeleteDebtId)?.debtName ?? 'this debt entry'}"?`}
                 confirmText="Delete"
-                cancelText="Cancel"
-                onConfirm={confirmDeleteDebt}
                 isProcessing={Boolean(deletingDebtId)}
             />
         </div>

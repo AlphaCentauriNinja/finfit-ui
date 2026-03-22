@@ -7,6 +7,7 @@ import { Pencil, Trash2, X, PlusCircle, LayoutGrid } from 'lucide-react'
 import type { DashboardSavingsAccount, DashboardSavingsPot } from '@/lib/dashboard-data'
 import PotOperationModal from './PotOperationModal'
 import PensionOperationModal from '../pension/PensionOperationModal'
+import DeleteActionModal from '@/app/dashboard/components/DeleteActionModal'
 
 type Props = {
     isOpen: boolean
@@ -30,15 +31,19 @@ export default function SavingsPotsModal({ isOpen, onClose, account }: Props) {
         setPotModalOpen(true)
     }
 
-    const handleDeletePot = async (potId: string) => {
-        if (!confirm('Are you sure you want to delete this pot?')) return
-
-        setDeletingPotId(potId)
+    const confirmDeletePot = async () => {
+        if (!deletingPotId) return
+        
+        const potId = deletingPotId
         const supabase = createClient()
         await supabase.from('savings_pots').delete().eq('id', potId)
 
         setDeletingPotId(null)
         router.refresh()
+    }
+
+    const handleDeletePot = (potId: string) => {
+        setDeletingPotId(potId)
     }
 
     if (!isOpen) return null
@@ -165,10 +170,14 @@ export default function SavingsPotsModal({ isOpen, onClose, account }: Props) {
                 />
             )}
 
-            <PensionOperationModal
+            <DeleteActionModal
                 isOpen={!!deletingPotId}
-                title="Deleting Pot"
-                message="Please wait while we remove this pot from your account."
+                onClose={() => setDeletingPotId(null)}
+                onConfirm={confirmDeletePot}
+                title="Delete Pot?"
+                message={`Are you sure you want to delete this pot?`}
+                confirmText="Delete"
+                isProcessing={false} // Add a state if needed, but it's fast
             />
 
             <style jsx>{`

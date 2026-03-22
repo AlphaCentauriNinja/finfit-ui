@@ -2,11 +2,11 @@
 
 import { FormEvent, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { AlertTriangle, BriefcaseBusiness, CreditCard, Loader2, Pencil, Plus, Trash2, Wallet, X } from 'lucide-react'
+import { AlertTriangle, BriefcaseBusiness, ChevronRight, CreditCard, Loader2, List, Pencil, Plus, Trash2, TrendingUp, Wallet, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useDashboardData } from '@/components/providers/DashboardDataProvider'
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts'
-import ConfirmActionModal from '@/app/components/ConfirmActionModal'
+import DeleteActionModal from '@/app/dashboard/components/DeleteActionModal'
 
 type BaseModalProps = {
     isOpen: boolean
@@ -734,13 +734,13 @@ function EditExpenditureModal({
                 </form>
             </div>
 
-            <ConfirmActionModal
+            <DeleteActionModal
                 isOpen={showDeleteConfirm}
                 onClose={() => setShowDeleteConfirm(false)}
                 onConfirm={handleDelete}
-                title="Delete Expenditure"
+                title="Delete Expenditure?"
                 message="Are you sure you want to delete this expenditure? This action cannot be undone."
-                confirmText="Delete Expenditure"
+                confirmText="Delete"
                 isProcessing={isDeleting}
             />
         </div>
@@ -897,13 +897,13 @@ function EditCapitalModal({
                 </form>
             </div>
 
-            <ConfirmActionModal
+            <DeleteActionModal
                 isOpen={showDeleteConfirm}
                 onClose={() => setShowDeleteConfirm(false)}
                 onConfirm={handleDelete}
-                title="Delete Capital"
+                title="Delete Capital?"
                 message="Are you sure you want to delete this capital item? This action cannot be undone."
-                confirmText="Delete Capital"
+                confirmText="Delete"
                 isProcessing={isDeleting}
             />
         </div>
@@ -1209,111 +1209,127 @@ export default function BudgetPage() {
             <div className="mt-8 grid gap-6 md:grid-cols-2">
                 {/* Core Expenses Card */}
                 <div className="bg-white/5 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/10 hover:bg-white/10 transition-colors flex flex-col h-full group/card">
-                    <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-start justify-between mb-2">
                         <div>
-                            <h3 className="text-lg font-semibold text-white">Core Expenses</h3>
-                            <p className="text-sm text-white/60 mt-1">Monthly committed outgoings</p>
+                            <h3 className="text-sm font-medium text-white/60">Core Expenses</h3>
+                            <p className="text-2xl font-bold text-white mt-1">
+                                £{budgetData.totalExpenditure.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </p>
                         </div>
                         <div className="w-10 h-10 rounded-full bg-rose-500/10 flex items-center justify-center text-rose-400 font-bold border border-rose-500/20 group-hover/card:scale-110 transition-transform">
                             <CreditCard className="w-5 h-5" />
                         </div>
                     </div>
 
+                    <div className="w-full bg-white/5 rounded-full h-1.5 mt-4 mb-6">
+                        <div
+                            className="bg-rose-400 h-1.5 rounded-full transition-all duration-500"
+                            style={{ width: `${budgetData.profile.monthlyNetSalary > 0 ? Math.min((budgetData.totalExpenditure / budgetData.profile.monthlyNetSalary) * 100, 100) : 0}%` }}
+                        />
+                    </div>
+
                     <div className="flex-1 space-y-4">
-                        <div className="text-center">
-                            <p className="text-3xl font-bold text-rose-400">
-                                £{budgetData.totalExpenditure.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            </p>
-                            <p className="text-sm text-rose-300/80 mt-1">{outgoingLabel}</p>
-                        </div>
-
-                        <div className="space-y-2">
-                            {expenditures.slice(0, 3).map((exp) => (
-                                <div key={exp.id} className="flex items-center justify-between text-sm">
-                                    <span className="text-white/80 truncate max-w-[60%]">{exp.name}</span>
-                                    <span className="text-rose-300 font-medium">
-                                        £{exp.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                    </span>
+                        <button
+                            onClick={() => setIsExpenditureDetailOpen(true)}
+                            className="w-full text-left group/detail"
+                        >
+                            <div className="p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 hover:border-rose-500/30 transition-all duration-300">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/10 group-hover/detail:scale-110 transition-transform">
+                                            <List className="w-4 h-4" />
+                                        </div>
+                                        <div>
+                                            <p className="text-xs font-semibold text-white/40 uppercase tracking-wider">Expenses</p>
+                                            <p className="text-sm font-medium text-white mt-0.5">
+                                                {expenditures.length} {expenditures.length === 1 ? 'Expense' : 'Expenses'} · {outgoingLabel}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <ChevronRight className="w-4 h-4 text-white/20 group-hover/detail:text-white/60 group-hover/detail:translate-x-1 transition-all" />
                                 </div>
-                            ))}
-                            {expenditures.length > 3 && (
-                                <p className="text-xs text-white/50 text-center">
-                                    +{expenditures.length - 3} more expenses
-                                </p>
-                            )}
-                        </div>
+                            </div>
+                        </button>
+                    </div>
 
-                        <div className="flex gap-2 pt-2">
-                            <button
-                                onClick={() => setIsAddExpenditureOpen(true)}
-                                className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg border border-indigo-500/30 bg-indigo-500/10 px-3 py-2 text-xs font-semibold text-indigo-200 hover:bg-indigo-500/20 transition-colors"
-                            >
-                                <Plus className="h-3.5 w-3.5" />
-                                Add
-                            </button>
-                            <button
-                                onClick={() => setIsExpenditureDetailOpen(true)}
-                                className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-white/80 hover:bg-white/10 transition-colors"
-                            >
-                                <Pencil className="h-3.5 w-3.5" />
-                                View All
-                            </button>
-                        </div>
+                    <div className="mt-8 flex flex-wrap items-center gap-2">
+                        <button
+                            onClick={() => setIsAddExpenditureOpen(true)}
+                            className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-xs font-semibold text-white/85 hover:bg-white/10 hover:text-white transition-colors"
+                        >
+                            <Plus className="h-3.5 w-3.5" />
+                            Add
+                        </button>
+                        <button
+                            onClick={() => setIsExpenditureDetailOpen(true)}
+                            className="inline-flex items-center justify-center gap-2 rounded-lg border border-rose-400/30 bg-rose-500/10 px-3 py-2 text-xs font-semibold text-rose-200 hover:bg-rose-500/20 hover:text-rose-100 transition-colors"
+                        >
+                            <Pencil className="h-3.5 w-3.5" />
+                            View All
+                        </button>
                     </div>
                 </div>
 
                 {/* Saving and Investments Card */}
                 <div className="bg-white/5 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/10 hover:bg-white/10 transition-colors flex flex-col h-full group/card">
-                    <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-start justify-between mb-2">
                         <div>
-                            <h3 className="text-lg font-semibold text-white">Saving & Investments</h3>
-                            <p className="text-sm text-white/60 mt-1">Capital expenditures</p>
+                            <h3 className="text-sm font-medium text-white/60">Saving & Investments</h3>
+                            <p className="text-2xl font-bold text-white mt-1">
+                                £{budgetData.capital.reduce((sum, cap) => sum + cap.amount, 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </p>
                         </div>
                         <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-400 font-bold border border-amber-500/20 group-hover/card:scale-110 transition-transform">
-                            <Wallet className="w-5 h-5" />
+                            <TrendingUp className="w-5 h-5" />
                         </div>
                     </div>
 
+                    <div className="w-full bg-white/5 rounded-full h-1.5 mt-4 mb-6">
+                        <div
+                            className="bg-amber-400 h-1.5 rounded-full transition-all duration-500"
+                            style={{ width: `${budgetData.profile.monthlyNetSalary > 0 ? Math.min((budgetData.capital.reduce((sum, cap) => sum + cap.amount, 0) / budgetData.profile.monthlyNetSalary) * 100, 100) : 0}%` }}
+                        />
+                    </div>
+
                     <div className="flex-1 space-y-4">
-                        <div className="text-center">
-                            <p className="text-3xl font-bold text-amber-400">
-                                £{budgetData.capital.reduce((sum, cap) => sum + cap.amount, 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            </p>
-                            <p className="text-sm text-amber-300/80 mt-1">Monthly capital</p>
-                        </div>
-
-                        <div className="space-y-2">
-                            {budgetData.capital.slice(0, 3).map((cap) => (
-                                <div key={cap.id} className="flex items-center justify-between text-sm">
-                                    <span className="text-white/80 truncate max-w-[60%]">{cap.name}</span>
-                                    <span className="text-amber-300 font-medium">
-                                        £{cap.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                    </span>
+                        <button
+                            onClick={() => setIsCapitalDetailOpen(true)}
+                            className="w-full text-left group/detail"
+                        >
+                            <div className="p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 hover:border-amber-500/30 transition-all duration-300">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/10 group-hover/detail:scale-110 transition-transform">
+                                            <List className="w-4 h-4" />
+                                        </div>
+                                        <div>
+                                            <p className="text-xs font-semibold text-white/40 uppercase tracking-wider">Capital</p>
+                                            <p className="text-sm font-medium text-white mt-0.5">
+                                                {budgetData.capital.length} {budgetData.capital.length === 1 ? 'Item' : 'Items'} · Monthly capital
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <ChevronRight className="w-4 h-4 text-white/20 group-hover/detail:text-white/60 group-hover/detail:translate-x-1 transition-all" />
                                 </div>
-                            ))}
-                            {budgetData.capital.length > 3 && (
-                                <p className="text-xs text-white/50 text-center">
-                                    +{budgetData.capital.length - 3} more items
-                                </p>
-                            )}
-                        </div>
+                            </div>
+                        </button>
+                    </div>
 
-                        <div className="flex gap-2 pt-2">
-                            <button
-                                onClick={() => setIsAddCapitalOpen(true)}
-                                className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-200 hover:bg-amber-500/20 transition-colors"
-                            >
-                                <Plus className="h-3.5 w-3.5" />
-                                Add
-                            </button>
-                            <button
-                                onClick={() => setIsCapitalDetailOpen(true)}
-                                className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-white/80 hover:bg-white/10 transition-colors"
-                            >
-                                <Pencil className="h-3.5 w-3.5" />
-                                View All
-                            </button>
-                        </div>
+                    <div className="mt-8 flex flex-wrap items-center gap-2">
+                        <button
+                            onClick={() => setIsAddCapitalOpen(true)}
+                            className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-xs font-semibold text-white/85 hover:bg-white/10 hover:text-white transition-colors"
+                        >
+                            <Plus className="h-3.5 w-3.5" />
+                            Add
+                        </button>
+                        <button
+                            onClick={() => setIsCapitalDetailOpen(true)}
+                            className="inline-flex items-center justify-center gap-2 rounded-lg border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-200 hover:bg-amber-500/20 hover:text-amber-100 transition-colors"
+                        >
+                            <Pencil className="h-3.5 w-3.5" />
+                            View All
+                        </button>
                     </div>
                 </div>
             </div>
@@ -1372,13 +1388,13 @@ export default function BudgetPage() {
             ) : null}
 
             {deletingCapitalId ? (
-                <ConfirmActionModal
+                <DeleteActionModal
                     isOpen={Boolean(deletingCapitalId)}
                     onClose={() => setDeletingCapitalId(null)}
-                    title="Delete Capital Item"
+                    onConfirm={handleDeleteCapital}
+                    title="Delete Capital Item?"
                     message={`Are you sure you want to delete "${budgetData.capital.find((item) => item.id === deletingCapitalId)?.name ?? 'this item'}"? This action cannot be undone.`}
                     confirmText="Delete"
-                    onConfirm={handleDeleteCapital}
                 />
             ) : null}
 
