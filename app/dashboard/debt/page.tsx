@@ -1,11 +1,11 @@
 'use client'
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { AlertTriangle, CreditCard, Edit3, Loader2, Plus, Trash2, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import DeleteActionModal from '@/app/dashboard/components/DeleteActionModal'
 import { usePrivacy } from '@/app/dashboard/components/providers/PrivacyProvider'
-import { formatCurrency } from '@/lib/utils'
 
 type DebtTypeValue = 'credit_card' | 'private_loan' | 'student_loan' | 'car_finance' | 'mortgage' | 'other'
 
@@ -335,6 +335,7 @@ function EditDebtModal({ onClose, entry, onSubmit }: EditDebtModalProps) {
 
 export default function DebtPage() {
     const supabase = useMemo(() => createClient(), [])
+    const router = useRouter()
     const { hideValues } = usePrivacy()
     const [userId, setUserId] = useState<string | null>(null)
     const [debts, setDebts] = useState<DebtEntry[]>([])
@@ -481,8 +482,9 @@ export default function DebtPage() {
         }
 
         setDebts((previous) => [entry, ...previous].sort((a, b) => b.amount - a.amount))
+        router.refresh()
         return { ok: true }
-    }, [supabase, userId])
+    }, [supabase, userId, router])
 
     const updateDebt = useCallback(async (id: string, payload: DebtModalPayload): Promise<ModalResult> => {
         if (!userId) return { ok: false, error: 'Session not found. Please sign in again.' }
@@ -530,8 +532,9 @@ export default function DebtPage() {
                 .map((debt) => (debt.id === id ? entry : debt))
                 .sort((a, b) => b.amount - a.amount)
         )
+        router.refresh()
         return { ok: true }
-    }, [supabase, userId])
+    }, [supabase, userId, router])
 
     const deleteDebt = useCallback(async (id: string): Promise<ModalResult> => {
         if (!userId) return { ok: false, error: 'Session not found. Please sign in again.' }
@@ -547,8 +550,9 @@ export default function DebtPage() {
         }
 
         setDebts((previous) => previous.filter((debt) => debt.id !== id))
+        router.refresh()
         return { ok: true }
-    }, [supabase, userId])
+    }, [supabase, userId, router])
 
     const editingDebt = useMemo(
         () => debts.find((debt) => debt.id === editingDebtId) ?? null,

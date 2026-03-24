@@ -38,8 +38,11 @@ export default function AssetCard({
 
             <div className="w-full bg-white/5 rounded-full h-1.5 overflow-hidden">
                 <div
-                    className="bg-gradient-to-r from-white to-emerald-400 h-1.5 rounded-full transition-all duration-1000 ease-out"
-                    style={{ width: `${allocation}%` }}
+                    className="h-1.5 rounded-full transition-all duration-1000 ease-out"
+                    style={{
+                        width: `${allocation}%`,
+                        background: 'linear-gradient(90deg, #c084fc 0%, #9333ea 100%)',
+                    }}
                 />
             </div>
         </div>
