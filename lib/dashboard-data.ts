@@ -65,6 +65,16 @@ export type DebtEntryRow = {
     amount: number | string | null
 }
 
+export type CryptoAssetRow = {
+    id: string
+    ticker: string
+    name: string
+    amount: number | string | null
+    usd: number | string | null
+    invested_gbp: number | string | null
+    created_at: string
+}
+
 type ValueSnapshot = {
     amount: number
     valueDate: string
@@ -139,6 +149,19 @@ export type DashboardDataSnapshot = {
         totalAssets: number
         assetsWithAllocation: DashboardAsset[]
     }
+    crypto: {
+        assets: {
+            id: string
+            ticker: string
+            name: string
+            amount: number
+            usd: number
+            investedGbp: number
+        }[]
+        totalValue: number
+        totalInvested: number
+        loadError: boolean
+    }
     pension: {
         accounts: DashboardPensionAccount[]
         totalValue: number
@@ -187,6 +210,8 @@ type BuildDashboardSnapshotInput = {
     savingsLoadError?: boolean
     debtEntries?: DebtEntryRow[] | null
     debtLoadError?: boolean
+    cryptoAssets?: CryptoAssetRow[] | null
+    cryptoLoadError?: boolean
 }
 
 const toNumber = (value: number | string | null | undefined): number => {
@@ -302,6 +327,8 @@ export const buildDashboardSnapshot = ({
     savingsLoadError = false,
     debtEntries = [],
     debtLoadError = false,
+    cryptoAssets = [],
+    cryptoLoadError = false,
 }: BuildDashboardSnapshotInput): DashboardDataSnapshot => {
     const accountRows = pensionAccounts ?? []
     const contributionRows = pensionContributions ?? []
@@ -568,12 +595,42 @@ export const buildDashboardSnapshot = ({
 
     const totalSavingsValue = savingsAccountsSummary.reduce((sum, acc) => sum + acc.totalValue, 0)
 
+    const cryptoAssetsSummary = (cryptoAssets ?? []).map((row) => {
+        const amount = toNumber(row.amount);
+        const usd = toNumber(row.usd);
+        const investedGbp = toNumber(row.invested_gbp);
+        
+        return {
+            id: row.id,
+            ticker: row.ticker,
+            name: row.name,
+            amount: Number.isFinite(amount) ? amount : 0,
+            usd: Number.isFinite(usd) ? usd : 0,
+            investedGbp: Number.isFinite(investedGbp) ? investedGbp : 0,
+            marketValueGbp: 0, // This is dynamic based on live price, calculated in the component normally, but we provide a base snapshot
+        };
+    }).filter(asset => asset.amount > 0);
+
+    const USD_TO_GBP = 0.746;
+    const totalCryptoValueSnapshot = cryptoAssetsSummary.reduce(
+        (sum, asset) => sum + (asset.amount * asset.usd * USD_TO_GBP), 
+        0
+    );
+    const totalCryptoInvested = cryptoAssetsSummary.reduce(
+        (sum, asset) => sum + asset.investedGbp, 
+        0
+    );
+
     const mergedAssets = mockedAssets.map((asset) => {
         if (asset.name === 'Pension') {
             return { ...asset, value: totalPensionValue }
         }
         if (asset.name === 'Savings') {
             return { ...asset, value: totalSavingsValue }
+        }
+        if (asset.name === 'Crypto' && cryptoAssets !== undefined) {
+            // Only override if cryptoAssets were fetched (even if empty)
+            return { ...asset, value: totalCryptoValueSnapshot }
         }
         return asset
     })
@@ -723,6 +780,12 @@ export const buildDashboardSnapshot = ({
         portfolio: {
             totalAssets,
             assetsWithAllocation,
+        },
+        crypto: {
+            assets: cryptoAssetsSummary,
+            totalValue: totalCryptoValueSnapshot,
+            totalInvested: totalCryptoInvested,
+            loadError: cryptoLoadError || false,
         },
         pension: {
             accounts: pensionAccountsSummary,

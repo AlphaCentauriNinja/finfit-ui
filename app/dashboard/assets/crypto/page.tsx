@@ -1,8 +1,12 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { Edit3, History, Wifi, WifiOff, Plus, X } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Trash2, History, Wifi, WifiOff, Plus, X, Loader2, Upload } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { useDashboardData } from '@/app/dashboard/components/providers/DashboardDataProvider'
+import { ImportLedgerModal } from './ImportLedgerModal'
+import DeleteActionModal from '@/app/dashboard/components/DeleteActionModal'
 
 import {
     CryptoRow,
@@ -46,26 +50,21 @@ function formatUsd(value: number): string {
 type AddCoinModalProps = {
     isOpen: boolean
     onClose: () => void
-    onAdd: (payload: {
-        ticker: string
-        name: string
-        amount: number
-        usd: number
-        investedGbp: number
-    }) => void
 }
 
-function AddCoinModal({ isOpen, onClose, onAdd }: AddCoinModalProps) {
+function AddCoinModal({ isOpen, onClose }: AddCoinModalProps) {
     const [ticker, setTicker] = useState('')
     const [name, setName] = useState('')
     const [amount, setAmount] = useState('')
     const [usd, setUsd] = useState('')
     const [invested, setInvested] = useState('')
     const [error, setError] = useState<string | null>(null)
+    const [isSaving, setIsSaving] = useState(false)
+    const router = useRouter()
 
     if (!isOpen) return null
 
-    const handleSubmit = (event: React.FormEvent) => {
+    const handleSubmit = async (event: React.FormEvent) => {
         event.preventDefault()
         setError(null)
 
@@ -95,13 +94,30 @@ function AddCoinModal({ isOpen, onClose, onAdd }: AddCoinModalProps) {
             return
         }
 
-        onAdd({
+        setIsSaving(true)
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+
+        if (!user) {
+            setError('You must be logged in to add a coin.')
+            setIsSaving(false)
+            return
+        }
+
+        const { error: insertError } = await supabase.from('crypto_assets').insert({
+            user_id: user.id,
             ticker: cleanTicker,
             name: cleanName,
             amount: parsedAmount,
             usd: parsedUsd,
-            investedGbp: parsedInvested,
+            invested_gbp: parsedInvested,
         })
+
+        if (insertError) {
+            setError(insertError.message || 'Failed to add crypto asset.')
+            setIsSaving(false)
+            return
+        }
 
         setTicker('')
         setName('')
@@ -109,6 +125,8 @@ function AddCoinModal({ isOpen, onClose, onAdd }: AddCoinModalProps) {
         setUsd('')
         setInvested('')
         setError(null)
+        setIsSaving(false)
+        router.refresh()
         onClose()
     }
 
@@ -198,16 +216,18 @@ function AddCoinModal({ isOpen, onClose, onAdd }: AddCoinModalProps) {
                         <button
                             type="button"
                             onClick={onClose}
-                            className="flex-1 rounded-xl bg-red-600 px-4 py-3 text-sm font-semibold text-white hover:bg-red-500"
+                            disabled={isSaving}
+                            className="flex-1 rounded-xl bg-red-600 px-4 py-3 text-sm font-semibold text-white hover:bg-red-500 disabled:opacity-50"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
-                            className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white hover:bg-indigo-500"
+                            disabled={isSaving}
+                            className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white hover:bg-indigo-500 disabled:opacity-50"
                         >
-                            <Plus className="h-4 w-4" />
-                            Add Coin
+                            {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                            {isSaving ? 'Saving...' : 'Add Coin'}
                         </button>
                     </div>
                 </form>
@@ -217,11 +237,35 @@ function AddCoinModal({ isOpen, onClose, onAdd }: AddCoinModalProps) {
 }
 
 export default function CryptoPage() {
-    const [cryptoAssets, setCryptoAssets] = useState<CryptoRow[]>(initialCryptoRows)
+    const { crypto } = useDashboardData()
     const [liveUsdByTicker, setLiveUsdByTicker] = useState<Record<string, number>>({})
     const [isSocketConnected, setIsSocketConnected] = useState(false)
     const [preferredCurrency, setPreferredCurrency] = useState<CurrencyCode>('GBP')
     const [isAddCoinOpen, setIsAddCoinOpen] = useState(false)
+    const [isImportOpen, setIsImportOpen] = useState(false)
+    const [coinToDelete, setCoinToDelete] = useState<{ id: string; name: string } | null>(null)
+    const [isDeleting, setIsDeleting] = useState(false)
+    const router = useRouter()
+
+    const handleDeleteCoin = async () => {
+        if (!coinToDelete) return
+
+        setIsDeleting(true)
+        const supabase = createClient()
+        const { error } = await supabase
+            .from('crypto_assets')
+            .delete()
+            .eq('id', coinToDelete.id)
+
+        setIsDeleting(false)
+
+        if (!error) {
+            setCoinToDelete(null)
+            router.refresh()
+        } else {
+            console.error('Error deleting coin:', error)
+        }
+    }
 
     useEffect(() => {
         let isMounted = true
@@ -298,12 +342,11 @@ export default function CryptoPage() {
     }, [])
 
     const calculatedRows = useMemo(() => {
-        return cryptoAssets.map((row) => {
+        return crypto.assets.map((row) => {
             const liveUsd = liveUsdByTicker[row.ticker] ?? row.usd
             const marketValueGbp = row.amount * liveUsd * USD_TO_GBP
             const normalizedName =
                 row.name?.trim() ||
-                row.description?.trim() ||
                 DEFAULT_COIN_NAME_BY_TICKER[row.ticker.toUpperCase()] ||
                 row.ticker
 
@@ -314,7 +357,7 @@ export default function CryptoPage() {
                 marketValueGbp,
             }
         })
-    }, [cryptoAssets, liveUsdByTicker])
+    }, [crypto.assets, liveUsdByTicker])
 
     const totalInvested = useMemo(
         () => calculatedRows.reduce((sum, row) => sum + row.investedGbp, 0),
@@ -328,29 +371,6 @@ export default function CryptoPage() {
     const pnlPct = totalInvested > 0 ? (pnl / totalInvested) * 100 : 0
     const isUp = pnl > 0
     const isDown = pnl < 0
-    const handleAddCoin = (payload: {
-        ticker: string
-        name: string
-        amount: number
-        usd: number
-        investedGbp: number
-    }) => {
-        setCryptoAssets((previous) => {
-            const nextId = `C.${previous.length + 1}`
-            return [
-                ...previous,
-                {
-                    id: nextId,
-                    ticker: payload.ticker,
-                    name: payload.name,
-                    amount: payload.amount,
-                    usd: payload.usd,
-                    marketValueGbp: payload.amount * payload.usd * USD_TO_GBP,
-                    investedGbp: payload.investedGbp,
-                },
-            ]
-        })
-    }
 
     return (
         <div className="w-full">
@@ -370,6 +390,14 @@ export default function CryptoPage() {
                         <Plus className="h-3.5 w-3.5" />
                         Add Coin
                     </button>
+                    <button
+                        type="button"
+                        onClick={() => setIsImportOpen(true)}
+                        className="inline-flex items-center gap-2 rounded-lg border border-emerald-400/30 bg-emerald-500/15 px-3 py-2 text-xs font-semibold text-emerald-200 hover:bg-emerald-500/25"
+                    >
+                        <Upload className="h-3.5 w-3.5" />
+                        Import
+                    </button>
                     <div className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs ${isSocketConnected ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300' : 'border-amber-500/30 bg-amber-500/10 text-amber-300'}`}>
                         {isSocketConnected ? <Wifi className="w-3.5 h-3.5" /> : <WifiOff className="w-3.5 h-3.5" />}
                         {isSocketConnected ? 'Connected' : 'Reconnecting'}
@@ -377,33 +405,41 @@ export default function CryptoPage() {
                 </div>
             </div>
 
-            <div className="mb-8 grid gap-6 md:grid-cols-3">
-                <div className="bg-white/5 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/10">
-                    <p className="text-sm font-medium text-white/60">Current Value</p>
-                    <p className="text-3xl font-bold text-white mt-2">{formatCurrency(convertFromGbp(totalCurrent, preferredCurrency), preferredCurrency)}</p>
-                </div>
-                <div className="bg-white/5 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/10">
-                    <p className="text-sm font-medium text-white/60">Total Invested</p>
-                    <p className="text-3xl font-bold text-white mt-2">{formatCurrency(convertFromGbp(totalInvested, preferredCurrency), preferredCurrency)}</p>
-                </div>
-                <div className="bg-white/5 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/10">
-                    <p className="text-sm font-medium text-white/60">PNL</p>
-                    <div className="flex items-center gap-2 mt-2">
-                        <p className={`text-3xl font-bold ${isUp ? 'text-emerald-400' : isDown ? 'text-rose-400' : 'text-white'}`}>
-                            {formatSignedCurrency(convertFromGbp(pnl, preferredCurrency), preferredCurrency)}
-                        </p>
-                        <span className={`text-xs px-2 py-1 rounded-md ${isUp ? 'text-emerald-300 bg-emerald-500/10' : isDown ? 'text-rose-300 bg-rose-500/10' : 'text-white/70 bg-white/10'}`}>
-                            {pnl >= 0 ? '+' : ''}{pnlPct.toFixed(2)}%
-                        </span>
+            {crypto.assets.length > 0 ? (
+                <div className="mb-8 grid gap-6 md:grid-cols-3">
+                    <div className="bg-white/5 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/10">
+                        <p className="text-sm font-medium text-white/60">Current Value</p>
+                        <p className="text-3xl font-bold text-white mt-2">{formatCurrency(convertFromGbp(totalCurrent, preferredCurrency), preferredCurrency)}</p>
+                    </div>
+                    <div className="bg-white/5 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/10">
+                        <p className="text-sm font-medium text-white/60">Total Invested</p>
+                        <p className="text-3xl font-bold text-white mt-2">{formatCurrency(convertFromGbp(totalInvested, preferredCurrency), preferredCurrency)}</p>
+                    </div>
+                    <div className="bg-white/5 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/10">
+                        <p className="text-sm font-medium text-white/60">PNL</p>
+                        <div className="flex items-center gap-2 mt-2">
+                            <p className={`text-3xl font-bold ${isUp ? 'text-emerald-400' : isDown ? 'text-rose-400' : 'text-white'}`}>
+                                {formatSignedCurrency(convertFromGbp(pnl, preferredCurrency), preferredCurrency)}
+                            </p>
+                            <span className={`text-xs px-2 py-1 rounded-md ${isUp ? 'text-emerald-300 bg-emerald-500/10' : isDown ? 'text-rose-300 bg-rose-500/10' : 'text-white/70 bg-white/10'}`}>
+                                {pnl >= 0 ? '+' : ''}{pnlPct.toFixed(2)}%
+                            </span>
+                        </div>
                     </div>
                 </div>
-            </div>
+            ) : null}
 
-            <div className="w-full max-w-none bg-white/5 backdrop-blur-sm rounded-2xl shadow-sm border border-white/10 overflow-hidden">
-                <div className="px-6 py-4 border-b border-white/10">
-                    <h3 className="text-sm font-semibold text-white">Crypto Holdings</h3>
+            {crypto.assets.length === 0 ? (
+                <div className="rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-6 py-8 text-center backdrop-blur-sm">
+                    <p className="text-indigo-200/90 font-medium mb-4">No crypto assets tracked yet.</p>
+                    <p className="text-sm text-indigo-200/60">Use the Add Coin button above to monitor your portfolio.</p>
                 </div>
-                <div className="w-full overflow-x-auto">
+            ) : (
+                <div className="w-full max-w-none bg-white/5 backdrop-blur-sm rounded-2xl shadow-sm border border-white/10 overflow-hidden">
+                    <div className="px-6 py-4 border-b border-white/10">
+                        <h3 className="text-sm font-semibold text-white">Crypto Holdings</h3>
+                    </div>
+                    <div className="w-full overflow-x-auto">
                     <table className="w-full min-w-[1300px] table-fixed text-sm">
                         <thead className="bg-white/[0.03]">
                             <tr className="text-white/60">
@@ -415,7 +451,7 @@ export default function CryptoPage() {
                                 <th className="text-center font-medium px-4 py-3">Invested</th>
                                 <th className="text-center font-medium px-4 py-3">PNL %</th>
                                 <th className="text-center font-medium px-4 py-3">PNL</th>
-                                <th className="text-center font-medium px-4 py-3">Edit</th>
+                                <th className="text-center font-medium px-4 py-3">Delete</th>
                                 <th className="text-center font-medium px-4 py-3">History</th>
                             </tr>
                         </thead>
@@ -450,10 +486,11 @@ export default function CryptoPage() {
                                         <td className="px-4 py-4 text-center">
                                             <button
                                                 type="button"
-                                                className="inline-flex items-center justify-center h-9 px-3 rounded-lg bg-white/10 text-white/80 hover:bg-white/15 transition-colors"
-                                                aria-label={`Edit ${row.ticker}`}
+                                                onClick={() => setCoinToDelete({ id: row.id, name: row.name })}
+                                                className="inline-flex items-center justify-center h-9 px-3 rounded-lg bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 transition-colors"
+                                                aria-label={`Delete ${row.ticker}`}
                                             >
-                                                <Edit3 className="w-4 h-4" />
+                                                <Trash2 className="w-4 h-4" />
                                             </button>
                                         </td>
                                         <td className="px-4 py-4 text-center">
@@ -473,11 +510,25 @@ export default function CryptoPage() {
                     </table>
                 </div>
             </div>
+            )}
 
             <AddCoinModal
                 isOpen={isAddCoinOpen}
                 onClose={() => setIsAddCoinOpen(false)}
-                onAdd={handleAddCoin}
+            />
+
+            <ImportLedgerModal
+                isOpen={isImportOpen}
+                onClose={() => setIsImportOpen(false)}
+            />
+
+            <DeleteActionModal
+                isOpen={!!coinToDelete}
+                onClose={() => !isDeleting && setCoinToDelete(null)}
+                onConfirm={handleDeleteCoin}
+                title="Delete Asset"
+                message={`Are you sure you want to delete ${coinToDelete?.name}? This action cannot be undone.`}
+                isProcessing={isDeleting}
             />
         </div>
     )
