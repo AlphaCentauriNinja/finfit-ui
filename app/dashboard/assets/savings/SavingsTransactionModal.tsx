@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { ArrowRightLeft, Loader2, X } from 'lucide-react'
 import DatePickerField from '@/app/dashboard/components/DatePickerField'
 import type { DashboardSavingsAccount } from '@/lib/dashboard-data'
+import { usePrivacy } from '@/app/dashboard/components/providers/PrivacyProvider'
 
 type Props = {
     isOpen: boolean
@@ -14,6 +15,7 @@ type Props = {
 }
 
 export default function SavingsTransactionModal({ isOpen, onClose, account }: Props) {
+    const { hideValues } = usePrivacy()
     const [potId, setPotId] = useState(account.pots[0]?.id || '')
     const [amount, setAmount] = useState('')
     const [name, setName] = useState('Transaction')
@@ -104,7 +106,9 @@ export default function SavingsTransactionModal({ isOpen, onClose, account }: Pr
                             className="w-full h-12 bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all text-sm"
                         >
                             {account.pots.map(pot => (
-                                <option key={pot.id} value={pot.id}>{pot.name} (£{pot.balance.toLocaleString()})</option>
+                                <option key={pot.id} value={pot.id}>
+                                    {hideValues ? `${pot.name} (****)` : `${pot.name} (£${pot.balance.toLocaleString()})`}
+                                </option>
                             ))}
                         </select>
                     </div>

@@ -45,9 +45,9 @@ export default function PensionAccountCard({ pension, total }: Props) {
         return new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(date)
     })()
 
-    const pnlLabel = hideValues ? (pension.pnl >= 0 ? "+****" : "****") : `${pension.pnl >= 0 ? '+' : ''}£${pension.pnl.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-    const pnlPctLabel = `${pension.pnlPercentage >= 0 ? '+' : ''}${pension.pnlPercentage.toFixed(2)}%`
-    const pnlState = getPnlState(pension.pnl)
+    const pnlLabel = hideValues ? '****' : `${pension.pnl >= 0 ? '+' : ''}£${pension.pnl.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    const pnlPctLabel = hideValues ? '****' : `${pension.pnlPercentage >= 0 ? '+' : ''}${pension.pnlPercentage.toFixed(2)}%`
+    const pnlState = hideValues ? 'neutral' : getPnlState(pension.pnl)
     const PnlIcon = pnlState === 'positive' ? ArrowUpRight : pnlState === 'negative' ? ArrowDownRight : Minus
     const pnlPillTone = pnlState === 'positive'
         ? 'border-green-500 bg-green-500/20 text-green-200'

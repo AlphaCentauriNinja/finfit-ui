@@ -28,7 +28,7 @@ export default function AssetCard({
                     <span className="text-sm font-medium text-white/60">{name}</span>
                 </div>
                 <span className="text-xs font-bold px-2 py-1 bg-white/5 border border-white/10 text-emerald-400 rounded-lg group-hover:bg-white/10 transition-colors">
-                    {allocation.toFixed(1)}%
+                    {hideValues ? '****' : `${allocation.toFixed(1)}%`}
                 </span>
             </div>
 
@@ -40,7 +40,7 @@ export default function AssetCard({
                 <div
                     className="h-1.5 rounded-full transition-all duration-1000 ease-out"
                     style={{
-                        width: `${allocation}%`,
+                        width: hideValues ? '0%' : `${allocation}%`,
                         background: 'linear-gradient(90deg, #c084fc 0%, #9333ea 100%)',
                     }}
                 />

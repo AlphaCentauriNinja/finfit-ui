@@ -3,11 +3,12 @@
 import Link from 'next/link'
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-    BarChart, Bar, Cell
+    PieChart, Pie, Cell
 } from 'recharts'
 import { Target, ArrowRight } from 'lucide-react'
 import { babySteps } from '@/lib/baby-steps'
 import { useDashboardData } from '@/app/dashboard/components/providers/DashboardDataProvider'
+import { usePrivacy } from '@/app/dashboard/components/providers/PrivacyProvider'
 
 import { useMemo } from 'react'
 
@@ -46,8 +47,8 @@ export function PortfolioGraph() {
                     <AreaChart data={portfolioData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
                         <defs>
                             <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#818cf8" stopOpacity={0.4} />
-                                <stop offset="95%" stopColor="#818cf8" stopOpacity={0} />
+                                <stop offset="5%" stopColor="#facc15" stopOpacity={0.4} />
+                                <stop offset="95%" stopColor="#facc15" stopOpacity={0} />
                             </linearGradient>
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
@@ -55,20 +56,20 @@ export function PortfolioGraph() {
                         <YAxis stroke="#ffffff50" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `£${value / 1000}k`} />
                         <Tooltip
                             contentStyle={{ backgroundColor: '#0f172a', borderColor: '#ffffff20', borderRadius: '12px', color: '#fff' }}
-                            itemStyle={{ color: '#818cf8' }}
+                            itemStyle={{ color: '#facc15' }}
                             formatter={(value) => [`£${Number(value ?? 0).toLocaleString()}`, 'Portfolio Value']}
                         />
                         <Area
                             type="natural"
                             dataKey="value"
-                            stroke="#818cf8"
+                            stroke="#facc15"
                             strokeWidth={3}
                             strokeLinecap="round"
                             strokeLinejoin="round"
                             fillOpacity={1}
                             fill="url(#colorValue)"
                             dot={false}
-                            activeDot={{ r: 5, strokeWidth: 0, fill: '#a5b4fc' }}
+                            activeDot={{ r: 5, strokeWidth: 0, fill: '#fde047' }}
                             isAnimationActive
                             animationDuration={900}
                             animationEasing="ease-out"
@@ -146,44 +147,98 @@ const spendingFallbackData = [
 
 const SPENDING_COLORS = ['#c084fc', '#818cf8', '#2dd4bf', '#fb923c', '#f472b6', '#a78bfa', '#4ade80']
 
+type SpendingPieTooltipProps = {
+    active?: boolean
+    payload?: Array<{
+        name?: string
+        value?: number | string
+    }>
+}
+
+function SpendingPieTooltip({ active, payload }: SpendingPieTooltipProps) {
+    if (!active || !payload?.length) return null
+    const item = payload[0]
+    const value = Number(item.value ?? 0)
+
+    return (
+        <div className="rounded-lg border border-white/10 bg-[#0e1629] px-3 py-2 text-xs shadow-xl">
+            <p className="text-white/70">{item.name}</p>
+            <p className="font-semibold text-white">
+                £{value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </p>
+        </div>
+    )
+}
+
 export function SpendingBreakdown() {
     const dashboardData = useDashboardData()
-    const providerSpendingData = [...dashboardData.budget.expenditures]
-        .sort((a, b) => b.amount - a.amount)
-        .slice(0, 7)
-        .map((entry) => ({
-            name: entry.name.length > 12 ? `${entry.name.slice(0, 12)}...` : entry.name,
-            amount: entry.amount,
-        }))
+    const { hideValues } = usePrivacy()
+    const providerSpendingData = useMemo(() => {
+        const topExpenditures = [...dashboardData.budget.expenditures]
+            .sort((a, b) => b.amount - a.amount)
+            .slice(0, 6)
+            .map((entry) => ({
+                name: entry.name.length > 12 ? `${entry.name.slice(0, 12)}...` : entry.name,
+                amount: entry.amount,
+            }))
+
+        if (dashboardData.budget.totalCapital > 0) {
+            topExpenditures.push({
+                name: 'Capital',
+                amount: dashboardData.budget.totalCapital,
+            })
+        }
+
+        return topExpenditures.sort((a, b) => b.amount - a.amount)
+    }, [dashboardData.budget.expenditures, dashboardData.budget.totalCapital])
     const spendingData = providerSpendingData.length > 0 ? providerSpendingData : spendingFallbackData
 
     return (
         <div className="bg-white/5 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/10">
             <h3 className="text-sm font-bold text-white mb-4">Monthly Spending</h3>
-            <div className="h-[200px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={spendingData} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
-                        <XAxis dataKey="name" stroke="#ffffff50" fontSize={11} tickLine={false} axisLine={false} />
-                        <YAxis stroke="#ffffff50" fontSize={11} tickLine={false} axisLine={false} />
-                        <Tooltip
-                            cursor={{ fill: '#ffffff10' }}
-                            contentStyle={{ backgroundColor: '#0f172a', borderColor: '#ffffff20', borderRadius: '12px' }}
-                        />
-                        <Bar dataKey="amount" radius={[4, 4, 0, 0]}>
-                            {spendingData.map((_entry, index) => (
-                                <Cell key={`cell-${index}`} fill={SPENDING_COLORS[index % SPENDING_COLORS.length]} />
-                            ))}
-                        </Bar>
-                    </BarChart>
-                </ResponsiveContainer>
-            </div>
+            {!hideValues ? (
+                <div className="h-[220px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                            <Pie
+                                data={spendingData}
+                                cx="50%"
+                                cy="50%"
+                                innerRadius={45}
+                                outerRadius={78}
+                                paddingAngle={3}
+                                dataKey="amount"
+                                nameKey="name"
+                                stroke="none"
+                            >
+                                {spendingData.map((_entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={SPENDING_COLORS[index % SPENDING_COLORS.length]} />
+                                ))}
+                            </Pie>
+                            <Tooltip
+                                contentStyle={{ backgroundColor: '#0f172a', borderColor: '#ffffff20', borderRadius: '12px' }}
+                                content={<SpendingPieTooltip />}
+                            />
+                        </PieChart>
+                    </ResponsiveContainer>
+                </div>
+            ) : (
+                <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-8 text-center text-xs text-white/50">
+                    Spending values are hidden.
+                </div>
+            )}
+            {!hideValues && dashboardData.budget.totalCapital > 0 ? (
+                <p className="mt-3 text-xs text-white/60">
+                    Includes £{dashboardData.budget.totalCapital.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} monthly capital.
+                </p>
+            ) : null}
         </div>
     )
 }
 
 export function DebtWidget() {
     const dashboardData = useDashboardData()
+    const { hideValues } = usePrivacy()
     const totalDebt = dashboardData.debt.totalDebt
     const debtCount = dashboardData.debt.debtCount
     const hasNoDebt = debtCount === 0 || totalDebt <= 0
@@ -211,7 +266,7 @@ export function DebtWidget() {
             ) : (
                 <div>
                     <p className="text-3xl font-bold text-rose-300">
-                        £{totalDebt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        {hideValues ? '****' : `£${totalDebt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                     </p>
                     <p className="text-xs text-white/60 mt-1">Total outstanding debt</p>
                 </div>
@@ -230,6 +285,7 @@ export function DebtWidget() {
 
 export function GoalTracker() {
     const dashboardData = useDashboardData()
+    const { hideValues } = usePrivacy()
 
     // Flatten all pots from all accounts and filter for ones with targets
     const goals = dashboardData.savings.accounts
@@ -270,7 +326,9 @@ export function GoalTracker() {
                             <div className="flex justify-between text-xs mb-2">
                                 <span className="text-white/80 font-medium">{goal.name}</span>
                                 <span className="text-white">
-                                    £{goal.balance.toLocaleString()} / £{goal.targetAmount?.toLocaleString()}
+                                    {hideValues
+                                        ? '**** / ****'
+                                        : `£${goal.balance.toLocaleString()} / £${goal.targetAmount?.toLocaleString()}`}
                                 </span>
                             </div>
                             <div className="w-full bg-white/10 rounded-full h-2">
@@ -286,4 +344,3 @@ export function GoalTracker() {
         </div>
     )
 }
-

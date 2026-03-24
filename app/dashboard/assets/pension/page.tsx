@@ -24,9 +24,9 @@ export default function PensionPage() {
     const total = dashboardData.pension.totalValue
     const totalPnlPerformance = dashboardData.pension.totalPnl
     const totalPnlPercentage = dashboardData.pension.totalPnlPercentage
-    const totalPnlLabel = hideValues ? (totalPnlPerformance >= 0 ? "+****" : "****") : `${totalPnlPerformance >= 0 ? '+' : ''}£${totalPnlPerformance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-    const totalPnlPctLabel = `${totalPnlPercentage >= 0 ? '+' : ''}${totalPnlPercentage.toFixed(2)}%`
-    const totalPnlState = getPnlState(totalPnlPerformance)
+    const totalPnlLabel = hideValues ? '****' : `${totalPnlPerformance >= 0 ? '+' : ''}£${totalPnlPerformance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    const totalPnlPctLabel = hideValues ? '****' : `${totalPnlPercentage >= 0 ? '+' : ''}${totalPnlPercentage.toFixed(2)}%`
+    const totalPnlState = hideValues ? 'neutral' : getPnlState(totalPnlPerformance)
     const TotalPnlIcon = totalPnlState === 'positive' ? ArrowUpRight : totalPnlState === 'negative' ? ArrowDownRight : Minus
     const totalPnlPillTone = totalPnlState === 'positive'
         ? 'border-green-500 bg-green-500/20 text-green-200'
@@ -57,9 +57,11 @@ export default function PensionPage() {
                 </div>
             </div>
 
-            <PensionPerformanceChart
-                data={dashboardData.pension.chartData}
-            />
+            {!hideValues ? (
+                <PensionPerformanceChart
+                    data={dashboardData.pension.chartData}
+                />
+            ) : null}
 
             {dashboardData.pension.loadError ? (
                 <div className="mb-8 rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
@@ -85,4 +87,3 @@ export default function PensionPage() {
         </div>
     )
 }
-

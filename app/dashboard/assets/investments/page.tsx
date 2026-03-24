@@ -12,6 +12,7 @@ import {
     X 
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { usePrivacy } from '@/app/dashboard/components/providers/PrivacyProvider'
 import {
     ResponsiveContainer,
     LineChart,
@@ -473,6 +474,7 @@ function InvestmentLineChart({ data }: { data: OhlcPoint[] }) {
 // --- Main Page Component ---
 
 export default function InvestmentsPage() {
+    const { hideValues } = usePrivacy()
     const [selectedInstrument, setSelectedInstrument] = useState<InstrumentKey>('combined')
     const [selectedTimeframe, setSelectedTimeframe] = useState<TimeframeOption>('this-month')
     const [preferredCurrency, setPreferredCurrency] = useState<CurrencyCode>('GBP')
@@ -557,69 +559,71 @@ export default function InvestmentsPage() {
             <div className="mb-8 grid gap-6 md:grid-cols-3">
                 <div className="bg-white/5 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/10">
                     <p className="text-sm font-medium text-white/60">Current Value</p>
-                    <p className="text-3xl font-bold text-white mt-2">{formatCurrency(totalCurrent, preferredCurrency)}</p>
+                    <p className="text-3xl font-bold text-white mt-2">{hideValues ? '****' : formatCurrency(totalCurrent, preferredCurrency)}</p>
                 </div>
                 <div className="bg-white/5 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/10">
                     <p className="text-sm font-medium text-white/60">Total Invested</p>
-                    <p className="text-3xl font-bold text-white mt-2">{formatCurrency(totalInvested, preferredCurrency)}</p>
+                    <p className="text-3xl font-bold text-white mt-2">{hideValues ? '****' : formatCurrency(totalInvested, preferredCurrency)}</p>
                 </div>
                 <div className="bg-white/5 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/10">
                     <p className="text-sm font-medium text-white/60">PNL</p>
                     <div className="flex items-center gap-2 mt-2">
                         <p className={`text-3xl font-bold ${isUp ? 'text-emerald-400' : isDown ? 'text-rose-400' : 'text-white'}`}>
-                            {formatSignedCurrency(pnl, preferredCurrency)}
+                            {hideValues ? '****' : formatSignedCurrency(pnl, preferredCurrency)}
                         </p>
                         <span className={`text-xs px-2 py-1 rounded-md ${isUp ? 'text-emerald-300 bg-emerald-500/10' : isDown ? 'text-rose-300 bg-rose-500/10' : 'text-white/70 bg-white/10'}`}>
-                            {pnl >= 0 ? '+' : ''}{pnlPct.toFixed(2)}%
+                            {hideValues ? '****' : `${pnl >= 0 ? '+' : ''}${pnlPct.toFixed(2)}%`}
                         </span>
                     </div>
                 </div>
             </div>
 
-            <div className="bg-white/5 backdrop-blur-sm p-6 pb-10 rounded-2xl shadow-sm border border-white/10 mb-8 mt-2">
-                <div className="flex flex-wrap items-center justify-between gap-4 mb-14">
-                    <div className="flex items-center gap-2">
-                        <CandlestickChart className="w-4 h-4 text-indigo-300" />
-                        <h2 className="text-sm font-semibold text-white">Performance: {instrumentLabel}</h2>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-3">
+            {!hideValues ? (
+                <div className="bg-white/5 backdrop-blur-sm p-6 pb-10 rounded-2xl shadow-sm border border-white/10 mb-8 mt-2">
+                    <div className="flex flex-wrap items-center justify-between gap-4 mb-14">
                         <div className="flex items-center gap-2">
-                            <label className="text-xs text-white/60">Instrument</label>
-                            <select
-                                value={selectedInstrument}
-                                onChange={(event) => setSelectedInstrument(event.target.value as InstrumentKey)}
-                                className="h-12 bg-slate-900 border border-white/15 text-white text-sm rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-400/50"
-                                aria-label="Select instrument"
-                            >
-                                {instrumentOptions.map((option) => (
-                                    <option key={option.value} value={option.value}>
-                                        {option.label}
-                                    </option>
-                                ))}
-                            </select>
+                            <CandlestickChart className="w-4 h-4 text-indigo-300" />
+                            <h2 className="text-sm font-semibold text-white">Performance: {instrumentLabel}</h2>
                         </div>
 
-                        <div className="flex items-center gap-2">
-                            <label className="text-xs text-white/60">Timeframe</label>
-                            <select
-                                value={selectedTimeframe}
-                                onChange={(event) => setSelectedTimeframe(event.target.value as TimeframeOption)}
-                                className="h-12 bg-slate-900 border border-white/15 text-white text-sm rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-400/50"
-                                aria-label="Select timeframe"
-                            >
-                                {timeframeOptions.map((option) => (
-                                    <option key={option.value} value={option.value}>
-                                        {option.label}
-                                    </option>
-                                ))}
-                            </select>
+                        <div className="flex flex-wrap items-center gap-3">
+                            <div className="flex items-center gap-2">
+                                <label className="text-xs text-white/60">Instrument</label>
+                                <select
+                                    value={selectedInstrument}
+                                    onChange={(event) => setSelectedInstrument(event.target.value as InstrumentKey)}
+                                    className="h-12 bg-slate-900 border border-white/15 text-white text-sm rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-400/50"
+                                    aria-label="Select instrument"
+                                >
+                                    {instrumentOptions.map((option) => (
+                                        <option key={option.value} value={option.value}>
+                                            {option.label}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                                <label className="text-xs text-white/60">Timeframe</label>
+                                <select
+                                    value={selectedTimeframe}
+                                    onChange={(event) => setSelectedTimeframe(event.target.value as TimeframeOption)}
+                                    className="h-12 bg-slate-900 border border-white/15 text-white text-sm rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-400/50"
+                                    aria-label="Select timeframe"
+                                >
+                                    {timeframeOptions.map((option) => (
+                                        <option key={option.value} value={option.value}>
+                                            {option.label}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
                         </div>
                     </div>
+
+                    <InvestmentLineChart data={chartData} />
                 </div>
-
-                <InvestmentLineChart data={chartData} />
-            </div>
+            ) : null}
 
             <div className="w-full max-w-none bg-white/5 backdrop-blur-sm rounded-2xl shadow-sm border border-white/10 overflow-hidden">
                 <div className="px-6 py-4 border-b border-white/10">
@@ -653,22 +657,22 @@ export default function InvestmentsPage() {
                                     <tr key={row.ticker} className="border-t border-white/10">
                                         <td className="px-4 py-4 text-center text-white font-semibold">{row.ticker}</td>
                                         <td className="px-4 py-4 text-center text-white/80">
-                                            {formatCurrency(row.invested, preferredCurrency)}
+                                            {hideValues ? '****' : formatCurrency(row.invested, preferredCurrency)}
                                         </td>
                                         <td className="px-4 py-4 text-center text-white/80">
-                                            {formatCurrency(row.value, preferredCurrency)}
+                                            {hideValues ? '****' : formatCurrency(row.value, preferredCurrency)}
                                         </td>
                                         <td className={`px-4 py-4 text-center font-semibold ${rowPnlClassName}`}>
-                                            {rowPnlPct >= 0 ? '+' : ''}{rowPnlPct.toFixed(2)}%
+                                            {hideValues ? '****' : `${rowPnlPct >= 0 ? '+' : ''}${rowPnlPct.toFixed(2)}%`}
                                         </td>
                                         <td className={`px-4 py-4 text-center font-semibold ${rowPnlClassName}`}>
-                                            {formatSignedCurrency(rowPnl, preferredCurrency)}
+                                            {hideValues ? '****' : formatSignedCurrency(rowPnl, preferredCurrency)}
                                         </td>
                                         <td className="px-4 py-4 text-center">
                                             <div className="flex items-center justify-center">
-                                                {rowPnl > 0 ? (
+                                                {!hideValues && rowPnl > 0 ? (
                                                     <ArrowUpRight className="w-4 h-4 text-emerald-400" />
-                                                ) : rowPnl < 0 ? (
+                                                ) : !hideValues && rowPnl < 0 ? (
                                                     <ArrowDownRight className="w-4 h-4 text-rose-400" />
                                                 ) : (
                                                     <Minus className="w-4 h-4 text-white/60" />

@@ -25,6 +25,7 @@ type Props = {
     asset: CryptoCardAsset
     totalCurrentValue: number
     preferredCurrency: CurrencyCode
+    hideValues: boolean
 }
 
 type PnlState = 'positive' | 'negative' | 'neutral'
@@ -47,7 +48,7 @@ const formatCurrency = (value: number, currency: CurrencyCode): string =>
         maximumFractionDigits: 2,
     }).format(value)
 
-export default function CryptoAssetCard({ asset, totalCurrentValue, preferredCurrency }: Props) {
+export default function CryptoAssetCard({ asset, totalCurrentValue, preferredCurrency, hideValues }: Props) {
     const [isEditOpen, setIsEditOpen] = useState(false)
     const [isTransactionOpen, setIsTransactionOpen] = useState(false)
     const [isHistoryOpen, setIsHistoryOpen] = useState(false)
@@ -56,7 +57,7 @@ export default function CryptoAssetCard({ asset, totalCurrentValue, preferredCur
     const rowPnlPct = asset.investedGbp > 0 ? (rowPnl / asset.investedGbp) * 100 : 0
     const allocation = totalCurrentValue > 0 ? (asset.marketValueGbp / totalCurrentValue) * 100 : 0
 
-    const pnlState = getPnlState(rowPnl)
+    const pnlState = hideValues ? 'neutral' : getPnlState(rowPnl)
     const PnlIcon = pnlState === 'positive' ? ArrowUpRight : pnlState === 'negative' ? ArrowDownRight : Minus
     const pnlPillTone = pnlState === 'positive'
         ? 'border-green-500 bg-green-500/20 text-green-200'
@@ -81,7 +82,7 @@ export default function CryptoAssetCard({ asset, totalCurrentValue, preferredCur
                         <p className="text-xs font-semibold text-white/40 uppercase tracking-wider">{asset.ticker}</p>
                         <h3 className="text-sm font-medium text-white/80 mt-0.5">{asset.name}</h3>
                         <p className="text-2xl font-bold text-white mt-1">
-                            {formatCurrency(convertFromGbp(asset.marketValueGbp, preferredCurrency), preferredCurrency)}
+                            {hideValues ? '****' : formatCurrency(convertFromGbp(asset.marketValueGbp, preferredCurrency), preferredCurrency)}
                         </p>
                     </div>
                     <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-400 border border-emerald-500/20 group-hover/card:scale-110 transition-transform">
@@ -92,29 +93,30 @@ export default function CryptoAssetCard({ asset, totalCurrentValue, preferredCur
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                     <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${pnlPillTone}`}>
                         <PnlIcon className="mr-1 h-3.5 w-3.5" />
-                        PNL {rowPnl >= 0 ? '+' : '-'}
-                        {formatCurrency(convertFromGbp(Math.abs(rowPnl), preferredCurrency), preferredCurrency)}
+                        PNL {hideValues
+                            ? '****'
+                            : `${rowPnl >= 0 ? '+' : '-'}${formatCurrency(convertFromGbp(Math.abs(rowPnl), preferredCurrency), preferredCurrency)}`}
                     </span>
                     <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${pnlPillTone}`}>
-                        {rowPnl >= 0 ? '+' : ''}{rowPnlPct.toFixed(2)}%
+                        {hideValues ? '****' : `${rowPnl >= 0 ? '+' : ''}${rowPnlPct.toFixed(2)}%`}
                     </span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 mt-4 text-sm">
                     <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2">
                         <p className="text-white/45 text-xs uppercase tracking-wider">Amount</p>
-                        <p className="text-white/85 font-medium mt-1">{amountLabel}</p>
+                        <p className="text-white/85 font-medium mt-1">{hideValues ? '****' : amountLabel}</p>
                     </div>
                     <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2">
                         <p className="text-white/45 text-xs uppercase tracking-wider">Live Price</p>
-                        <p className="text-white/85 font-medium mt-1">${priceUsdLabel}</p>
+                        <p className="text-white/85 font-medium mt-1">{hideValues ? '****' : `$${priceUsdLabel}`}</p>
                     </div>
                 </div>
 
                 <div className="w-full bg-white/5 rounded-full h-1.5 mt-4">
                     <div
                         className="bg-emerald-400 h-1.5 rounded-full transition-all duration-500"
-                        style={{ width: `${allocation}%` }}
+                        style={{ width: hideValues ? '0%' : `${allocation}%` }}
                     />
                 </div>
 
@@ -165,6 +167,7 @@ export default function CryptoAssetCard({ asset, totalCurrentValue, preferredCur
                     onClose={() => setIsHistoryOpen(false)}
                     asset={asset}
                     preferredCurrency={preferredCurrency}
+                    hideValues={hideValues}
                 />
             ) : null}
         </>

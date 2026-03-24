@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Wifi, WifiOff, Plus, X, Loader2, Upload } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useDashboardData } from '@/app/dashboard/components/providers/DashboardDataProvider'
+import { usePrivacy } from '@/app/dashboard/components/providers/PrivacyProvider'
 import { ImportLedgerModal } from './ImportLedgerModal'
 import CryptoAssetCard from './CryptoAssetCard'
 
@@ -232,6 +233,7 @@ function AddCoinModal({ isOpen, onClose }: AddCoinModalProps) {
 
 export default function CryptoPage() {
     const { crypto } = useDashboardData()
+    const { hideValues } = usePrivacy()
     const [liveUsdByTicker, setLiveUsdByTicker] = useState<Record<string, number>>({})
     const [isSocketConnected, setIsSocketConnected] = useState(false)
     const [preferredCurrency, setPreferredCurrency] = useState<CurrencyCode>('GBP')
@@ -327,6 +329,11 @@ export default function CryptoPage() {
                 usd: liveUsd,
                 marketValueGbp,
             }
+        }).sort((a, b) => {
+            if (b.marketValueGbp !== a.marketValueGbp) {
+                return b.marketValueGbp - a.marketValueGbp
+            }
+            return a.ticker.localeCompare(b.ticker)
         })
     }, [crypto.assets, liveUsdByTicker])
 
@@ -342,6 +349,20 @@ export default function CryptoPage() {
     const pnlPct = totalInvested > 0 ? (pnl / totalInvested) * 100 : 0
     const isUp = pnl > 0
     const isDown = pnl < 0
+    const pnlValueClassName = hideValues
+        ? 'text-white'
+        : isUp
+            ? 'text-emerald-400'
+            : isDown
+                ? 'text-rose-400'
+                : 'text-white'
+    const pnlPillClassName = hideValues
+        ? 'text-white/70 bg-white/10'
+        : isUp
+            ? 'text-emerald-300 bg-emerald-500/10'
+            : isDown
+                ? 'text-rose-300 bg-rose-500/10'
+                : 'text-white/70 bg-white/10'
 
     return (
         <div className="w-full">
@@ -380,20 +401,24 @@ export default function CryptoPage() {
                 <div className="mb-8 grid gap-6 md:grid-cols-3">
                     <div className="bg-white/5 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/10">
                         <p className="text-sm font-medium text-white/60">Current Value</p>
-                        <p className="text-3xl font-bold text-white mt-2">{formatCurrency(convertFromGbp(totalCurrent, preferredCurrency), preferredCurrency)}</p>
+                        <p className="text-3xl font-bold text-white mt-2">
+                            {hideValues ? '****' : formatCurrency(convertFromGbp(totalCurrent, preferredCurrency), preferredCurrency)}
+                        </p>
                     </div>
                     <div className="bg-white/5 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/10">
                         <p className="text-sm font-medium text-white/60">Total Invested</p>
-                        <p className="text-3xl font-bold text-white mt-2">{formatCurrency(convertFromGbp(totalInvested, preferredCurrency), preferredCurrency)}</p>
+                        <p className="text-3xl font-bold text-white mt-2">
+                            {hideValues ? '****' : formatCurrency(convertFromGbp(totalInvested, preferredCurrency), preferredCurrency)}
+                        </p>
                     </div>
                     <div className="bg-white/5 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/10">
                         <p className="text-sm font-medium text-white/60">PNL</p>
                         <div className="flex items-center gap-2 mt-2">
-                            <p className={`text-3xl font-bold ${isUp ? 'text-emerald-400' : isDown ? 'text-rose-400' : 'text-white'}`}>
-                                {formatSignedCurrency(convertFromGbp(pnl, preferredCurrency), preferredCurrency)}
+                            <p className={`text-3xl font-bold ${pnlValueClassName}`}>
+                                {hideValues ? '****' : formatSignedCurrency(convertFromGbp(pnl, preferredCurrency), preferredCurrency)}
                             </p>
-                            <span className={`text-xs px-2 py-1 rounded-md ${isUp ? 'text-emerald-300 bg-emerald-500/10' : isDown ? 'text-rose-300 bg-rose-500/10' : 'text-white/70 bg-white/10'}`}>
-                                {pnl >= 0 ? '+' : ''}{pnlPct.toFixed(2)}%
+                            <span className={`text-xs px-2 py-1 rounded-md ${pnlPillClassName}`}>
+                                {hideValues ? '****' : `${pnl >= 0 ? '+' : ''}${pnlPct.toFixed(2)}%`}
                             </span>
                         </div>
                     </div>
@@ -413,6 +438,7 @@ export default function CryptoPage() {
                             asset={row}
                             totalCurrentValue={totalCurrent}
                             preferredCurrency={preferredCurrency}
+                            hideValues={hideValues}
                         />
                     ))}
                 </div>

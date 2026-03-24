@@ -24,6 +24,7 @@ type Props = {
     onClose: () => void
     asset: Asset
     preferredCurrency: CurrencyCode
+    hideValues: boolean
 }
 
 type TransactionType = 'BUY' | 'SELL'
@@ -90,7 +91,7 @@ const formatDate = (isoDate: string): string => {
     }).format(date)
 }
 
-export default function CryptoHistoryModal({ isOpen, onClose, asset, preferredCurrency }: Props) {
+export default function CryptoHistoryModal({ isOpen, onClose, asset, preferredCurrency, hideValues }: Props) {
     const [transactions, setTransactions] = useState<TransactionEntry[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [loadError, setLoadError] = useState<string | null>(null)
@@ -181,22 +182,22 @@ export default function CryptoHistoryModal({ isOpen, onClose, asset, preferredCu
                         <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
                             <p className="text-xs uppercase tracking-wider text-white/45">Current Value</p>
                             <p className="mt-1 text-lg font-semibold text-white">
-                                {formatCurrency(convertFromGbp(asset.marketValueGbp, preferredCurrency), preferredCurrency)}
+                                {hideValues ? '****' : formatCurrency(convertFromGbp(asset.marketValueGbp, preferredCurrency), preferredCurrency)}
                             </p>
                         </div>
                         <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
                             <p className="text-xs uppercase tracking-wider text-white/45">Total Invested</p>
                             <p className="mt-1 text-lg font-semibold text-white">
-                                {formatCurrency(convertFromGbp(asset.investedGbp, preferredCurrency), preferredCurrency)}
+                                {hideValues ? '****' : formatCurrency(convertFromGbp(asset.investedGbp, preferredCurrency), preferredCurrency)}
                             </p>
                         </div>
                         <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
                             <p className="text-xs uppercase tracking-wider text-white/45">PNL</p>
                             <p className={`mt-1 text-lg font-semibold inline-flex items-center gap-1.5 ${pnlClassName}`}>
                                 <PnlIcon className="h-4 w-4" />
-                                {formatSignedCurrency(convertFromGbp(pnl, preferredCurrency), preferredCurrency)}
+                                {hideValues ? '****' : formatSignedCurrency(convertFromGbp(pnl, preferredCurrency), preferredCurrency)}
                             </p>
-                            <p className={`text-xs mt-1 ${pnlClassName}`}>{pnl >= 0 ? '+' : ''}{pnlPct.toFixed(2)}%</p>
+                            <p className={`text-xs mt-1 ${pnlClassName}`}>{hideValues ? '****' : `${pnl >= 0 ? '+' : ''}${pnlPct.toFixed(2)}%`}</p>
                         </div>
                     </div>
 
@@ -204,13 +205,13 @@ export default function CryptoHistoryModal({ isOpen, onClose, asset, preferredCu
                         <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3">
                             <p className="text-xs uppercase tracking-wider text-emerald-200/70">Total Buys</p>
                             <p className="mt-1 text-base font-semibold text-emerald-100">
-                                {formatCurrency(convertFromGbp(totalBuys, preferredCurrency), preferredCurrency)}
+                                {hideValues ? '****' : formatCurrency(convertFromGbp(totalBuys, preferredCurrency), preferredCurrency)}
                             </p>
                         </div>
                         <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3">
                             <p className="text-xs uppercase tracking-wider text-rose-200/70">Total Sells</p>
                             <p className="mt-1 text-base font-semibold text-rose-100">
-                                {formatCurrency(convertFromGbp(totalSells, preferredCurrency), preferredCurrency)}
+                                {hideValues ? '****' : formatCurrency(convertFromGbp(totalSells, preferredCurrency), preferredCurrency)}
                             </p>
                         </div>
                     </div>
@@ -219,12 +220,12 @@ export default function CryptoHistoryModal({ isOpen, onClose, asset, preferredCu
                         <div className="grid gap-3 md:grid-cols-2 text-sm">
                             <div>
                                 <p className="text-white/45 uppercase tracking-wider text-xs">Amount Held</p>
-                                <p className="text-white/85 mt-1">{asset.amount.toLocaleString('en-GB', { maximumFractionDigits: 8 })}</p>
+                                <p className="text-white/85 mt-1">{hideValues ? '****' : asset.amount.toLocaleString('en-GB', { maximumFractionDigits: 8 })}</p>
                             </div>
                             <div>
                                 <p className="text-white/45 uppercase tracking-wider text-xs">Live Price (USD)</p>
                                 <p className="text-white/85 mt-1">
-                                    ${asset.usd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    {hideValues ? '****' : `$${asset.usd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                                 </p>
                             </div>
                         </div>
@@ -274,13 +275,13 @@ export default function CryptoHistoryModal({ isOpen, onClose, asset, preferredCu
                                                         </span>
                                                     </td>
                                                     <td className="px-4 py-3 text-center text-white/85 font-medium">
-                                                        {entry.amount.toLocaleString('en-GB', { maximumFractionDigits: 8 })}
+                                                        {hideValues ? '****' : entry.amount.toLocaleString('en-GB', { maximumFractionDigits: 8 })}
                                                     </td>
                                                     <td className="px-4 py-3 text-center text-white/85">
-                                                        {formatCurrency(convertFromGbp(entry.totalValueGbp, preferredCurrency), preferredCurrency)}
+                                                        {hideValues ? '****' : formatCurrency(convertFromGbp(entry.totalValueGbp, preferredCurrency), preferredCurrency)}
                                                     </td>
                                                     <td className="px-4 py-3 text-center text-white/75">
-                                                        {formatCurrency(convertFromGbp(unitPriceGbp, preferredCurrency), preferredCurrency)}
+                                                        {hideValues ? '****' : formatCurrency(convertFromGbp(unitPriceGbp, preferredCurrency), preferredCurrency)}
                                                     </td>
                                                     <td className="px-4 py-3 text-center text-white/70">
                                                         {entry.notes?.trim() || '-'}

@@ -1126,32 +1126,6 @@ export default function BudgetPage() {
                         </ResponsiveContainer>
                     </div>
 
-                    <div className="mt-2 space-y-1">
-                        <div className="flex items-center justify-between text-xs text-purple-100/90">
-                            <span className="inline-flex items-center gap-2">
-                                <span className="h-2 w-2 rounded-full bg-[#6366f1]" />
-                                Committed Outgoings
-                            </span>
-                            <span>
-                                £{budgetData.totalExpenditure.toLocaleString(undefined, {
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2,
-                                })}
-                            </span>
-                        </div>
-                        <div className="flex items-center justify-between text-xs text-purple-100/90">
-                            <span className="inline-flex items-center gap-2">
-                                <span className="h-2 w-2 rounded-full bg-[#fbbf24]" />
-                                Disposable Income
-                            </span>
-                            <span>
-                                £{Math.max(budgetData.disposableIncome, 0).toLocaleString(undefined, {
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2,
-                                })}
-                            </span>
-                        </div>
-                    </div>
                 </div>
 
                 <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/10 p-6 shadow-sm backdrop-blur-sm">
@@ -1187,22 +1161,6 @@ export default function BudgetPage() {
                         </ResponsiveContainer>
                     </div>
 
-                    <div className="mt-2 max-h-24 overflow-y-auto space-y-1 pr-2">
-                        {expenditureGraphData.map((exp, idx) => (
-                            <div key={`exp-${idx}`} className="flex items-center justify-between text-xs text-cyan-100/90">
-                                <span className="inline-flex items-center gap-2 truncate max-w-[70%]">
-                                    <span className="h-2 w-2 rounded-full flex-shrink-0" style={{ backgroundColor: exp.fill }} />
-                                    <span className="truncate">{exp.name}</span>
-                                </span>
-                                <span>
-                                    £{exp.value.toLocaleString(undefined, {
-                                        minimumFractionDigits: 2,
-                                        maximumFractionDigits: 2,
-                                    })}
-                                </span>
-                            </div>
-                        ))}
-                    </div>
                 </div>
             </div>
 

@@ -6,8 +6,8 @@ import { createClient } from '@/lib/supabase/client'
 import { Pencil, Trash2, X, PlusCircle, LayoutGrid } from 'lucide-react'
 import type { DashboardSavingsAccount, DashboardSavingsPot } from '@/lib/dashboard-data'
 import PotOperationModal from './PotOperationModal'
-import PensionOperationModal from '../pension/PensionOperationModal'
 import DeleteActionModal from '@/app/dashboard/components/DeleteActionModal'
+import { usePrivacy } from '@/app/dashboard/components/providers/PrivacyProvider'
 
 type Props = {
     isOpen: boolean
@@ -16,6 +16,7 @@ type Props = {
 }
 
 export default function SavingsPotsModal({ isOpen, onClose, account }: Props) {
+    const { hideValues } = usePrivacy()
     const [potModalOpen, setPotModalOpen] = useState(false)
     const [editingPot, setEditingPot] = useState<DashboardSavingsPot | null>(null)
     const [deletingPotId, setDeletingPotId] = useState<string | null>(null)
@@ -101,7 +102,7 @@ export default function SavingsPotsModal({ isOpen, onClose, account }: Props) {
                                                 <div className="min-w-0">
                                                     <h3 className="font-bold text-white truncate">{pot.name}</h3>
                                                     <p className="text-2xl font-black text-white mt-1">
-                                                        £{pot.balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                        {hideValues ? '****' : `£${pot.balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                                                     </p>
                                                 </div>
                                                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
@@ -124,16 +125,16 @@ export default function SavingsPotsModal({ isOpen, onClose, account }: Props) {
                                                 <div className="space-y-2">
                                                     <div className="flex justify-between text-xs font-semibold">
                                                         <span className="text-white/40">Target Progress</span>
-                                                        <span className="text-white">{progressPercentage}%</span>
+                                                        <span className="text-white">{hideValues ? '****' : `${progressPercentage}%`}</span>
                                                     </div>
                                                     <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
                                                         <div
                                                             className="h-full bg-indigo-500 rounded-full transition-all duration-500"
-                                                            style={{ width: `${progressPercentage}%` }}
+                                                            style={{ width: hideValues ? '0%' : `${progressPercentage}%` }}
                                                         />
                                                     </div>
                                                     <p className="text-[10px] text-white/30 font-medium">
-                                                        Goal: £{pot.targetAmount?.toLocaleString()}
+                                                        {hideValues ? 'Goal: ****' : `Goal: £${pot.targetAmount?.toLocaleString()}`}
                                                     </p>
                                                 </div>
                                             )}

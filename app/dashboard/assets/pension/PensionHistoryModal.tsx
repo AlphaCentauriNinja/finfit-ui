@@ -7,6 +7,7 @@ import { Loader2, Pencil, Trash2, X } from 'lucide-react'
 import PensionOperationModal from './PensionOperationModal'
 import DatePickerField from '@/app/dashboard/components/DatePickerField'
 import DeleteActionModal from '@/app/dashboard/components/DeleteActionModal'
+import { usePrivacy } from '@/app/dashboard/components/providers/PrivacyProvider'
 
 type Props = {
     isOpen: boolean
@@ -138,6 +139,7 @@ async function fetchHistoryEntries(pensionId: string): Promise<{ entries: Histor
 }
 
 export default function PensionHistoryModal({ isOpen, onClose, pensionId, pensionName }: Props) {
+    const { hideValues } = usePrivacy()
     const [entries, setEntries] = useState<HistoryEntry[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [loadError, setLoadError] = useState<string | null>(null)
@@ -147,7 +149,6 @@ export default function PensionHistoryModal({ isOpen, onClose, pensionId, pensio
     const [editAmount, setEditAmount] = useState('')
     const [editDate, setEditDate] = useState('')
     const [editError, setEditError] = useState<string | null>(null)
-    const [deleteError, setDeleteError] = useState<string | null>(null)
     const [isSavingEdit, setIsSavingEdit] = useState(false)
     const [isDeletingEntry, setIsDeletingEntry] = useState(false)
     const router = useRouter()
@@ -248,7 +249,6 @@ export default function PensionHistoryModal({ isOpen, onClose, pensionId, pensio
 
     const handleDelete = async () => {
         if (!deletingEntry) return
-        setDeleteError(null)
         setIsDeletingEntry(true)
         const supabase = createClient()
 
@@ -262,7 +262,6 @@ export default function PensionHistoryModal({ isOpen, onClose, pensionId, pensio
             .eq('id', deletingEntry.id)
 
         if (error) {
-            setDeleteError(error.message)
             setIsDeletingEntry(false)
             return
         }
@@ -330,11 +329,11 @@ export default function PensionHistoryModal({ isOpen, onClose, pensionId, pensio
                                                     {isValueEntry ? 'Value snapshot' : entry.name}
                                                 </td>
                                                 <td className={`px-4 py-3 text-center font-semibold ${isValueEntry ? 'text-cyan-200' : 'text-indigo-200'}`}>
-                                                    {isValueEntry ? formatAmount(entry.amount) : formatSignedAmount(entry.amount)}
+                                                    {hideValues ? '****' : isValueEntry ? formatAmount(entry.amount) : formatSignedAmount(entry.amount)}
                                                 </td>
                                                 <td className={`px-4 py-3 text-center font-semibold ${isValueEntry ? (entry.valueChange === null ? 'text-white/55' : entry.valueChange >= 0 ? 'text-emerald-300' : 'text-rose-300') : 'text-white/45'}`}>
                                                     {isValueEntry
-                                                        ? (entry.valueChange === null ? '—' : formatSignedAmount(entry.valueChange))
+                                                        ? (entry.valueChange === null ? '—' : hideValues ? '****' : formatSignedAmount(entry.valueChange))
                                                         : '—'}
                                                 </td>
                                                 <td className="px-4 py-3">
@@ -348,7 +347,6 @@ export default function PensionHistoryModal({ isOpen, onClose, pensionId, pensio
                                                         </button>
                                                         <button
                                                             onClick={() => {
-                                                                setDeleteError(null)
                                                                 setDeletingEntry(entry)
                                                             }}
                                                             className="inline-flex items-center gap-1.5 rounded-lg border border-rose-500/35 bg-rose-500/10 px-2.5 py-1.5 text-xs font-semibold text-rose-200 hover:bg-rose-500/20"

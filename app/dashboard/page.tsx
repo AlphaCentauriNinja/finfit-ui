@@ -18,7 +18,6 @@ import {
 import {
     PortfolioGraph,
     FinFitScoreWidget,
-    SpendingBreakdown,
     DebtWidget,
     GoalTracker
 } from '@/app/dashboard/components/DashboardWidgets'
@@ -159,9 +158,11 @@ export default function Overview() {
                 </section>
 
                 {/* Portfolio Graph */}
-                <section>
-                    <PortfolioGraph />
-                </section>
+                {!hideValues ? (
+                    <section>
+                        <PortfolioGraph />
+                    </section>
+                ) : null}
 
                 {/* Asset Grid */}
                 <section>
@@ -204,9 +205,6 @@ export default function Overview() {
 
                 {/* Goals */}
                 <GoalTracker />
-
-                {/* Spending */}
-                <SpendingBreakdown />
             </aside>
         </div>
     )

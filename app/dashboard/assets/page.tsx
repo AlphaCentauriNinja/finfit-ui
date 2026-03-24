@@ -220,11 +220,11 @@ export default function AssetsPage() {
                                     <div className="flex-1 bg-white/5 rounded-full h-1.5">
                                         <div
                                             className="h-1.5 rounded-full transition-all duration-500"
-                                            style={{ width: `${proportion}%`, backgroundColor: route.barHex }}
+                                            style={{ width: hideValues ? '0%' : `${proportion}%`, backgroundColor: route.barHex }}
                                         />
                                     </div>
                                     <span className="text-xs font-medium text-white/50 tabular-nums w-12 text-right">
-                                        {proportion.toFixed(1)}%
+                                        {hideValues ? '****' : `${proportion.toFixed(1)}%`}
                                     </span>
                                 </div>
 

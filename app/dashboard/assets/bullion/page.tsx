@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Edit3, History, Coins } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { usePrivacy } from '@/app/dashboard/components/providers/PrivacyProvider'
 
 type CurrencyCode = 'GBP' | 'EUR' | 'USD' | 'CHF' | 'CAD'
 
@@ -346,6 +347,7 @@ function BarIcon({ className }: { className?: string }) {
 }
 
 export default function BullionPage() {
+    const { hideValues } = usePrivacy()
     const [preferredCurrency, setPreferredCurrency] = useState<CurrencyCode>('GBP')
 
     useEffect(() => {
@@ -406,23 +408,23 @@ export default function BullionPage() {
                 <div className="rounded-2xl border border-white/10 bg-white/5 p-6 shadow-sm backdrop-blur-sm">
                     <p className="text-sm font-medium text-white/60">Current Value</p>
                     <p className="mt-2 text-3xl font-bold text-white">
-                        {formatCurrency(convertFromGbp(totalMarketGbp, preferredCurrency), preferredCurrency)}
+                        {hideValues ? '****' : formatCurrency(convertFromGbp(totalMarketGbp, preferredCurrency), preferredCurrency)}
                     </p>
                 </div>
                 <div className="rounded-2xl border border-white/10 bg-white/5 p-6 shadow-sm backdrop-blur-sm">
                     <p className="text-sm font-medium text-white/60">Intrinsic Value</p>
                     <p className="mt-2 text-3xl font-bold text-white">
-                        {formatCurrency(convertFromGbp(totalIntrinsicGbp, preferredCurrency), preferredCurrency)}
+                        {hideValues ? '****' : formatCurrency(convertFromGbp(totalIntrinsicGbp, preferredCurrency), preferredCurrency)}
                     </p>
                 </div>
                 <div className="rounded-2xl border border-white/10 bg-white/5 p-6 shadow-sm backdrop-blur-sm">
                     <p className="text-sm font-medium text-white/60">PNL</p>
                     <div className="mt-2 flex items-center gap-2">
                         <p className={`text-3xl font-bold ${totalPnlClassName}`}>
-                            {formatSignedCurrency(convertFromGbp(totalPnlGbp, preferredCurrency), preferredCurrency)}
+                            {hideValues ? '****' : formatSignedCurrency(convertFromGbp(totalPnlGbp, preferredCurrency), preferredCurrency)}
                         </p>
                         <span className={`rounded-md px-2 py-1 text-xs ${totalPnlPillClassName}`}>
-                            {totalPnlPct >= 0 ? '+' : ''}{totalPnlPct.toFixed(2)}%
+                            {hideValues ? '****' : `${totalPnlPct >= 0 ? '+' : ''}${totalPnlPct.toFixed(2)}%`}
                         </span>
                     </div>
                 </div>
@@ -478,22 +480,22 @@ export default function BullionPage() {
                                             </span>
                                         </td>
                                         <td className="px-4 py-4 text-center text-white/85">{row.description}</td>
-                                        <td className="px-4 py-4 text-center text-white/80">{row.amount}</td>
-                                        <td className="px-4 py-4 text-center text-white/80">{formatWeight(row.totalWeightGrams)}</td>
+                                        <td className="px-4 py-4 text-center text-white/80">{hideValues ? '****' : row.amount}</td>
+                                        <td className="px-4 py-4 text-center text-white/80">{hideValues ? '****' : formatWeight(row.totalWeightGrams)}</td>
                                         <td className="px-4 py-4 text-center text-white/80">
-                                            {formatCurrency(convertFromGbp(row.intrinsicPriceGbp, preferredCurrency), preferredCurrency)}
+                                            {hideValues ? '****' : formatCurrency(convertFromGbp(row.intrinsicPriceGbp, preferredCurrency), preferredCurrency)}
                                         </td>
                                         <td className="px-4 py-4 text-center text-white/90">
-                                            {formatCurrency(convertFromGbp(row.marketPriceGbp, preferredCurrency), preferredCurrency)}
+                                            {hideValues ? '****' : formatCurrency(convertFromGbp(row.marketPriceGbp, preferredCurrency), preferredCurrency)}
                                         </td>
                                         <td className={`px-4 py-4 text-center font-semibold ${deltaIntrinsicGbp > 0 ? 'text-emerald-400' : deltaIntrinsicGbp < 0 ? 'text-rose-400' : 'text-amber-400'}`}>
-                                            {formatSignedCurrency(convertFromGbp(deltaIntrinsicGbp, preferredCurrency), preferredCurrency)}
+                                            {hideValues ? '****' : formatSignedCurrency(convertFromGbp(deltaIntrinsicGbp, preferredCurrency), preferredCurrency)}
                                         </td>
                                         <td className="px-4 py-4 text-center text-white/90">
-                                            {formatCurrency(convertFromGbp(row.marketTotalGbp, preferredCurrency), preferredCurrency)}
+                                            {hideValues ? '****' : formatCurrency(convertFromGbp(row.marketTotalGbp, preferredCurrency), preferredCurrency)}
                                         </td>
                                         <td className="px-4 py-4 text-center text-white/80">
-                                            {formatCurrency(convertFromGbp(row.intrinsicTotalGbp, preferredCurrency), preferredCurrency)}
+                                            {hideValues ? '****' : formatCurrency(convertFromGbp(row.intrinsicTotalGbp, preferredCurrency), preferredCurrency)}
                                         </td>
                                         <td className="px-4 py-4 text-center">
                                             <button

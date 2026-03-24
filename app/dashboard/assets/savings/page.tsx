@@ -29,8 +29,8 @@ export default function SavingsPage() {
     // Mock PNL to match pension page style (3% return as in original page.tsx)
     const mockPnl = total * 0.03
     const mockPnlPct = 3.00
-    const totalPnlLabel = hideValues ? "+****" : `+£${mockPnl.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-    const totalPnlPctLabel = `+${mockPnlPct.toFixed(2)}%`
+    const totalPnlLabel = hideValues ? '****' : `+£${mockPnl.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    const totalPnlPctLabel = hideValues ? '****' : `+${mockPnlPct.toFixed(2)}%`
     const totalPnlPillTone = 'border-green-500 bg-green-500/20 text-green-200'
 
     return (
@@ -62,7 +62,9 @@ export default function SavingsPage() {
                 </div>
             </div>
 
-            <SavingsCharts pots={allPots} chartData={dashboardData.savings.chartData} />
+            {!hideValues ? (
+                <SavingsCharts pots={allPots} chartData={dashboardData.savings.chartData} />
+            ) : null}
 
             {dashboardData.savings.loadError ? (
                 <div className="mb-8 rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">

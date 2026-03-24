@@ -603,7 +603,7 @@ export default function DebtPage() {
                             <h3 className="text-sm font-medium text-rose-300">Total Debt</h3>
                             <CreditCard className="h-5 w-5 text-rose-400" />
                         </div>
-                        <p className="text-4xl font-bold text-rose-400">{formatGbp(totalDebt)}</p>
+                        <p className="text-4xl font-bold text-rose-400">{hideValues ? '****' : formatGbp(totalDebt)}</p>
                         <p className="mt-2 text-sm font-medium text-rose-300/80">
                             {debts.length} debt account{debts.length === 1 ? '' : 's'}
                         </p>
@@ -614,7 +614,7 @@ export default function DebtPage() {
                             <h3 className="text-sm font-medium text-amber-300">Debt-to-Income Ratio</h3>
                             <AlertTriangle className="h-5 w-5 text-amber-400" />
                         </div>
-                        <p className="text-4xl font-bold text-amber-300">{debtToIncomeRatio.toFixed(1)}%</p>
+                        <p className="text-4xl font-bold text-amber-300">{hideValues ? '****' : `${debtToIncomeRatio.toFixed(1)}%`}</p>
                         <p className="mt-2 text-sm font-medium text-amber-200/80">
                             Monthly net salary: {hideValues ? "****" : `£${monthlyNetSalary.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                         </p>
@@ -664,7 +664,7 @@ export default function DebtPage() {
                                             <td className="px-6 py-4 text-center text-white/85">{formatDebtTypeLabel(debt.debtType)}</td>
                                             <td className="px-6 py-4 text-center font-semibold text-white">{debt.debtName}</td>
                                             <td className="px-6 py-4 text-center text-white/85">{hideValues ? "****" : `£${debt.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</td>
-                                            <td className="px-6 py-4 text-center text-amber-300">{shareOfTotal.toFixed(1)}%</td>
+                                            <td className="px-6 py-4 text-center text-amber-300">{hideValues ? '****' : `${shareOfTotal.toFixed(1)}%`}</td>
                                             <td className="px-6 py-4 text-center">
                                                 <button
                                                     onClick={() => setEditingDebtId(debt.id)}
