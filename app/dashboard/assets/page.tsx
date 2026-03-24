@@ -1,9 +1,11 @@
 'use client'
 
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { BriefcaseBusiness, ChevronRight, Coins, Gem, Home, PiggyBank, TrendingUp } from 'lucide-react'
 import { useDashboardData } from '@/app/dashboard/components/providers/DashboardDataProvider'
 import { usePrivacy } from '@/app/dashboard/components/providers/PrivacyProvider'
+import { USD_TO_GBP, binanceCombinedStreamUrl } from '@/lib/crypto-data'
 import { formatCurrency } from '@/lib/utils'
 import type { LucideIcon } from 'lucide-react'
 
@@ -91,12 +93,86 @@ const assetRoutes: AssetRoute[] = [
 export default function AssetsPage() {
     const dashboardData = useDashboardData()
     const { hideValues } = usePrivacy()
+    const [liveUsdByTicker, setLiveUsdByTicker] = useState<Record<string, number>>({})
 
-    const totalAssetsValue = dashboardData.portfolio.totalAssets
+    useEffect(() => {
+        let isActive = true
+        let socket: WebSocket | null = null
+        let reconnectTimer: ReturnType<typeof setTimeout> | null = null
 
-    // Build a lookup map from portfolio.assetsWithAllocation by name
-    const assetValueMap = new Map(
-        dashboardData.portfolio.assetsWithAllocation.map((a) => [a.name, a.value])
+        const connect = () => {
+            if (!isActive) return
+            socket = new WebSocket(binanceCombinedStreamUrl)
+
+            socket.onmessage = (event: MessageEvent) => {
+                if (!isActive) return
+                try {
+                    const parsed = JSON.parse(event.data) as { data?: { s?: string; c?: string } }
+                    const symbol = parsed.data?.s
+                    const close = parsed.data?.c
+                    if (!symbol || !close) return
+
+                    const ticker = symbol.replace('USDT', '')
+                    const nextUsd = Number(close)
+                    if (!Number.isFinite(nextUsd)) return
+
+                    setLiveUsdByTicker((previous) => ({ ...previous, [ticker]: nextUsd }))
+                } catch {
+                    // Ignore malformed websocket payloads.
+                }
+            }
+
+            socket.onclose = () => {
+                if (!isActive) return
+                reconnectTimer = setTimeout(connect, 3000)
+            }
+
+            socket.onerror = () => {
+                socket?.close()
+            }
+        }
+
+        connect()
+
+        return () => {
+            isActive = false
+            if (reconnectTimer) clearTimeout(reconnectTimer)
+            socket?.close()
+        }
+    }, [])
+
+    const liveCryptoValue = useMemo(() => {
+        return dashboardData.crypto.assets.reduce((sum, row) => {
+            const liveUsd = liveUsdByTicker[row.ticker] ?? row.usd
+            return sum + (row.amount * liveUsd * USD_TO_GBP)
+        }, 0)
+    }, [dashboardData.crypto.assets, liveUsdByTicker])
+
+    const dynamicAssetsWithAllocation = useMemo(() => {
+        const updatedAssets = dashboardData.portfolio.assetsWithAllocation.map((asset) => {
+            if (asset.name === 'Crypto') {
+                return { ...asset, value: liveCryptoValue }
+            }
+            return asset
+        })
+
+        const finalTotal = updatedAssets.reduce((sum, asset) => sum + asset.value, 0)
+
+        return updatedAssets.map((asset) => ({
+            ...asset,
+            allocation: finalTotal > 0 ? (asset.value / finalTotal) * 100 : 0,
+        }))
+    }, [dashboardData.portfolio.assetsWithAllocation, liveCryptoValue])
+
+    const totalAssetsValue = useMemo(
+        () => dynamicAssetsWithAllocation.reduce((sum, asset) => sum + asset.value, 0),
+        [dynamicAssetsWithAllocation]
+    )
+
+    // Build a lookup map from the dynamic assets list by name.
+    const assetValueMap = useMemo(
+        () => new Map(dynamicAssetsWithAllocation.map((a) => [a.name, a.value])),
+        [dynamicAssetsWithAllocation]
     )
 
     return (

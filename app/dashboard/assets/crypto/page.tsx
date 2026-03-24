@@ -2,20 +2,18 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Trash2, History, Wifi, WifiOff, Plus, X, Loader2, Upload } from 'lucide-react'
+import { Wifi, WifiOff, Plus, X, Loader2, Upload } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useDashboardData } from '@/app/dashboard/components/providers/DashboardDataProvider'
 import { ImportLedgerModal } from './ImportLedgerModal'
-import DeleteActionModal from '@/app/dashboard/components/DeleteActionModal'
+import CryptoAssetCard from './CryptoAssetCard'
 
 import {
-    CryptoRow,
     CurrencyCode,
     USD_TO_GBP,
     GBP_TO_CURRENCY_RATE,
     CURRENCY_LOCALE,
     DEFAULT_COIN_NAME_BY_TICKER,
-    initialCryptoRows,
     binanceCombinedStreamUrl
 } from '@/lib/crypto-data'
 
@@ -41,10 +39,6 @@ function formatCurrency(value: number, currency: CurrencyCode): string {
 
 function formatSignedCurrency(value: number, currency: CurrencyCode): string {
     return `${value >= 0 ? '+' : '-'}${formatCurrency(Math.abs(value), currency)}`
-}
-
-function formatUsd(value: number): string {
-    return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
 type AddCoinModalProps = {
@@ -243,29 +237,6 @@ export default function CryptoPage() {
     const [preferredCurrency, setPreferredCurrency] = useState<CurrencyCode>('GBP')
     const [isAddCoinOpen, setIsAddCoinOpen] = useState(false)
     const [isImportOpen, setIsImportOpen] = useState(false)
-    const [coinToDelete, setCoinToDelete] = useState<{ id: string; name: string } | null>(null)
-    const [isDeleting, setIsDeleting] = useState(false)
-    const router = useRouter()
-
-    const handleDeleteCoin = async () => {
-        if (!coinToDelete) return
-
-        setIsDeleting(true)
-        const supabase = createClient()
-        const { error } = await supabase
-            .from('crypto_assets')
-            .delete()
-            .eq('id', coinToDelete.id)
-
-        setIsDeleting(false)
-
-        if (!error) {
-            setCoinToDelete(null)
-            router.refresh()
-        } else {
-            console.error('Error deleting coin:', error)
-        }
-    }
 
     useEffect(() => {
         let isMounted = true
@@ -435,81 +406,16 @@ export default function CryptoPage() {
                     <p className="text-sm text-indigo-200/60">Use the Add Coin button above to monitor your portfolio.</p>
                 </div>
             ) : (
-                <div className="w-full max-w-none bg-white/5 backdrop-blur-sm rounded-2xl shadow-sm border border-white/10 overflow-hidden">
-                    <div className="px-6 py-4 border-b border-white/10">
-                        <h3 className="text-sm font-semibold text-white">Crypto Holdings</h3>
-                    </div>
-                    <div className="w-full overflow-x-auto">
-                    <table className="w-full min-w-[1300px] table-fixed text-sm">
-                        <thead className="bg-white/[0.03]">
-                            <tr className="text-white/60">
-                                <th className="text-center font-medium px-4 py-3">Ticker</th>
-                                <th className="text-center font-medium px-4 py-3">Name</th>
-                                <th className="text-center font-medium px-4 py-3">Amount</th>
-                                <th className="text-center font-medium px-4 py-3">Price (USD)</th>
-                                <th className="text-center font-medium px-4 py-3">Value ({preferredCurrency})</th>
-                                <th className="text-center font-medium px-4 py-3">Invested</th>
-                                <th className="text-center font-medium px-4 py-3">PNL %</th>
-                                <th className="text-center font-medium px-4 py-3">PNL</th>
-                                <th className="text-center font-medium px-4 py-3">Delete</th>
-                                <th className="text-center font-medium px-4 py-3">History</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {calculatedRows.map((row) => {
-                                const rowPnl = row.marketValueGbp - row.investedGbp
-                                const rowPnlPct = row.investedGbp > 0 ? (rowPnl / row.investedGbp) * 100 : 0
-                                const rowPnlClassName = rowPnl > 0
-                                    ? 'text-emerald-400'
-                                    : rowPnl < 0
-                                        ? 'text-rose-400'
-                                        : 'text-amber-400'
-
-                                return (
-                                    <tr key={row.id} className="border-t border-white/10">
-                                        <td className="px-4 py-4 text-center text-white font-semibold">{row.ticker}</td>
-                                        <td className="px-4 py-4 text-center text-white/80">{row.name}</td>
-                                        <td className="px-4 py-4 text-center text-white/80">{row.amount.toLocaleString('en-GB', { maximumFractionDigits: 8 })}</td>
-                                        <td className="px-4 py-4 text-center text-white/80">${formatUsd(row.usd)}</td>
-                                        <td className="px-4 py-4 text-center text-white/90">
-                                            {formatCurrency(convertFromGbp(row.marketValueGbp, preferredCurrency), preferredCurrency)}
-                                        </td>
-                                        <td className="px-4 py-4 text-center text-white/80">
-                                            {formatCurrency(convertFromGbp(row.investedGbp, preferredCurrency), preferredCurrency)}
-                                        </td>
-                                        <td className={`px-4 py-4 text-center font-semibold ${rowPnlClassName}`}>
-                                            {rowPnlPct >= 0 ? '+' : ''}{rowPnlPct.toFixed(2)}%
-                                        </td>
-                                        <td className={`px-4 py-4 text-center font-semibold ${rowPnlClassName}`}>
-                                            {formatSignedCurrency(convertFromGbp(rowPnl, preferredCurrency), preferredCurrency)}
-                                        </td>
-                                        <td className="px-4 py-4 text-center">
-                                            <button
-                                                type="button"
-                                                onClick={() => setCoinToDelete({ id: row.id, name: row.name })}
-                                                className="inline-flex items-center justify-center h-9 px-3 rounded-lg bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 transition-colors"
-                                                aria-label={`Delete ${row.ticker}`}
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
-                                        </td>
-                                        <td className="px-4 py-4 text-center">
-                                            <button
-                                                type="button"
-                                                className="inline-flex items-center gap-1.5 justify-center h-9 px-3 rounded-lg bg-indigo-500/15 text-indigo-200 hover:bg-indigo-500/25 transition-colors"
-                                                aria-label={`History for ${row.ticker}`}
-                                            >
-                                                <History className="w-4 h-4" />
-                                                History
-                                            </button>
-                                        </td>
-                                    </tr>
-                                )
-                            })}
-                        </tbody>
-                    </table>
+                <div className="grid gap-6 md:grid-cols-3">
+                    {calculatedRows.map((row) => (
+                        <CryptoAssetCard
+                            key={row.id}
+                            asset={row}
+                            totalCurrentValue={totalCurrent}
+                            preferredCurrency={preferredCurrency}
+                        />
+                    ))}
                 </div>
-            </div>
             )}
 
             <AddCoinModal
@@ -520,15 +426,6 @@ export default function CryptoPage() {
             <ImportLedgerModal
                 isOpen={isImportOpen}
                 onClose={() => setIsImportOpen(false)}
-            />
-
-            <DeleteActionModal
-                isOpen={!!coinToDelete}
-                onClose={() => !isDeleting && setCoinToDelete(null)}
-                onConfirm={handleDeleteCoin}
-                title="Delete Asset"
-                message={`Are you sure you want to delete ${coinToDelete?.name}? This action cannot be undone.`}
-                isProcessing={isDeleting}
             />
         </div>
     )
