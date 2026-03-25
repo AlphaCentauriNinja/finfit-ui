@@ -21,7 +21,7 @@ import {
 
 const topLinks = [
     { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Pension', href: '/dashboard/assets/pension', icon: Briefcase },
+    { name: 'Pension', href: '/dashboard/pension', icon: Briefcase },
     { name: 'Budget', href: '/dashboard/budget', icon: Wallet },
     { name: 'Debt', href: '/dashboard/debt', icon: CreditCard },
 ]

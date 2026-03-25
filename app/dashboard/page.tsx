@@ -40,7 +40,7 @@ const getIconForAsset = (name: string) => {
 
 const getRouteForAsset = (name: string) => {
     switch (name) {
-        case 'Pension': return '/dashboard/assets/pension'
+        case 'Pension': return '/dashboard/pension'
         case 'Savings': return '/dashboard/assets/savings'
         case 'Investments': return '/dashboard/assets/investments'
         case 'Crypto': return '/dashboard/assets/crypto'

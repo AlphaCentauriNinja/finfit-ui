@@ -24,7 +24,7 @@ type AssetRoute = {
 const assetRoutes: AssetRoute[] = [
     {
         name: 'Pension',
-        href: '/dashboard/assets/pension',
+        href: '/dashboard/pension',
         description: 'Retirement savings & employer contributions',
         icon: BriefcaseBusiness,
         iconBg: 'bg-purple-500/10',
