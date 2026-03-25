@@ -236,9 +236,10 @@ export function SpendingBreakdown() {
     )
 }
 
-export function DebtWidget() {
+export function DebtWidget({ hideValuesOverride }: { hideValuesOverride?: boolean } = {}) {
     const dashboardData = useDashboardData()
-    const { hideValues } = usePrivacy()
+    const { hideValues: privacyHideValues } = usePrivacy()
+    const hideValues = hideValuesOverride ?? privacyHideValues
     const totalDebt = dashboardData.debt.totalDebt
     const debtCount = dashboardData.debt.debtCount
     const hasNoDebt = debtCount === 0 || totalDebt <= 0
@@ -283,9 +284,10 @@ export function DebtWidget() {
     )
 }
 
-export function GoalTracker() {
+export function GoalTracker({ hideValuesOverride }: { hideValuesOverride?: boolean } = {}) {
     const dashboardData = useDashboardData()
-    const { hideValues } = usePrivacy()
+    const { hideValues: privacyHideValues } = usePrivacy()
+    const hideValues = hideValuesOverride ?? privacyHideValues
 
     // Flatten all pots from all accounts and filter for ones with targets
     const goals = dashboardData.savings.accounts

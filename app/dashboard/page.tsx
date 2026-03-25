@@ -53,10 +53,20 @@ const getRouteForAsset = (name: string) => {
 export default function Overview() {
     const dashboardData = useDashboardData()
     const { hideValues, toggleHideValues } = usePrivacy()
+    const [optimisticHideValues, setOptimisticHideValues] = useState(hideValues)
 
     // Crypto Websocket Logic
     const [cryptoAssets] = useState<CryptoRow[]>(initialCryptoRows)
     const [liveUsdByTicker, setLiveUsdByTicker] = useState<Record<string, number>>({})
+
+    useEffect(() => {
+        setOptimisticHideValues(hideValues)
+    }, [hideValues])
+
+    const handleToggleHideValues = () => {
+        setOptimisticHideValues((previous) => !previous)
+        toggleHideValues()
+    }
 
     useEffect(() => {
         let isActive = true
@@ -139,26 +149,26 @@ export default function Overview() {
                     <div className="flex items-center justify-between mb-6">
                         <h1 className="text-2xl font-bold text-white">Portfolio Overview</h1>
                         <button
-                            onClick={toggleHideValues}
+                            onClick={handleToggleHideValues}
                             className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 hover:text-emerald-200 transition-colors"
-                            title={hideValues ? "Show values" : "Hide values"}
+                            title={optimisticHideValues ? "Show values" : "Hide values"}
                         >
-                            {hideValues ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                            {optimisticHideValues ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                             <span className="text-sm font-medium">
-                                {hideValues ? "Show Values" : "Hide Values"}
+                                {optimisticHideValues ? "Show Values" : "Hide Values"}
                             </span>
                         </button>
                     </div>
                     <StatCard
                         title="Total Net Assets"
-                        value={formatCurrency(totalAssets, hideValues)}
+                        value={formatCurrency(totalAssets, optimisticHideValues)}
                         change="+12.5% YTD"
                         icon={Wallet}
                     />
                 </section>
 
                 {/* Portfolio Graph */}
-                {!hideValues ? (
+                {!optimisticHideValues ? (
                     <section>
                         <PortfolioGraph />
                     </section>
@@ -184,7 +194,7 @@ export default function Overview() {
                                         value={asset.value}
                                         allocation={asset.allocation}
                                         icon={getIconForAsset(asset.name)}
-                                        hideValues={hideValues}
+                                        hideValues={optimisticHideValues}
                                     />
                                 </Link>
                             )
@@ -200,11 +210,11 @@ export default function Overview() {
                 <FinFitScoreWidget />
 
                 {/* Debt */}
-                <DebtWidget />
+                <DebtWidget hideValuesOverride={optimisticHideValues} />
 
 
                 {/* Goals */}
-                <GoalTracker />
+                <GoalTracker hideValuesOverride={optimisticHideValues} />
             </aside>
         </div>
     )
