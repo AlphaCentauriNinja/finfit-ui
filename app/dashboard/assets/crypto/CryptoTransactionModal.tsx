@@ -20,7 +20,7 @@ type Props = {
     asset: Asset
 }
 
-type TransactionType = 'BUY' | 'SELL'
+type TransactionType = 'BUY' | 'SELL' | 'STAKE'
 
 type CryptoAssetBalanceRow = {
     amount: number | string | null
@@ -48,6 +48,7 @@ export default function CryptoTransactionModal({ isOpen, onClose, asset }: Props
     const [formError, setFormError] = useState<string | null>(null)
     const router = useRouter()
     const supabase = createClient()
+    const requiresTotalValue = transactionType !== 'STAKE'
 
     if (!isOpen) return null
 
@@ -56,7 +57,7 @@ export default function CryptoTransactionModal({ isOpen, onClose, asset }: Props
         setFormError(null)
 
         const parsedAmount = Number(amount)
-        const parsedTotal = Number(totalValueGbp)
+        const parsedTotal = totalValueGbp.trim().length > 0 ? Number(totalValueGbp) : null
         const cleanNotes = notes.trim()
 
         if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
@@ -64,10 +65,12 @@ export default function CryptoTransactionModal({ isOpen, onClose, asset }: Props
             return
         }
 
-        if (!Number.isFinite(parsedTotal) || parsedTotal <= 0) {
+        if (requiresTotalValue && (parsedTotal === null || !Number.isFinite(parsedTotal) || parsedTotal <= 0)) {
             setFormError('Total value must be greater than 0.')
             return
         }
+
+        const safeParsedTotal = parsedTotal ?? 0
 
         if (!transactionDate) {
             setFormError('Transaction date is required.')
@@ -109,13 +112,15 @@ export default function CryptoTransactionModal({ isOpen, onClose, asset }: Props
             return
         }
 
-        const nextAmount = transactionType === 'BUY'
-            ? currentAmount + parsedAmount
-            : Math.max(0, currentAmount - parsedAmount)
+        const nextAmount = transactionType === 'SELL'
+            ? Math.max(0, currentAmount - parsedAmount)
+            : currentAmount + parsedAmount
 
         const nextInvestedRaw = transactionType === 'BUY'
-            ? currentInvested + parsedTotal
-            : currentInvested - parsedTotal
+            ? currentInvested + safeParsedTotal
+            : transactionType === 'SELL'
+                ? currentInvested - safeParsedTotal
+                : currentInvested
         const nextInvested = Math.max(0, nextInvestedRaw)
 
         const { error: transactionError } = await supabase.from('crypto_transactions').insert({
@@ -123,7 +128,7 @@ export default function CryptoTransactionModal({ isOpen, onClose, asset }: Props
             crypto_asset_id: asset.id,
             transaction_type: transactionType,
             amount: parsedAmount,
-            total_value_gbp: parsedTotal,
+            total_value_gbp: requiresTotalValue ? parsedTotal : null,
             transaction_date: transactionDate,
             notes: cleanNotes.length > 0 ? cleanNotes : null,
         })
@@ -178,6 +183,7 @@ export default function CryptoTransactionModal({ isOpen, onClose, asset }: Props
                         >
                             <option value="BUY">Buy</option>
                             <option value="SELL">Sell</option>
+                            <option value="STAKE">Stake</option>
                         </select>
                     </div>
 
@@ -195,19 +201,28 @@ export default function CryptoTransactionModal({ isOpen, onClose, asset }: Props
                                 placeholder="0.00"
                             />
                         </div>
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-white/80">Total Value (GBP)</label>
-                            <input
-                                type="number"
-                                required
-                                min="0"
-                                step="any"
-                                value={totalValueGbp}
-                                onChange={(event) => setTotalValueGbp(event.target.value)}
-                                className="w-full h-12 rounded-xl border border-white/10 bg-slate-900 px-4 text-sm text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
-                                placeholder="0.00"
-                            />
-                        </div>
+                        {requiresTotalValue ? (
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-white/80">Total Value (GBP)</label>
+                                <input
+                                    type="number"
+                                    required
+                                    min="0"
+                                    step="any"
+                                    value={totalValueGbp}
+                                    onChange={(event) => setTotalValueGbp(event.target.value)}
+                                    className="w-full h-12 rounded-xl border border-white/10 bg-slate-900 px-4 text-sm text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                                    placeholder="0.00"
+                                />
+                            </div>
+                        ) : (
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-white/80">Total Value (GBP)</label>
+                                <div className="flex h-12 items-center rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 text-sm text-rose-300">
+                                    Not needed for stake
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     <DatePickerField
@@ -224,7 +239,7 @@ export default function CryptoTransactionModal({ isOpen, onClose, asset }: Props
                             onChange={(event) => setNotes(event.target.value)}
                             rows={3}
                             className="w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-sm text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
-                            placeholder="e.g. Monthly DCA buy"
+                            placeholder={transactionType === 'STAKE' ? 'e.g. Validator reward' : 'e.g. Monthly DCA buy'}
                         />
                     </div>
 

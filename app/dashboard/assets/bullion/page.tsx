@@ -1,29 +1,13 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { ArrowDownRight, ArrowUpRight, ChevronRight, Coins, LayoutGrid, Minus, X } from 'lucide-react'
+import { AlertTriangle, ArrowDownRight, ArrowUpRight, ChevronRight, Coins, LayoutGrid, Minus, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { usePrivacy } from '@/app/dashboard/components/providers/PrivacyProvider'
+import AddBullionButton from './AddBullionButton'
+import type { BullionCurrencyCode, BullionHoldingDbRow, BullionRow, BullionType } from './types'
 
 type CurrencyCode = 'GBP' | 'EUR' | 'USD' | 'CHF' | 'CAD'
-
-type BullionRow = {
-    id: string
-    metal: 'GOLD' | 'SILVER'
-    description: string
-    amount: number
-    weightPerItemGrams: number
-    totalWeightGrams: number
-    intrinsicPriceGbp: number
-    marketPriceGbp: number
-    marketTotalGbp: number
-    intrinsicTotalGbp: number
-    type: 'COIN' | 'BAR'
-    manufacturer: string
-    country: string
-    year: string
-    linkLabel: string | null
-}
 
 type BullionGroupKey = 'gold-coins' | 'gold-bars' | 'silver-coins' | 'silver-bars'
 
@@ -61,264 +45,6 @@ const CURRENCY_LOCALE: Record<CurrencyCode, string> = {
     CAD: 'en-CA',
 }
 
-const bullionRows: BullionRow[] = [
-    {
-        id: 'G.1',
-        metal: 'GOLD',
-        description: 'Gold Sovereign',
-        amount: 1,
-        weightPerItemGrams: 7.988,
-        totalWeightGrams: 7.988,
-        intrinsicPriceGbp: 984.67,
-        marketPriceGbp: 973.90,
-        marketTotalGbp: 973.90,
-        intrinsicTotalGbp: 984.67,
-        type: 'COIN',
-        manufacturer: 'Royal Mint',
-        country: 'UK',
-        year: '2022',
-        linkLabel: null,
-    },
-    {
-        id: 'G.2',
-        metal: 'GOLD',
-        description: '5 Canadian Dollar (1/10 Ounce)',
-        amount: 1,
-        weightPerItemGrams: 3.11,
-        totalWeightGrams: 3.11,
-        intrinsicPriceGbp: 383.37,
-        marketPriceGbp: 449.80,
-        marketTotalGbp: 449.80,
-        intrinsicTotalGbp: 383.37,
-        type: 'COIN',
-        manufacturer: '',
-        country: 'Canada',
-        year: '',
-        linkLabel: null,
-    },
-    {
-        id: 'G.3',
-        metal: 'GOLD',
-        description: '10 Canadian Dollar',
-        amount: 1,
-        weightPerItemGrams: 7.78,
-        totalWeightGrams: 7.78,
-        intrinsicPriceGbp: 959.03,
-        marketPriceGbp: 973.90,
-        marketTotalGbp: 973.90,
-        intrinsicTotalGbp: 959.03,
-        type: 'COIN',
-        manufacturer: '',
-        country: 'Canada',
-        year: '',
-        linkLabel: null,
-    },
-    {
-        id: 'G.4',
-        metal: 'GOLD',
-        description: '1 Tola Bar',
-        amount: 1,
-        weightPerItemGrams: 11.6,
-        totalWeightGrams: 11.6,
-        intrinsicPriceGbp: 1429.92,
-        marketPriceGbp: 1607.00,
-        marketTotalGbp: 1607.00,
-        intrinsicTotalGbp: 1429.92,
-        type: 'BAR',
-        manufacturer: '',
-        country: 'Swiss',
-        year: '',
-        linkLabel: null,
-    },
-    {
-        id: 'G.5',
-        metal: 'GOLD',
-        description: '1 Gram Bar',
-        amount: 1,
-        weightPerItemGrams: 1,
-        totalWeightGrams: 1,
-        intrinsicPriceGbp: 123.27,
-        marketPriceGbp: 158.50,
-        marketTotalGbp: 158.50,
-        intrinsicTotalGbp: 123.27,
-        type: 'BAR',
-        manufacturer: '',
-        country: 'Germany',
-        year: '',
-        linkLabel: null,
-    },
-    {
-        id: 'G.6',
-        metal: 'GOLD',
-        description: '10 Gram Bar',
-        amount: 1,
-        weightPerItemGrams: 10,
-        totalWeightGrams: 1,
-        intrinsicPriceGbp: 123.27,
-        marketPriceGbp: 1356.00,
-        marketTotalGbp: 1356.00,
-        intrinsicTotalGbp: 123.27,
-        type: 'BAR',
-        manufacturer: '',
-        country: 'Germany',
-        year: '',
-        linkLabel: null,
-    },
-    {
-        id: 'G.7',
-        metal: 'GOLD',
-        description: '1/10 Ounce Bar',
-        amount: 1,
-        weightPerItemGrams: 2.83,
-        totalWeightGrams: 2.83,
-        intrinsicPriceGbp: 348.85,
-        marketPriceGbp: 364.40,
-        marketTotalGbp: 364.40,
-        intrinsicTotalGbp: 348.85,
-        type: 'BAR',
-        manufacturer: '',
-        country: 'Germany',
-        year: '',
-        linkLabel: null,
-    },
-    {
-        id: 'S.1',
-        metal: 'SILVER',
-        description: 'Canada 5 Dollar',
-        amount: 54,
-        weightPerItemGrams: 31.1,
-        totalWeightGrams: 31.1,
-        intrinsicPriceGbp: 62.96,
-        marketPriceGbp: 100.92,
-        marketTotalGbp: 5449.68,
-        intrinsicTotalGbp: 3400.00,
-        type: 'COIN',
-        manufacturer: '',
-        country: 'Canada',
-        year: '2022',
-        linkLabel: 'LINK',
-    },
-    {
-        id: 'S.2',
-        metal: 'SILVER',
-        description: 'British 2 Pounds',
-        amount: 1,
-        weightPerItemGrams: 31.1,
-        totalWeightGrams: 31.1,
-        intrinsicPriceGbp: 62.96,
-        marketPriceGbp: 100.56,
-        marketTotalGbp: 100.56,
-        intrinsicTotalGbp: 62.96,
-        type: 'COIN',
-        manufacturer: '',
-        country: 'UK',
-        year: '',
-        linkLabel: null,
-    },
-    {
-        id: 'S.3',
-        metal: 'SILVER',
-        description: 'British Queens Beast',
-        amount: 2,
-        weightPerItemGrams: 2,
-        totalWeightGrams: 62.21,
-        intrinsicPriceGbp: 125.95,
-        marketPriceGbp: 103.80,
-        marketTotalGbp: 207.60,
-        intrinsicTotalGbp: 251.89,
-        type: 'COIN',
-        manufacturer: '',
-        country: 'UK',
-        year: '',
-        linkLabel: null,
-    },
-    {
-        id: 'S.4',
-        metal: 'SILVER',
-        description: 'British Queens Beast Completer',
-        amount: 1,
-        weightPerItemGrams: 62.21,
-        totalWeightGrams: 62.21,
-        intrinsicPriceGbp: 125.95,
-        marketPriceGbp: 194.88,
-        marketTotalGbp: 194.88,
-        intrinsicTotalGbp: 125.95,
-        type: 'COIN',
-        manufacturer: '',
-        country: 'UK',
-        year: '',
-        linkLabel: 'LINK',
-    },
-    {
-        id: 'S.5',
-        metal: 'SILVER',
-        description: 'Sharps Pixkey 100 GRAM',
-        amount: 4,
-        weightPerItemGrams: 100,
-        totalWeightGrams: 100,
-        intrinsicPriceGbp: 202.45,
-        marketPriceGbp: 378.96,
-        marketTotalGbp: 1515.84,
-        intrinsicTotalGbp: 809.81,
-        type: 'BAR',
-        manufacturer: '',
-        country: 'Swiss',
-        year: '',
-        linkLabel: null,
-    },
-    {
-        id: 'S.6',
-        metal: 'SILVER',
-        description: 'Pamp 100 GRAM',
-        amount: 1,
-        weightPerItemGrams: 100,
-        totalWeightGrams: 100,
-        intrinsicPriceGbp: 202.45,
-        marketPriceGbp: 378.96,
-        marketTotalGbp: 378.96,
-        intrinsicTotalGbp: 202.45,
-        type: 'BAR',
-        manufacturer: '',
-        country: 'Swiss',
-        year: '',
-        linkLabel: null,
-    },
-    {
-        id: 'S.7',
-        metal: 'SILVER',
-        description: 'Sharps Pixley 500 GRAM',
-        amount: 1,
-        weightPerItemGrams: 100,
-        totalWeightGrams: 100,
-        intrinsicPriceGbp: 202.45,
-        marketPriceGbp: 1563.60,
-        marketTotalGbp: 1563.60,
-        intrinsicTotalGbp: 202.45,
-        type: 'BAR',
-        manufacturer: '',
-        country: 'Swiss',
-        year: '',
-        linkLabel: null,
-    },
-    {
-        id: 'S.8',
-        metal: 'SILVER',
-        description: 'James Bond 007 Bar No Time To Die',
-        amount: 1,
-        weightPerItemGrams: 31.1,
-        totalWeightGrams: 31.1,
-        intrinsicPriceGbp: 62.96,
-        marketPriceGbp: 102.12,
-        marketTotalGbp: 102.12,
-        intrinsicTotalGbp: 62.96,
-        type: 'BAR',
-        manufacturer: '',
-        country: 'UK',
-        year: '',
-        linkLabel: null,
-    },
-]
-
 function normalizeCurrency(value: string | null | undefined): CurrencyCode {
     if (value === 'GBP' || value === 'EUR' || value === 'USD' || value === 'CHF' || value === 'CAD') {
         return value
@@ -345,6 +71,57 @@ function formatSignedCurrency(value: number, currency: CurrencyCode): string {
 
 function formatWeight(value: number): string {
     return value.toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 3 })
+}
+
+function toNumber(value: number | string | null | undefined): number {
+    if (typeof value === 'number') return value
+    if (typeof value === 'string') {
+        const parsed = Number(value)
+        if (Number.isFinite(parsed)) return parsed
+    }
+    return 0
+}
+
+function normalizeStoredCurrency(value: string | null | undefined): BullionCurrencyCode | null {
+    if (value === 'GBP' || value === 'EUR' || value === 'USD' || value === 'CHF' || value === 'CAD') {
+        return value
+    }
+
+    return null
+}
+
+function mapBullionHoldingRow(row: BullionHoldingDbRow): BullionRow | null {
+    const metal = row.metal === 'GOLD' || row.metal === 'SILVER' ? row.metal : null
+    const type = row.type === 'COIN' || row.type === 'BAR' ? row.type : null
+    const description = row.description?.trim() ?? ''
+    const amount = toNumber(row.amount)
+    const weightPerItemGrams = toNumber(row.weight_per_item_grams)
+
+    if (!row.id || !metal || !type || !description) return null
+    if (amount <= 0 || weightPerItemGrams <= 0) return null
+
+    return {
+        id: row.id,
+        metal,
+        description,
+        amount,
+        weightPerItemGrams,
+        totalWeightGrams: amount * weightPerItemGrams,
+        intrinsicPriceGbp: 0,
+        marketPriceGbp: 0,
+        marketTotalGbp: 0,
+        intrinsicTotalGbp: 0,
+        type,
+        manufacturer: row.manufacturer?.trim() ?? '',
+        country: row.country?.trim() ?? '',
+        year: row.mint_year?.trim() ?? '',
+        linkLabel: row.link_label ?? null,
+        catalogProductId: row.catalog_product_id,
+        catalogVariantId: row.catalog_variant_id,
+        purchaseDate: row.purchase_date,
+        purchaseValue: row.purchase_value === null ? null : toNumber(row.purchase_value),
+        purchaseCurrency: normalizeStoredCurrency(row.purchase_currency),
+    }
 }
 
 const BULLION_GROUP_CONFIG: Array<Pick<BullionGroup, 'key' | 'title' | 'metal' | 'type' | 'iconToneClassName' | 'progressClassName' | 'accentBorderClassName'>> = [
@@ -386,7 +163,7 @@ const BULLION_GROUP_CONFIG: Array<Pick<BullionGroup, 'key' | 'title' | 'metal' |
     },
 ]
 
-function BullionGroupIcon({ type, className }: { type: 'COIN' | 'BAR'; className?: string }) {
+function BullionGroupIcon({ type, className }: { type: BullionType; className?: string }) {
     if (type === 'COIN') {
         return <Coins className={className} />
     }
@@ -559,6 +336,9 @@ function BarIcon({ className }: { className?: string }) {
 export default function BullionPage() {
     const { hideValues } = usePrivacy()
     const [preferredCurrency, setPreferredCurrency] = useState<CurrencyCode>('GBP')
+    const [bullionRows, setBullionRows] = useState<BullionRow[]>([])
+    const [isLoading, setIsLoading] = useState(true)
+    const [loadError, setLoadError] = useState<string | null>(null)
     const [selectedGroupKey, setSelectedGroupKey] = useState<BullionGroupKey | null>(null)
 
     useEffect(() => {
@@ -583,13 +363,68 @@ export default function BullionPage() {
         }
     }, [])
 
+    useEffect(() => {
+        let isMounted = true
+
+        const loadBullionHoldings = async () => {
+            const supabase = createClient()
+            const {
+                data: { user },
+                error: userError,
+            } = await supabase.auth.getUser()
+
+            if (!isMounted) return
+
+            if (userError) {
+                setLoadError(userError.message)
+                setIsLoading(false)
+                return
+            }
+
+            if (!user) {
+                setBullionRows([])
+                setLoadError(null)
+                setIsLoading(false)
+                return
+            }
+
+            const { data, error } = await supabase
+                .from('bullion_holdings')
+                .select('id, metal, description, amount, weight_per_item_grams, type, manufacturer, country, mint_year, link_label, catalog_product_id, catalog_variant_id, purchase_date, purchase_value, purchase_currency')
+                .eq('user_id', user.id)
+                .order('created_at', { ascending: false })
+
+            if (!isMounted) return
+
+            if (error) {
+                setLoadError(error.message)
+                setIsLoading(false)
+                return
+            }
+
+            const rows = (data ?? [])
+                .map((row) => mapBullionHoldingRow(row as BullionHoldingDbRow))
+                .filter((row): row is BullionRow => Boolean(row))
+
+            setBullionRows(rows)
+            setLoadError(null)
+            setIsLoading(false)
+        }
+
+        void loadBullionHoldings()
+
+        return () => {
+            isMounted = false
+        }
+    }, [])
+
     const totalMarketGbp = useMemo(
         () => bullionRows.reduce((sum, row) => sum + row.marketTotalGbp, 0),
-        []
+        [bullionRows]
     )
     const totalIntrinsicGbp = useMemo(
         () => bullionRows.reduce((sum, row) => sum + row.intrinsicTotalGbp, 0),
-        []
+        [bullionRows]
     )
     const totalPnlGbp = totalMarketGbp - totalIntrinsicGbp
     const totalPnlPct = totalIntrinsicGbp > 0 ? (totalPnlGbp / totalIntrinsicGbp) * 100 : 0
@@ -625,11 +460,12 @@ export default function BullionPage() {
                 allocationPct,
             }
         })
-    }, [totalMarketGbp])
+    }, [bullionRows, totalMarketGbp])
     const selectedGroup = useMemo(
         () => groupedBullion.find((group) => group.key === selectedGroupKey) ?? null,
         [groupedBullion, selectedGroupKey]
     )
+    const hasBullionHoldings = bullionRows.length > 0
 
     return (
         <div className="w-full">
@@ -637,120 +473,146 @@ export default function BullionPage() {
                 <div>
                     <h1 className="text-2xl font-bold text-white">Bullion Portfolio</h1>
                     <p className="mt-1 text-sm text-white/65">
-                        Static gold and silver holdings with intrinsic and market values.
+                        Gold and silver holdings. Pricing is synced separately by the backend.
                     </p>
                 </div>
+                <AddBullionButton
+                    onCreated={(row) => {
+                        setBullionRows((previous) => [row, ...previous])
+                    }}
+                />
             </div>
 
-            <div className="mb-8 grid gap-6 md:grid-cols-3">
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-6 shadow-sm backdrop-blur-sm">
-                    <p className="text-sm font-medium text-white/60">Current Value</p>
-                    <p className="mt-2 text-3xl font-bold text-white">
-                        {hideValues ? '****' : formatCurrency(convertFromGbp(totalMarketGbp, preferredCurrency), preferredCurrency)}
-                    </p>
+            {loadError ? (
+                <div className="mb-6 rounded-2xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
+                    Bullion holdings could not load right now: {loadError}
                 </div>
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-6 shadow-sm backdrop-blur-sm">
-                    <p className="text-sm font-medium text-white/60">Intrinsic Value</p>
-                    <p className="mt-2 text-3xl font-bold text-white">
-                        {hideValues ? '****' : formatCurrency(convertFromGbp(totalIntrinsicGbp, preferredCurrency), preferredCurrency)}
-                    </p>
+            ) : null}
+
+            {isLoading ? (
+                <div className="rounded-xl border border-white/10 bg-white/5 p-5 text-sm text-white/65">
+                    Loading bullion holdings...
                 </div>
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-6 shadow-sm backdrop-blur-sm">
-                    <p className="text-sm font-medium text-white/60">PNL</p>
-                    <div className="mt-2 flex items-center gap-2">
-                        <p className={`text-3xl font-bold ${totalPnlClassName}`}>
-                            {hideValues ? '****' : formatSignedCurrency(convertFromGbp(totalPnlGbp, preferredCurrency), preferredCurrency)}
-                        </p>
-                        <span className={`rounded-md px-2 py-1 text-xs ${totalPnlPillClassName}`}>
-                            {hideValues ? '****' : `${totalPnlPct >= 0 ? '+' : ''}${totalPnlPct.toFixed(2)}%`}
-                        </span>
+            ) : !hasBullionHoldings ? (
+                <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
+                    <div className="flex items-center gap-2">
+                        <AlertTriangle className="h-5 w-5 text-emerald-300" />
+                        <span>No bullion holdings yet. Add gold or silver bars/coins to get started.</span>
                     </div>
                 </div>
-            </div>
-
-            <div className="grid gap-6 md:grid-cols-2">
-                {groupedBullion.map((group) => {
-                    const pnlState = group.pnlGbp > 0 ? 'positive' : group.pnlGbp < 0 ? 'negative' : 'neutral'
-                    const PnlIcon = pnlState === 'positive' ? ArrowUpRight : pnlState === 'negative' ? ArrowDownRight : Minus
-                    const pnlPillTone = pnlState === 'positive'
-                        ? 'border-green-500 bg-green-500/20 text-green-200'
-                        : pnlState === 'negative'
-                            ? 'border-red-500 bg-red-500/20 text-red-200'
-                            : 'border-amber-500 bg-amber-500/20 text-amber-200'
-
-                    return (
-                        <div
-                            key={group.key}
-                            className="group/card flex h-full flex-col rounded-2xl border border-white/10 bg-white/5 p-6 shadow-sm backdrop-blur-sm transition-colors hover:bg-white/10"
-                        >
-                            <div className="mb-2 flex items-start justify-between">
-                                <div>
-                                    <h3 className="text-sm font-medium text-white/60">{group.title}</h3>
-                                    <p className="mt-1 text-2xl font-bold text-white">
-                                        {hideValues ? '****' : formatCurrency(convertFromGbp(group.marketTotalGbp, preferredCurrency), preferredCurrency)}
-                                    </p>
-                                </div>
-                                <div className={`flex h-10 w-10 items-center justify-center rounded-full border transition-transform group-hover/card:scale-110 ${group.iconToneClassName}`}>
-                                    <BullionGroupIcon type={group.type} className="h-5 w-5" />
-                                </div>
-                            </div>
-
-                            <div className="mt-2 flex flex-wrap items-center gap-2">
-                                <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${pnlPillTone}`}>
-                                    <PnlIcon className="mr-1 h-3.5 w-3.5" />
-                                    PNL {hideValues ? '****' : formatSignedCurrency(convertFromGbp(group.pnlGbp, preferredCurrency), preferredCurrency)}
+            ) : (
+                <>
+                    <div className="mb-8 grid gap-6 md:grid-cols-3">
+                        <div className="rounded-2xl border border-white/10 bg-white/5 p-6 shadow-sm backdrop-blur-sm">
+                            <p className="text-sm font-medium text-white/60">Current Value</p>
+                            <p className="mt-2 text-3xl font-bold text-white">
+                                {hideValues ? '****' : formatCurrency(convertFromGbp(totalMarketGbp, preferredCurrency), preferredCurrency)}
+                            </p>
+                        </div>
+                        <div className="rounded-2xl border border-white/10 bg-white/5 p-6 shadow-sm backdrop-blur-sm">
+                            <p className="text-sm font-medium text-white/60">Intrinsic Value</p>
+                            <p className="mt-2 text-3xl font-bold text-white">
+                                {hideValues ? '****' : formatCurrency(convertFromGbp(totalIntrinsicGbp, preferredCurrency), preferredCurrency)}
+                            </p>
+                        </div>
+                        <div className="rounded-2xl border border-white/10 bg-white/5 p-6 shadow-sm backdrop-blur-sm">
+                            <p className="text-sm font-medium text-white/60">PNL</p>
+                            <div className="mt-2 flex items-center gap-2">
+                                <p className={`text-3xl font-bold ${totalPnlClassName}`}>
+                                    {hideValues ? '****' : formatSignedCurrency(convertFromGbp(totalPnlGbp, preferredCurrency), preferredCurrency)}
+                                </p>
+                                <span className={`rounded-md px-2 py-1 text-xs ${totalPnlPillClassName}`}>
+                                    {hideValues ? '****' : `${totalPnlPct >= 0 ? '+' : ''}${totalPnlPct.toFixed(2)}%`}
                                 </span>
-                                <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${pnlPillTone}`}>
-                                    {hideValues ? '****' : `${group.pnlGbp >= 0 ? '+' : ''}${group.pnlPct.toFixed(2)}%`}
-                                </span>
-                            </div>
-
-                            <div className="mb-6 mt-4 w-full rounded-full bg-white/5 h-1.5">
-                                <div
-                                    className={`h-1.5 rounded-full transition-all duration-500 ${group.progressClassName}`}
-                                    style={{ width: hideValues ? '0%' : `${group.allocationPct}%` }}
-                                />
-                            </div>
-
-                            <div className="flex-1 space-y-4">
-                                <button
-                                    type="button"
-                                    onClick={() => setSelectedGroupKey(group.key)}
-                                    className="w-full text-left group/holdings"
-                                >
-                                    <div className={`rounded-xl border border-white/10 bg-white/5 p-4 transition-all duration-300 hover:bg-white/10 ${group.accentBorderClassName}`}>
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-3">
-                                                <div className={`rounded-lg border p-2 ${group.iconToneClassName}`}>
-                                                    <LayoutGrid className="h-4 w-4" />
-                                                </div>
-                                                <div>
-                                                    <p className="text-xs font-semibold uppercase tracking-wider text-white/40">Holdings</p>
-                                                    <p className="mt-0.5 text-sm font-medium text-white">
-                                                        {group.holdingCount} {group.holdingCount === 1 ? 'Holding' : 'Holdings'} · {hideValues ? '****' : `${group.totalUnits.toLocaleString('en-GB')} units`}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            <ChevronRight className="h-4 w-4 text-white/20 transition-all group-hover/holdings:translate-x-1 group-hover/holdings:text-white/60" />
-                                        </div>
-                                    </div>
-                                </button>
-                            </div>
-
-                            <div className="mt-8 flex flex-wrap items-center gap-2">
-                                <button
-                                    type="button"
-                                    onClick={() => setSelectedGroupKey(group.key)}
-                                    className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-xs font-semibold text-white/85 transition-colors hover:bg-white/10 hover:text-white"
-                                >
-                                    <LayoutGrid className="h-3.5 w-3.5" />
-                                    View Holdings
-                                </button>
                             </div>
                         </div>
-                    )
-                })}
-            </div>
+                    </div>
+
+                    <div className="grid gap-6 md:grid-cols-2">
+                        {groupedBullion.map((group) => {
+                            const pnlState = group.pnlGbp > 0 ? 'positive' : group.pnlGbp < 0 ? 'negative' : 'neutral'
+                            const PnlIcon = pnlState === 'positive' ? ArrowUpRight : pnlState === 'negative' ? ArrowDownRight : Minus
+                            const pnlPillTone = pnlState === 'positive'
+                                ? 'border-green-500 bg-green-500/20 text-green-200'
+                                : pnlState === 'negative'
+                                    ? 'border-red-500 bg-red-500/20 text-red-200'
+                                    : 'border-amber-500 bg-amber-500/20 text-amber-200'
+
+                            return (
+                                <div
+                                    key={group.key}
+                                    className="group/card flex h-full flex-col rounded-2xl border border-white/10 bg-white/5 p-6 shadow-sm backdrop-blur-sm transition-colors hover:bg-white/10"
+                                >
+                                    <div className="mb-2 flex items-start justify-between">
+                                        <div>
+                                            <h3 className="text-sm font-medium text-white/60">{group.title}</h3>
+                                            <p className="mt-1 text-2xl font-bold text-white">
+                                                {hideValues ? '****' : formatCurrency(convertFromGbp(group.marketTotalGbp, preferredCurrency), preferredCurrency)}
+                                            </p>
+                                        </div>
+                                        <div className={`flex h-10 w-10 items-center justify-center rounded-full border transition-transform group-hover/card:scale-110 ${group.iconToneClassName}`}>
+                                            <BullionGroupIcon type={group.type} className="h-5 w-5" />
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                                        <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${pnlPillTone}`}>
+                                            <PnlIcon className="mr-1 h-3.5 w-3.5" />
+                                            PNL {hideValues ? '****' : formatSignedCurrency(convertFromGbp(group.pnlGbp, preferredCurrency), preferredCurrency)}
+                                        </span>
+                                        <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${pnlPillTone}`}>
+                                            {hideValues ? '****' : `${group.pnlGbp >= 0 ? '+' : ''}${group.pnlPct.toFixed(2)}%`}
+                                        </span>
+                                    </div>
+
+                                    <div className="mb-6 mt-4 w-full rounded-full bg-white/5 h-1.5">
+                                        <div
+                                            className={`h-1.5 rounded-full transition-all duration-500 ${group.progressClassName}`}
+                                            style={{ width: hideValues ? '0%' : `${group.allocationPct}%` }}
+                                        />
+                                    </div>
+
+                                    <div className="flex-1 space-y-4">
+                                        <button
+                                            type="button"
+                                            onClick={() => setSelectedGroupKey(group.key)}
+                                            className="w-full text-left group/holdings"
+                                        >
+                                            <div className={`rounded-xl border border-white/10 bg-white/5 p-4 transition-all duration-300 hover:bg-white/10 ${group.accentBorderClassName}`}>
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className={`rounded-lg border p-2 ${group.iconToneClassName}`}>
+                                                            <LayoutGrid className="h-4 w-4" />
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-xs font-semibold uppercase tracking-wider text-white/40">Holdings</p>
+                                                            <p className="mt-0.5 text-sm font-medium text-white">
+                                                                {group.holdingCount} {group.holdingCount === 1 ? 'Holding' : 'Holdings'} · {hideValues ? '****' : `${group.totalUnits.toLocaleString('en-GB')} units`}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    <ChevronRight className="h-4 w-4 text-white/20 transition-all group-hover/holdings:translate-x-1 group-hover/holdings:text-white/60" />
+                                                </div>
+                                            </div>
+                                        </button>
+                                    </div>
+
+                                    <div className="mt-8 flex flex-wrap items-center gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => setSelectedGroupKey(group.key)}
+                                            className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-xs font-semibold text-white/85 transition-colors hover:bg-white/10 hover:text-white"
+                                        >
+                                            <LayoutGrid className="h-3.5 w-3.5" />
+                                            View Holdings
+                                        </button>
+                                    </div>
+                                </div>
+                            )
+                        })}
+                    </div>
+                </>
+            )}
 
             <BullionHoldingsModal
                 group={selectedGroup}

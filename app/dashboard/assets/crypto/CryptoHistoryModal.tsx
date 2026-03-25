@@ -27,7 +27,7 @@ type Props = {
     hideValues: boolean
 }
 
-type TransactionType = 'BUY' | 'SELL'
+type TransactionType = 'BUY' | 'SELL' | 'STAKE'
 
 type CryptoTransactionRow = {
     id: string
@@ -43,7 +43,7 @@ type TransactionEntry = {
     id: string
     type: TransactionType
     amount: number
-    totalValueGbp: number
+    totalValueGbp: number | null
     transactionDate: string
     notes: string | null
     createdAt: string
@@ -79,6 +79,16 @@ const toNumber = (value: number | string | null | undefined): number => {
         if (Number.isFinite(parsed)) return parsed
     }
     return 0
+}
+
+const toOptionalNumber = (value: number | string | null | undefined): number | null => {
+    if (value === null || value === undefined) return null
+    if (typeof value === 'number') return Number.isFinite(value) ? value : null
+    if (typeof value === 'string') {
+        const parsed = Number(value)
+        return Number.isFinite(parsed) ? parsed : null
+    }
+    return null
 }
 
 const formatDate = (isoDate: string): string => {
@@ -125,7 +135,7 @@ export default function CryptoHistoryModal({ isOpen, onClose, asset, preferredCu
                 id: row.id,
                 type: row.transaction_type,
                 amount: toNumber(row.amount),
-                totalValueGbp: toNumber(row.total_value_gbp),
+                totalValueGbp: toOptionalNumber(row.total_value_gbp),
                 transactionDate: row.transaction_date,
                 notes: row.notes,
                 createdAt: row.created_at,
@@ -156,11 +166,15 @@ export default function CryptoHistoryModal({ isOpen, onClose, asset, preferredCu
 
     const totalBuys = transactions
         .filter((entry) => entry.type === 'BUY')
-        .reduce((sum, entry) => sum + entry.totalValueGbp, 0)
+        .reduce((sum, entry) => sum + (entry.totalValueGbp ?? 0), 0)
 
     const totalSells = transactions
         .filter((entry) => entry.type === 'SELL')
-        .reduce((sum, entry) => sum + entry.totalValueGbp, 0)
+        .reduce((sum, entry) => sum + (entry.totalValueGbp ?? 0), 0)
+
+    const totalStaked = transactions
+        .filter((entry) => entry.type === 'STAKE')
+        .reduce((sum, entry) => sum + entry.amount, 0)
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -201,7 +215,7 @@ export default function CryptoHistoryModal({ isOpen, onClose, asset, preferredCu
                         </div>
                     </div>
 
-                    <div className="grid gap-4 md:grid-cols-2">
+                    <div className="grid gap-4 md:grid-cols-3">
                         <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3">
                             <p className="text-xs uppercase tracking-wider text-emerald-200/70">Total Buys</p>
                             <p className="mt-1 text-base font-semibold text-emerald-100">
@@ -212,6 +226,12 @@ export default function CryptoHistoryModal({ isOpen, onClose, asset, preferredCu
                             <p className="text-xs uppercase tracking-wider text-rose-200/70">Total Sells</p>
                             <p className="mt-1 text-base font-semibold text-rose-100">
                                 {hideValues ? '****' : formatCurrency(convertFromGbp(totalSells, preferredCurrency), preferredCurrency)}
+                            </p>
+                        </div>
+                        <div className="rounded-xl border border-sky-500/30 bg-sky-500/10 px-4 py-3">
+                            <p className="text-xs uppercase tracking-wider text-sky-200/70">Total Staked</p>
+                            <p className="mt-1 text-base font-semibold text-sky-100">
+                                {hideValues ? '****' : totalStaked.toLocaleString('en-GB', { maximumFractionDigits: 8 })}
                             </p>
                         </div>
                     </div>
@@ -261,8 +281,12 @@ export default function CryptoHistoryModal({ isOpen, onClose, asset, preferredCu
                                         {transactions.map((entry) => {
                                             const typeTone = entry.type === 'BUY'
                                                 ? 'text-emerald-300 bg-emerald-500/10 border-emerald-500/30'
-                                                : 'text-rose-300 bg-rose-500/10 border-rose-500/30'
-                                            const unitPriceGbp = entry.amount > 0 ? (entry.totalValueGbp / entry.amount) : 0
+                                                : entry.type === 'SELL'
+                                                    ? 'text-rose-300 bg-rose-500/10 border-rose-500/30'
+                                                    : 'text-sky-300 bg-sky-500/10 border-sky-500/30'
+                                            const unitPriceGbp = entry.amount > 0 && entry.totalValueGbp !== null
+                                                ? (entry.totalValueGbp / entry.amount)
+                                                : null
 
                                             return (
                                                 <tr key={entry.id} className="border-t border-white/10">
@@ -278,10 +302,10 @@ export default function CryptoHistoryModal({ isOpen, onClose, asset, preferredCu
                                                         {hideValues ? '****' : entry.amount.toLocaleString('en-GB', { maximumFractionDigits: 8 })}
                                                     </td>
                                                     <td className="px-4 py-3 text-center text-white/85">
-                                                        {hideValues ? '****' : formatCurrency(convertFromGbp(entry.totalValueGbp, preferredCurrency), preferredCurrency)}
+                                                        {hideValues ? '****' : entry.totalValueGbp === null ? '-' : formatCurrency(convertFromGbp(entry.totalValueGbp, preferredCurrency), preferredCurrency)}
                                                     </td>
                                                     <td className="px-4 py-3 text-center text-white/75">
-                                                        {hideValues ? '****' : formatCurrency(convertFromGbp(unitPriceGbp, preferredCurrency), preferredCurrency)}
+                                                        {hideValues ? '****' : unitPriceGbp === null ? '-' : formatCurrency(convertFromGbp(unitPriceGbp, preferredCurrency), preferredCurrency)}
                                                     </td>
                                                     <td className="px-4 py-3 text-center text-white/70">
                                                         {entry.notes?.trim() || '-'}
