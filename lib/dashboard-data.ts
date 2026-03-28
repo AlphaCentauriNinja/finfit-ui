@@ -75,6 +75,13 @@ export type CryptoAssetRow = {
     created_at: string
 }
 
+export type BullionHoldingRow = {
+    id: string
+    purchase_value: number | string | null
+    purchase_currency: string | null
+    amount: number | string | null
+}
+
 type ValueSnapshot = {
     amount: number
     valueDate: string
@@ -212,6 +219,8 @@ type BuildDashboardSnapshotInput = {
     debtLoadError?: boolean
     cryptoAssets?: CryptoAssetRow[] | null
     cryptoLoadError?: boolean
+    bullionHoldings?: BullionHoldingRow[] | null
+    bullionLoadError?: boolean
 }
 
 const toNumber = (value: number | string | null | undefined): number => {
@@ -329,6 +338,8 @@ export const buildDashboardSnapshot = ({
     debtLoadError = false,
     cryptoAssets = [],
     cryptoLoadError = false,
+    bullionHoldings = [],
+    bullionLoadError = false,
 }: BuildDashboardSnapshotInput): DashboardDataSnapshot => {
     const accountRows = pensionAccounts ?? []
     const contributionRows = pensionContributions ?? []
@@ -621,6 +632,21 @@ export const buildDashboardSnapshot = ({
         0
     );
 
+    const CURRENCY_TO_GBP: Record<string, number> = {
+        GBP: 1,
+        EUR: 1 / 1.17,
+        USD: 0.746, // Consistent with crypto USD_TO_GBP
+        CHF: 1 / 1.13,
+        CAD: 1 / 1.74,
+    }
+
+    const totalBullionValue = (bullionHoldings ?? []).reduce((sum, holding) => {
+        const value = toNumber(holding.purchase_value)
+        const currency = holding.purchase_currency || 'GBP'
+        const rate = CURRENCY_TO_GBP[currency] ?? 1
+        return sum + (value * rate)
+    }, 0)
+
     const mergedAssets = mockedAssets.map((asset) => {
         if (asset.name === 'Pension') {
             return { ...asset, value: totalPensionValue }
@@ -631,6 +657,9 @@ export const buildDashboardSnapshot = ({
         if (asset.name === 'Crypto' && cryptoAssets !== undefined) {
             // Only override if cryptoAssets were fetched (even if empty)
             return { ...asset, value: totalCryptoValueSnapshot }
+        }
+        if (asset.name === 'Bullion' && bullionHoldings !== undefined) {
+            return { ...asset, value: totalBullionValue }
         }
         return asset
     })
