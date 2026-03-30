@@ -80,6 +80,9 @@ export type BullionHoldingRow = {
     purchase_value: number | string | null
     purchase_currency: string | null
     amount: number | string | null
+    tax_rate_pct: number | string | null
+    tax_amount: number | string | null
+    total_price_incl_tax: number | string | null
 }
 
 type ValueSnapshot = {
@@ -641,10 +644,19 @@ export const buildDashboardSnapshot = ({
     }
 
     const totalBullionValue = (bullionHoldings ?? []).reduce((sum, holding) => {
-        const value = toNumber(holding.purchase_value)
         const currency = holding.purchase_currency || 'GBP'
         const rate = CURRENCY_TO_GBP[currency] ?? 1
-        return sum + (value * rate)
+
+        // Use pre-computed total_price_incl_tax if available, otherwise fall back to purchase_value with tax calc
+        const totalInclTax = toNumber(holding.total_price_incl_tax)
+        if (Number.isFinite(totalInclTax) && totalInclTax > 0) {
+            return sum + (totalInclTax * rate)
+        }
+
+        const value = toNumber(holding.purchase_value)
+        const taxPct = toNumber(holding.tax_rate_pct)
+        const taxMultiplier = Number.isFinite(taxPct) && taxPct > 0 ? 1 + taxPct / 100 : 1
+        return sum + (value * rate * taxMultiplier)
     }, 0)
 
     const mergedAssets = mockedAssets.map((asset) => {

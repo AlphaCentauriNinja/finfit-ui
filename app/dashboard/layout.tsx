@@ -89,7 +89,7 @@ export default async function Layout({
             .order('created_at', { ascending: false }),
         supabase
             .from('bullion_holdings')
-            .select('id, purchase_value, purchase_currency, amount')
+            .select('id, purchase_value, purchase_currency, amount, tax_rate_pct, tax_amount, total_price_incl_tax')
             .order('created_at', { ascending: false }),
     ])
 

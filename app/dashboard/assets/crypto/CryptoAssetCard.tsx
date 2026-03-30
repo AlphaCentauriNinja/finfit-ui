@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { ArrowDownRight, ArrowRightLeft, ArrowUpRight, Coins, History, Minus, Pencil } from 'lucide-react'
+import { tokenIcons } from '@web3icons/react'
 import {
     CURRENCY_LOCALE,
     GBP_TO_CURRENCY_RATE,
@@ -74,6 +75,8 @@ export default function CryptoAssetCard({ asset, totalCurrentValue, preferredCur
         [asset.usd]
     )
 
+    const IconComponent = (tokenIcons as Record<string, React.FC<any>>)[`Token${asset.ticker.toUpperCase()}`] || null
+
     return (
         <>
             <div className="bg-white/5 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/10 hover:bg-white/10 transition-colors flex flex-col h-full group/card">
@@ -85,9 +88,15 @@ export default function CryptoAssetCard({ asset, totalCurrentValue, preferredCur
                             {hideValues ? '****' : formatCurrency(convertFromGbp(asset.marketValueGbp, preferredCurrency), preferredCurrency)}
                         </p>
                     </div>
-                    <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-400 border border-emerald-500/20 group-hover/card:scale-110 transition-transform">
-                        <Coins className="w-5 h-5" />
-                    </div>
+                    {IconComponent ? (
+                        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-white/5 shadow-sm border border-white/10 group-hover/card:scale-110 transition-transform overflow-hidden">
+                            <IconComponent variant="branded" className="h-[28px] w-[28px]" />
+                        </div>
+                    ) : (
+                        <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-400 border border-emerald-500/20 group-hover/card:scale-110 transition-transform">
+                            <Coins className="w-5 h-5" />
+                        </div>
+                    )}
                 </div>
 
                 <div className="mt-2 flex flex-wrap items-center gap-2">

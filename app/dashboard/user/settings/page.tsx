@@ -5,6 +5,7 @@ import SettingsClient, {
     type CurrencyCode,
     type OpenBankingConnection,
     type SettingsUserInfo,
+    type UserTaxRate,
 } from './SettingsClient'
 
 type SupabaseError = {
@@ -66,6 +67,10 @@ export default async function SettingsPage() {
             .from('api_integrations')
             .select('id, provider_name, account_label, key_label, is_active, last_synced_at')
             .order('created_at', { ascending: false }),
+        supabase
+            .from('user_tax_rates')
+            .select('id, rate_pct, is_default')
+            .order('rate_pct', { ascending: true }),
     ])
 
     let hasCountryCityColumns = true
@@ -94,6 +99,15 @@ export default async function SettingsPage() {
 
     if (isMissingTableError(apiIntegrationsResult.error as SupabaseError | null)) {
         missingTables.push('api_integrations')
+    }
+
+    const { data: rawTaxRates, error: taxRatesError } = await supabase
+        .from('user_tax_rates')
+        .select('id, rate_pct, is_default')
+        .order('rate_pct', { ascending: true })
+
+    if (isMissingTableError(taxRatesError as SupabaseError | null)) {
+        missingTables.push('user_tax_rates')
     }
 
     const metadataName =
@@ -187,11 +201,18 @@ export default async function SettingsPage() {
             }))
             : []
 
+    const taxRates: UserTaxRate[] = (rawTaxRates || []).map((row) => ({
+        id: row.id,
+        ratePct: Number(row.rate_pct),
+        isDefault: row.is_default || false,
+    }))
+
     return (
         <SettingsClient
             userInfo={userInfo}
             openBankingConnections={openBankingConnections}
             apiIntegrations={apiIntegrations}
+            taxRates={taxRates}
             missingTables={missingTables}
         />
     )

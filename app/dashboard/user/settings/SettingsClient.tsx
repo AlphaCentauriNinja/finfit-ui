@@ -25,7 +25,7 @@ import DatePickerField from '@/app/dashboard/components/DatePickerField'
 
 export type CurrencyCode = 'GBP' | 'EUR' | 'USD' | 'CHF' | 'CAD'
 
-type SettingsTab = 'personal' | 'financials' | 'security' | 'danger'
+type SettingsTab = 'personal' | 'financials' | 'connections' | 'security' | 'danger'
 
 type TabItem = {
     key: SettingsTab
@@ -60,10 +60,17 @@ export type ApiIntegration = {
     lastSyncedAt: string | null
 }
 
+export type UserTaxRate = {
+    id: string
+    ratePct: number
+    isDefault: boolean
+}
+
 type Props = {
     userInfo: SettingsUserInfo
     openBankingConnections: OpenBankingConnection[]
     apiIntegrations: ApiIntegration[]
+    taxRates: UserTaxRate[]
     missingTables: string[]
 }
 
@@ -75,6 +82,7 @@ type Feedback = {
 const tabs: TabItem[] = [
     { key: 'personal', label: 'Personal Info', icon: User },
     { key: 'financials', label: 'Financials', icon: Wallet },
+    { key: 'connections', label: 'Connections', icon: Link2 },
     { key: 'security', label: 'Security', icon: Shield },
     { key: 'danger', label: 'Delete Account', icon: AlertTriangle },
 ]
@@ -173,6 +181,7 @@ export default function SettingsClient({
     userInfo,
     openBankingConnections,
     apiIntegrations,
+    taxRates,
     missingTables,
 }: Props) {
     const router = useRouter()
@@ -183,6 +192,8 @@ export default function SettingsClient({
     const [isSavingBankConnection, setIsSavingBankConnection] = useState(false)
     const [isSavingApiKey, setIsSavingApiKey] = useState(false)
     const [isSavingPassword, setIsSavingPassword] = useState(false)
+    const [isSavingTaxRate, setIsSavingTaxRate] = useState(false)
+    const [deletingTaxRateId, setDeletingTaxRateId] = useState<string | null>(null)
     const [dateOfBirth, setDateOfBirth] = useState(userInfo.dateOfBirth)
 
     useEffect(() => {
@@ -416,6 +427,51 @@ export default function SettingsClient({
         }
     }
 
+    const handleAddTaxRate = async (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault()
+
+        const formData = new FormData(event.currentTarget)
+        const ratePct = getValue(formData, 'rate_pct')
+
+        if (!ratePct) {
+            setFeedback({ type: 'error', message: 'Tax rate percentage is required.' })
+            return
+        }
+
+        setIsSavingTaxRate(true)
+        setFeedback(null)
+
+        try {
+            await postSettingsAction({ action: 'add_tax_rate', ratePct })
+            refreshWithSuccess('Tax rate added successfully.')
+            event.currentTarget.reset()
+        } catch (error) {
+            setFeedback({
+                type: 'error',
+                message: error instanceof Error ? error.message : 'Unable to add tax rate.',
+            })
+        } finally {
+            setIsSavingTaxRate(false)
+        }
+    }
+
+    const handleDeleteTaxRate = async (taxRateId: string) => {
+        setDeletingTaxRateId(taxRateId)
+        setFeedback(null)
+
+        try {
+            await postSettingsAction({ action: 'delete_tax_rate', taxRateId })
+            refreshWithSuccess('Tax rate deleted successfully.')
+        } catch (error) {
+            setFeedback({
+                type: 'error',
+                message: error instanceof Error ? error.message : 'Unable to delete tax rate.',
+            })
+        } finally {
+            setDeletingTaxRateId(null)
+        }
+    }
+
     return (
         <div className="w-full space-y-8 xl:space-y-10">
             {activeToast ? (
@@ -489,7 +545,7 @@ export default function SettingsClient({
 
             {activeTab === 'personal' && (
                 <section className="grid grid-cols-1 gap-6">
-                    <div className={`${cardClass} max-w-3xl`}>
+                    <div className={cardClass}>
                         <h2 className="mb-5 text-xl font-bold text-white">Basic Information</h2>
                         <form onSubmit={handlePersonalSave} className="space-y-4">
                             <Field name="full_name" label="Full name" defaultValue={userInfo.fullName} placeholder="Full name" />
@@ -511,7 +567,7 @@ export default function SettingsClient({
                 </section>
             )}
 
-            {activeTab === 'financials' && (
+            {activeTab === 'connections' && (
                 <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
                     <div className={cardClass}>
                         <h2 className="mb-5 inline-flex items-center gap-2 text-xl font-bold text-white">
@@ -611,8 +667,12 @@ export default function SettingsClient({
                             </div>
                         </div>
                     </div>
+                </section>
+            )}
 
-                    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur-sm xl:col-span-2 xl:max-w-xl">
+            {activeTab === 'financials' && (
+                <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+                    <div className={cardClass}>
                         <h2 className="mb-3 text-lg font-bold text-white">Currency Preferences</h2>
                         <form onSubmit={handleCurrencySave} className="flex flex-col gap-3 sm:flex-row sm:items-end">
                             <div className="w-full space-y-2 sm:max-w-sm">
@@ -632,6 +692,58 @@ export default function SettingsClient({
                         <p className="mt-2 text-xs text-white/60">
                             Used for valuations, totals, and performance reporting.
                         </p>
+                    </div>
+
+                    <div className={cardClass}>
+                        <h2 className="mb-3 text-lg font-bold text-white">Custom Tax Rates</h2>
+                        <p className="text-sm text-white/70 mb-4">
+                            Define custom VAT / Tax rates to be used across your portfolio.
+                        </p>
+
+                        <form onSubmit={handleAddTaxRate} className="flex flex-col gap-3 sm:flex-row sm:items-end mb-6">
+                            <div className="w-full space-y-2 sm:max-w-[130px]">
+                                <label className={`${labelClass} whitespace-nowrap`}>Tax Percentage (%)</label>
+                                <input
+                                    type="number"
+                                    name="rate_pct"
+                                    min="0"
+                                    step="0.01"
+                                    placeholder="e.g. 20"
+                                    className={inputClass}
+                                    required
+                                />
+                            </div>
+                            <button type="submit" disabled={isSavingTaxRate} className={`${primaryButtonClass} w-full sm:w-auto sm:min-w-[120px] disabled:cursor-not-allowed disabled:opacity-60`}>
+                                <Plus className="h-4 w-4" /> {isSavingTaxRate ? 'Adding...' : 'Add Rate'}
+                            </button>
+                        </form>
+
+                        <div className="space-y-2">
+                            {taxRates.length > 0 ? (
+                                taxRates.map((rate) => (
+                                    <div key={rate.id} className="flex items-center justify-between rounded-xl border border-white/10 bg-slate-950/70 p-3">
+                                        <div className="flex items-center gap-3">
+                                            <span className="text-sm font-semibold text-white">{rate.ratePct}%</span>
+                                            {rate.isDefault && (
+                                                <span className="rounded-full bg-emerald-500/20 px-2.5 py-1 text-xs font-semibold text-emerald-300">Default</span>
+                                            )}
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleDeleteTaxRate(rate.id)}
+                                            disabled={deletingTaxRateId === rate.id}
+                                            className="text-white/40 hover:text-rose-400 transition-colors disabled:opacity-50"
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </button>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="text-sm text-white/50 text-center py-4 rounded-xl border border-dashed border-white/10">
+                                    No custom tax rates set.
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </section>
             )}

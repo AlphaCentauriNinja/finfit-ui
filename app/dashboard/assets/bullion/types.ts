@@ -25,6 +25,9 @@ export type BullionRow = {
     purchaseDate?: string | null
     purchaseValue?: number | null
     purchaseCurrency?: BullionCurrencyCode | null
+    taxRatePct?: number | null
+    taxAmount?: number | null
+    totalPriceInclTax?: number | null
 }
 
 export type BullionHoldingDbRow = {
@@ -43,6 +46,9 @@ export type BullionHoldingDbRow = {
     purchase_date: string | null
     purchase_value: number | string | null
     purchase_currency: BullionCurrencyCode | string | null
+    tax_rate_pct: number | string | null
+    tax_amount: number | string | null
+    total_price_incl_tax: number | string | null
 }
 
 export type BullionCatalogProduct = {

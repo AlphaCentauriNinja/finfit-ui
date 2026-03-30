@@ -19,6 +19,8 @@ type BodyPayload = {
     currentPassword?: string
     newPassword?: string
     confirmPassword?: string
+    ratePct?: string
+    taxRateId?: string
 }
 
 function parseBody(value: unknown): BodyPayload {
@@ -206,6 +208,49 @@ export async function POST(request: Request) {
         const { error } = await supabase.auth.updateUser({
             password: newPassword,
         })
+
+        if (error) {
+            return NextResponse.json({ error: error.message }, { status: 400 })
+        }
+
+        return NextResponse.json({ ok: true })
+    }
+
+    if (body.action === 'add_tax_rate') {
+        const ratePctStr = normalizeString(body.ratePct)
+        const ratePct = Number(ratePctStr)
+
+        if (!ratePctStr || Number.isNaN(ratePct) || ratePct < 0) {
+            return NextResponse.json({ error: 'Valid tax rate percentage is required.' }, { status: 400 })
+        }
+
+        const { error } = await supabase.from('user_tax_rates').insert({
+            user_id: user.id,
+            rate_pct: ratePct,
+            is_default: false,
+        })
+
+        if (error) {
+            if (error.code === '23505') {
+                 return NextResponse.json({ error: 'This tax rate already exists.' }, { status: 400 })
+            }
+            if (isMissingRelationError(error)) {
+                 return NextResponse.json({ error: 'Missing user_tax_rates table. Apply latest migrations.' }, { status: 400 })
+            }
+            return NextResponse.json({ error: error.message }, { status: 400 })
+        }
+
+        return NextResponse.json({ ok: true })
+    }
+
+    if (body.action === 'delete_tax_rate') {
+        const taxRateId = normalizeString(body.taxRateId)
+
+        if (!taxRateId) {
+            return NextResponse.json({ error: 'Tax rate ID is required.' }, { status: 400 })
+        }
+
+        const { error } = await supabase.from('user_tax_rates').delete().match({ id: taxRateId, user_id: user.id })
 
         if (error) {
             return NextResponse.json({ error: error.message }, { status: 400 })
