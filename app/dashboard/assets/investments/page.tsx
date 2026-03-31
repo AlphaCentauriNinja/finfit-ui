@@ -8,16 +8,21 @@ import {
     ArrowDownRight,
     Minus,
     Plus,
-    Edit3,
     History,
     Landmark,
     TrendingUp,
-    AlertTriangle,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { usePrivacy } from '@/app/dashboard/components/providers/PrivacyProvider'
 import EmptyStateAlert from '@/app/dashboard/components/EmptyStateAlert'
 import AssetOnboardingHero from '@/app/dashboard/components/AssetOnboardingHero'
+import InvestmentAccountCard from './InvestmentAccountCard'
+import EditAccountModal from './EditAccountModal'
+import AccountTransactionModal from './AccountTransactionModal'
+import AccountHistoryModal from './AccountHistoryModal'
+import InvestmentEditModal from './InvestmentEditModal'
+import InvestmentTransactionModal from './InvestmentTransactionModal'
+import InvestmentHistoryModal from './InvestmentHistoryModal'
 import AddInvestmentAccountModal from './AddInvestmentAccountModal'
 import AddInvestmentHoldingModal from './AddInvestmentHoldingModal'
 import type { InvestmentAccountDbRow, InvestmentHoldingDbRow, InvestmentHoldingRow, InvestmentAccountCardData } from './types'
@@ -39,16 +44,17 @@ function normalizeCurrency(value: string | null | undefined): CurrencyCode {
     return 'GBP'
 }
 
-function formatCurrency(value: number, currency: CurrencyCode): string {
-    return new Intl.NumberFormat(CURRENCY_LOCALE[currency], {
+function formatCurrency(value: number, currency: string): string {
+    const code = normalizeCurrency(currency)
+    return new Intl.NumberFormat(CURRENCY_LOCALE[code], {
         style: 'currency',
-        currency,
+        currency: code,
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
     }).format(value)
 }
 
-function formatSignedCurrency(value: number, currency: CurrencyCode): string {
+function formatSignedCurrency(value: number, currency: string): string {
     return `${value >= 0 ? '+' : '-'}${formatCurrency(Math.abs(value), currency)}`
 }
 
@@ -63,6 +69,17 @@ export default function InvestmentsPage() {
 
     const [isAddAccountOpen, setIsAddAccountOpen] = useState(false)
     const [isAddHoldingOpen, setIsAddHoldingOpen] = useState(false)
+    const [selectedAccountId, setSelectedAccountId] = useState<string | undefined>(undefined)
+
+    // Account Management states
+    const [editingAccount, setEditingAccount] = useState<InvestmentAccountCardData | null>(null)
+    const [transactionAccount, setTransactionAccount] = useState<InvestmentAccountCardData | null>(null)
+    const [historyAccount, setHistoryAccount] = useState<InvestmentAccountCardData | null>(null)
+
+    // Holding Management states
+    const [editingHolding, setEditingHolding] = useState<InvestmentHoldingRow | null>(null)
+    const [transactionHolding, setTransactionHolding] = useState<InvestmentHoldingRow | null>(null)
+    const [historyHolding, setHistoryHolding] = useState<InvestmentHoldingRow | null>(null)
 
     // Load data from Supabase
     useEffect(() => {
@@ -186,9 +203,9 @@ export default function InvestmentsPage() {
                         <button
                             type="button"
                             onClick={() => setIsAddAccountOpen(true)}
-                            className="inline-flex items-center gap-2 rounded-lg border border-emerald-400/30 bg-emerald-500/15 px-3 py-2 text-xs font-semibold text-emerald-200 hover:bg-emerald-500/25 transition-colors"
+                            className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-600/20 hover:bg-indigo-500 transition-all active:scale-95"
                         >
-                            <Landmark className="h-3.5 w-3.5" />
+                            <Plus className="h-4 w-4" />
                             Add Account
                         </button>
                     </div>
@@ -224,10 +241,15 @@ export default function InvestmentsPage() {
                 <AddInvestmentAccountModal
                     isOpen={isAddAccountOpen}
                     onClose={() => setIsAddAccountOpen(false)}
-                    onCreated={() => { router.refresh() }}
+                    onCreated={() => { window.location.reload() }}
                 />
             </div>
         )
+    }
+
+    const openAddHolding = (accId?: string) => {
+        setSelectedAccountId(accId)
+        setIsAddHoldingOpen(true)
     }
 
     return (
@@ -236,177 +258,156 @@ export default function InvestmentsPage() {
                 <div>
                     <h1 className="text-2xl font-bold text-white">Investments Portfolio</h1>
                     <p className="text-sm text-white/65 mt-1">
-                        Track ISAs, taxable accounts, and underlying ticker performance manually.
+                        Track ISAs, taxable accounts, and underlying ticker performance.
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
                     <button
                         type="button"
                         onClick={() => setIsAddAccountOpen(true)}
-                        className="inline-flex items-center gap-2 rounded-lg border border-emerald-400/30 bg-emerald-500/15 px-3 py-2 text-xs font-semibold text-emerald-200 hover:bg-emerald-500/25 transition-colors"
+                        className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-semibold text-white/70 hover:bg-white/10 hover:text-white transition-all active:scale-95"
                     >
-                        <Landmark className="h-3.5 w-3.5" />
+                        <Plus className="h-4 w-4" />
                         Add Account
                     </button>
                     <button
                         type="button"
-                        onClick={() => setIsAddHoldingOpen(true)}
-                        className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white shadow-sm shadow-indigo-500/20 hover:bg-indigo-500 transition-colors"
+                        onClick={() => openAddHolding()}
+                        className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-600/20 hover:bg-indigo-500 transition-all active:scale-95"
                     >
-                        <TrendingUp className="h-3.5 w-3.5" />
-                        Add Holding
+                        <TrendingUp className="h-4 w-4" />
+                        Add Investment
                     </button>
                 </div>
             </div>
 
-            <div className="mb-8 grid gap-4 lg:grid-cols-4 md:grid-cols-2">
-                <div className="bg-white/5 backdrop-blur-sm p-5 rounded-2xl shadow-sm border border-white/10 lg:col-span-2">
-                    <p className="text-xs font-semibold text-indigo-300 uppercase tracking-widest">Global Aggregated Value</p>
-                    <div className="mt-2 flex items-baseline gap-3">
-                        <p className="text-4xl font-bold text-white">{hideValues ? '****' : formatCurrency(globalCurrent, preferredCurrency)}</p>
-                    </div>
-                    <div className="mt-4 flex flex-wrap items-center gap-4 text-sm font-medium">
-                        <div className="flex gap-2 items-center">
-                            <span className="text-white/60">Invested:</span>
-                            <span className="text-white">{hideValues ? '****' : formatCurrency(globalInvested, preferredCurrency)}</span>
-                        </div>
-                        <div className="flex gap-2 items-center">
-                            <span className="text-white/60">PNL:</span>
-                            <span className={`flex items-center gap-1.5 ${globalIsUp ? 'text-emerald-400' : globalIsDown ? 'text-rose-400' : 'text-white'}`}>
-                                {hideValues ? '****' : formatSignedCurrency(globalPnl, preferredCurrency)}
-                                <span className={`text-[10px] px-1.5 py-0.5 rounded ${globalIsUp ? 'bg-emerald-500/10 text-emerald-300' : globalIsDown ? 'bg-rose-500/10 text-rose-300' : 'bg-white/10 text-white/70'}`}>
-                                    {hideValues ? '****' : `${globalPnlPct >= 0 ? '+' : ''}${globalPnlPct.toFixed(2)}%`}
-                                </span>
-                            </span>
-                        </div>
+            <div className="mb-8 rounded-2xl border border-white/10 bg-white/5 p-6 shadow-sm backdrop-blur-sm">
+                <p className="text-sm font-medium text-white/60">Total Investment Value</p>
+                <div className="mt-2 flex items-baseline gap-4">
+                    <p className="text-3xl font-bold text-white">
+                        {hideValues ? '****' : formatCurrency(globalCurrent, preferredCurrency)}
+                    </p>
+                    <div className="flex items-center gap-2">
+                        <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${
+                            globalIsUp ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400' : 
+                            globalIsDown ? 'border-rose-500/30 bg-rose-500/10 text-rose-400' : 
+                            'border-white/10 bg-white/5 text-white/70'
+                        }`}>
+                            {globalIsUp ? <ArrowUpRight className="mr-1 h-3.5 w-3.5" /> : 
+                             globalIsDown ? <ArrowDownRight className="mr-1 h-3.5 w-3.5" /> : 
+                             <Minus className="mr-1 h-3.5 w-3.5" />}
+                            PNL {hideValues ? '****' : formatSignedCurrency(globalPnl, preferredCurrency)}
+                        </span>
+                        <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${
+                            globalIsUp ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400' : 
+                            globalIsDown ? 'border-rose-500/30 bg-rose-500/10 text-rose-400' : 
+                            'border-white/10 bg-white/5 text-white/70'
+                        }`}>
+                            {hideValues ? '****' : `${globalPnlPct >= 0 ? '+' : ''}${globalPnlPct.toFixed(2)}%`}
+                        </span>
                     </div>
                 </div>
-
-                {accounts.map(acc => {
-                    const isUp = acc.pnl > 0
-                    const isDown = acc.pnl < 0
-                    
-                    return (
-                        <div key={acc.id} className="bg-white/5 backdrop-blur-sm p-5 rounded-2xl shadow-sm border border-white/10 flex flex-col justify-between">
-                            <div>
-                                <div className="flex items-center justify-between gap-2">
-                                    <h3 className="font-bold text-white truncate">{acc.name}</h3>
-                                    <span className={`px-2 py-0.5 text-[10px] font-bold rounded flex-shrink-0 ${
-                                        acc.type === 'ISA' ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/30' : 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
-                                    }`}>
-                                        {acc.type}
-                                    </span>
-                                </div>
-                                <p className="text-xs text-white/50 mt-1">{acc.taxStatus} · {acc.holdings.length} {acc.holdings.length === 1 ? 'asset' : 'assets'}</p>
-                            </div>
-
-                            <div className="mt-4">
-                                <p className="text-xl font-bold text-white">{hideValues ? '****' : formatCurrency(acc.totalCurrentValue, preferredCurrency)}</p>
-                                <p className={`text-xs mt-1 ${isUp ? 'text-emerald-400' : isDown ? 'text-rose-400' : 'text-white/70'}`}>
-                                    {hideValues ? '****' : `${isUp ? '+' : ''}${formatCurrency(acc.pnl, preferredCurrency)} (${acc.pnlPct.toFixed(2)}%)`}
-                                </p>
-                            </div>
-                        </div>
-                    )
-                })}
-            </div>
-
-            <div className="w-full max-w-none bg-white/5 backdrop-blur-sm rounded-2xl shadow-sm border border-white/10 overflow-hidden">
-                <div className="px-6 py-4 border-b border-white/10">
-                    <h3 className="text-sm font-semibold text-white">Underlying Asset Metrics</h3>
+                <div className="mt-4 pt-4 border-t border-white/5 flex gap-6 text-sm font-medium">
+                    <div className="flex gap-2 items-center">
+                        <span className="text-white/40 uppercase tracking-widest text-[10px]">Net Invested:</span>
+                        <span className="text-white/80">{hideValues ? '****' : formatCurrency(globalInvested, preferredCurrency)}</span>
+                    </div>
                 </div>
-                {allHoldings.length === 0 ? (
-                    <div className="px-6 py-10 text-center text-sm text-white/50 border-t border-white/10">
-                        No holdings added yet. Click "Add Holding" to inject assets into your accounts.
-                    </div>
-                ) : (
-                    <div className="w-full overflow-x-auto">
-                        <table className="w-full min-w-[1000px] table-fixed text-sm">
-                            <thead className="bg-[#0f172a]">
-                                <tr className="text-white/60 border-b border-white/10">
-                                    <th className="text-left font-medium px-4 py-3">Account & Ticker</th>
-                                    <th className="text-center font-medium px-4 py-3">Invested</th>
-                                    <th className="text-center font-medium px-4 py-3">Current Value</th>
-                                    <th className="text-center font-medium px-4 py-3">PNL %</th>
-                                    <th className="text-center font-medium px-4 py-3">PNL</th>
-                                    <th className="text-center font-medium px-4 py-3">Trend</th>
-                                    <th className="text-center font-medium px-4 py-3">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {allHoldings.map((row) => {
-                                    const rowPnl = row.currentValue - row.investedAmount
-                                    const rowPnlPct = row.investedAmount > 0 ? (rowPnl / row.investedAmount) * 100 : 0
-                                    const rowPnlClassName = rowPnl > 0
-                                        ? 'text-emerald-400'
-                                        : rowPnl < 0
-                                            ? 'text-rose-400'
-                                            : 'text-amber-400'
-
-                                    const account = accounts.find(a => a.id === row.accountId)
-
-                                    return (
-                                        <tr key={row.id} className="border-b border-white/5 hover:bg-white/[0.02] last:border-b-0">
-                                            <td className="px-4 py-4">
-                                                <div className="flex flex-col">
-                                                    <span className="font-bold text-white flex items-center gap-2">
-                                                        {row.ticker}
-                                                        <span className="text-xs bg-white/10 text-white/70 px-1.5 rounded">{account?.name.substring(0, 15)}</span>
-                                                    </span>
-                                                    <span className="text-xs text-white/50">{row.name}</span>
-                                                </div>
-                                            </td>
-                                            <td className="px-4 py-4 text-center text-white/80">
-                                                {hideValues ? '****' : formatCurrency(row.investedAmount, preferredCurrency)}
-                                            </td>
-                                            <td className="px-4 py-4 text-center text-white font-medium">
-                                                {hideValues ? '****' : formatCurrency(row.currentValue, preferredCurrency)}
-                                            </td>
-                                            <td className={`px-4 py-4 text-center font-semibold ${rowPnlClassName}`}>
-                                                {hideValues ? '****' : `${rowPnlPct >= 0 ? '+' : ''}${rowPnlPct.toFixed(2)}%`}
-                                            </td>
-                                            <td className={`px-4 py-4 text-center font-semibold ${rowPnlClassName}`}>
-                                                {hideValues ? '****' : formatSignedCurrency(rowPnl, preferredCurrency)}
-                                            </td>
-                                            <td className="px-4 py-4 text-center">
-                                                <div className="flex items-center justify-center">
-                                                    {!hideValues && rowPnl > 0 ? (
-                                                        <ArrowUpRight className="w-4 h-4 text-emerald-400" />
-                                                    ) : !hideValues && rowPnl < 0 ? (
-                                                        <ArrowDownRight className="w-4 h-4 text-rose-400" />
-                                                    ) : (
-                                                        <Minus className="w-4 h-4 text-white/60" />
-                                                    )}
-                                                </div>
-                                            </td>
-                                            <td className="px-4 py-4 text-center">
-                                                <div className="flex items-center justify-center gap-2">
-                                                    <button type="button" className="text-white/40 hover:text-white transition">
-                                                        <Edit3 className="w-4 h-4" />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    )
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
             </div>
 
+            <div className="grid gap-6 md:grid-cols-2">
+                {accounts.map((account) => (
+                    <InvestmentAccountCard
+                        key={account.id}
+                        account={account}
+                        totalPortfolioValue={globalCurrent}
+                        preferredCurrency={preferredCurrency}
+                        formatCurrency={formatCurrency}
+                        onEdit={(acc) => setEditingAccount(acc)}
+                        onTransaction={(acc) => setTransactionAccount(acc)}
+                        onHistory={(acc) => setHistoryAccount(acc)}
+                        onAddHolding={(accId) => openAddHolding(accId)}
+                        onEditHolding={(holding) => setEditingHolding(holding)}
+                    />
+                ))}
+            </div>
+
+            {/* Account Modals */}
             <AddInvestmentAccountModal
                 isOpen={isAddAccountOpen}
                 onClose={() => setIsAddAccountOpen(false)}
                 onCreated={() => { window.location.reload() }}
             />
 
+            {editingAccount && (
+                <EditAccountModal
+                    isOpen={true}
+                    onClose={() => setEditingAccount(null)}
+                    account={editingAccount}
+                />
+            )}
+
+            {transactionAccount && (
+                <AccountTransactionModal
+                    isOpen={true}
+                    onClose={() => setTransactionAccount(null)}
+                    account={transactionAccount}
+                />
+            )}
+
+            {historyAccount && (
+                <AccountHistoryModal
+                    isOpen={true}
+                    onClose={() => setHistoryAccount(null)}
+                    account={historyAccount}
+                    preferredCurrency={preferredCurrency}
+                    formatCurrency={formatCurrency}
+                />
+            )}
+
+            {/* Holding Modals */}
             <AddInvestmentHoldingModal
                 isOpen={isAddHoldingOpen}
-                onClose={() => setIsAddHoldingOpen(false)}
+                onClose={() => {
+                    setIsAddHoldingOpen(false)
+                    setSelectedAccountId(undefined)
+                }}
                 accounts={accounts}
-                onCreated={(row) => { router.refresh() }}
+                selectedAccountId={selectedAccountId}
+                onCreated={() => { router.refresh() }}
             />
+
+            {editingHolding && (
+                <InvestmentEditModal
+                    isOpen={true}
+                    onClose={() => setEditingHolding(null)}
+                    holding={editingHolding}
+                    onUpdated={() => router.refresh()}
+                    onDeleted={() => {
+                        setEditingHolding(null)
+                        router.refresh()
+                    }}
+                />
+            )}
+
+            {transactionHolding && (
+                <InvestmentTransactionModal
+                    isOpen={true}
+                    onClose={() => setTransactionHolding(null)}
+                    holding={transactionHolding}
+                />
+            )}
+
+            {historyHolding && (
+                <InvestmentHistoryModal
+                    isOpen={true}
+                    onClose={() => setHistoryHolding(null)}
+                    holding={historyHolding}
+                    preferredCurrency={preferredCurrency}
+                    formatCurrency={formatCurrency}
+                />
+            )}
         </div>
     )
 }
+
