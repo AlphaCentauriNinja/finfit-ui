@@ -224,7 +224,7 @@ export default function AccountTransactionModal({ isOpen, onClose, account }: Pr
                         <button
                             type="button"
                             onClick={onClose}
-                            className="flex-1 rounded-xl border border-white/10 text-white/70 px-4 py-3 text-sm font-semibold hover:bg-white/5 transition-colors"
+                            className="flex-1 rounded-xl border border-rose-500/35 text-rose-300 px-4 py-3 text-sm font-semibold hover:bg-rose-500/10 transition-colors"
                         >
                             Cancel
                         </button>

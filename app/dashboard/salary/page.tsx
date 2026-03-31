@@ -132,7 +132,7 @@ function EditSalaryModal({
                             type="button"
                             onClick={onClose}
                             disabled={isSaving}
-                            className="flex-1 rounded-xl border border-white/10 px-4 py-3 text-sm font-semibold text-white/80 hover:bg-white/5"
+                            className="flex-1 rounded-xl border border-rose-500/35 text-rose-300 px-4 py-3 text-sm font-semibold hover:bg-rose-500/10 transition-colors disabled:opacity-60"
                         >
                             Cancel
                         </button>
@@ -261,7 +261,7 @@ function AddExpenditureModal({ isOpen, onClose }: AddExpenditureModalProps) {
                             type="button"
                             onClick={onClose}
                             disabled={isSaving}
-                            className="flex-1 rounded-xl border border-white/10 px-4 py-3 text-sm font-semibold text-white/80 hover:bg-white/5"
+                            className="flex-1 rounded-xl border border-rose-500/35 text-rose-300 px-4 py-3 text-sm font-semibold hover:bg-rose-500/10 transition-colors disabled:opacity-60"
                         >
                             Cancel
                         </button>
@@ -408,9 +408,17 @@ function EditExpenditureModal({
                     <div className="flex gap-3 pt-1">
                         <button
                             type="button"
+                            onClick={onClose}
+                            disabled={isSaving || isDeleting}
+                            className="flex-1 rounded-xl border border-rose-500/35 text-rose-300 px-4 py-3 text-sm font-semibold hover:bg-rose-500/10 transition-colors disabled:opacity-60"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="button"
                             onClick={handleDelete}
                             disabled={isSaving || isDeleting}
-                            className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-sm font-semibold text-white hover:bg-red-500 disabled:opacity-60"
+                            className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl border border-rose-500/35 text-rose-300 px-4 py-3 text-sm font-semibold hover:bg-rose-500/10 transition-colors disabled:opacity-60"
                         >
                             {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                             {isDeleting ? 'Deleting...' : 'Delete'}

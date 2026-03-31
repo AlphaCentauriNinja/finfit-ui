@@ -214,7 +214,7 @@ function AddCoinModal({ isOpen, onClose }: AddCoinModalProps) {
                             type="button"
                             onClick={onClose}
                             disabled={isSaving}
-                            className="flex-1 rounded-xl bg-red-600 px-4 py-3 text-sm font-semibold text-white hover:bg-red-500 disabled:opacity-50"
+                            className="flex-1 rounded-xl border border-rose-500/35 text-rose-300 px-4 py-3 text-sm font-semibold hover:bg-rose-500/10 transition-colors disabled:opacity-60"
                         >
                             Cancel
                         </button>
