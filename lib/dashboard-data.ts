@@ -85,6 +85,11 @@ export type BullionHoldingRow = {
     total_price_incl_tax: number | string | null
 }
 
+export type InvestmentHoldingRow = {
+    id: string
+    current_value: number | string | null
+}
+
 type ValueSnapshot = {
     amount: number
     valueDate: string
@@ -224,6 +229,8 @@ type BuildDashboardSnapshotInput = {
     cryptoLoadError?: boolean
     bullionHoldings?: BullionHoldingRow[] | null
     bullionLoadError?: boolean
+    investmentHoldings?: InvestmentHoldingRow[] | null
+    investmentLoadError?: boolean
 }
 
 const toNumber = (value: number | string | null | undefined): number => {
@@ -343,6 +350,8 @@ export const buildDashboardSnapshot = ({
     cryptoLoadError = false,
     bullionHoldings = [],
     bullionLoadError = false,
+    investmentHoldings = [],
+    investmentLoadError = false,
 }: BuildDashboardSnapshotInput): DashboardDataSnapshot => {
     const accountRows = pensionAccounts ?? []
     const contributionRows = pensionContributions ?? []
@@ -659,6 +668,10 @@ export const buildDashboardSnapshot = ({
         return sum + (value * rate * taxMultiplier)
     }, 0)
 
+    const totalInvestmentsValue = (investmentHoldings ?? []).reduce((sum, holding) => {
+        return sum + toNumber(holding.current_value)
+    }, 0)
+
     const mergedAssets = mockedAssets.map((asset) => {
         if (asset.name === 'Pension') {
             return { ...asset, value: totalPensionValue }
@@ -672,6 +685,9 @@ export const buildDashboardSnapshot = ({
         }
         if (asset.name === 'Bullion' && bullionHoldings !== undefined) {
             return { ...asset, value: totalBullionValue }
+        }
+        if (asset.name === 'Investments' && investmentHoldings !== undefined) {
+            return { ...asset, value: totalInvestmentsValue }
         }
         return asset
     })

@@ -2,12 +2,14 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Wifi, WifiOff, Plus, X, Loader2, Upload } from 'lucide-react'
+import { Wifi, WifiOff, Plus, X, Loader2, Upload, Cpu, Wallet, History } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useDashboardData } from '@/app/dashboard/components/providers/DashboardDataProvider'
 import { usePrivacy } from '@/app/dashboard/components/providers/PrivacyProvider'
 import { ImportLedgerModal } from './ImportLedgerModal'
 import CryptoAssetCard from './CryptoAssetCard'
+import EmptyStateAlert from '@/app/dashboard/components/EmptyStateAlert'
+import AssetOnboardingHero from '@/app/dashboard/components/AssetOnboardingHero'
 
 import {
     CurrencyCode,
@@ -426,9 +428,31 @@ export default function CryptoPage() {
             ) : null}
 
             {crypto.assets.length === 0 ? (
-                <div className="rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-6 py-8 text-center backdrop-blur-sm">
-                    <p className="text-indigo-200/90 font-medium mb-4">No crypto assets tracked yet.</p>
-                    <p className="text-sm text-indigo-200/60">Use the Add Coin button above to monitor your portfolio.</p>
+                <div className="space-y-6">
+                    <EmptyStateAlert
+                        description="No crypto assets tracked yet. Use the Add Coin button above to monitor your portfolio."
+                    />
+
+                    <AssetOnboardingHero
+                        title="Track Your Crypto Portfolio"
+                        description="Monitor your digital assets across exchanges and hardware wallets. FinFit provides real-time price updates powered by Binance."
+                        items={[
+                            {
+                                icon: Cpu,
+                                title: "Real-time Tracking",
+                                description: "Live price feeds for top cryptocurrencies. Stay updated on your portfolio's performance with instant market data.",
+                                colorClass: "bg-indigo-500/10 border-indigo-500/20 text-indigo-300"
+                            },
+                            {
+                                icon: Wallet,
+                                title: "Hardware Wallets",
+                                description: "Import your holdings from Ledger or other hardware wallets using CSV uploads for a complete wealth overview.",
+                                colorClass: "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+                            }
+                        ]}
+                        actionText="Add First Coin"
+                        onAction={() => setIsAddCoinOpen(true)}
+                    />
                 </div>
             ) : (
                 <div className="grid gap-6 md:grid-cols-3">

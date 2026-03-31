@@ -1,12 +1,14 @@
 'use client'
 
-import { ArrowUpRight, Plus } from 'lucide-react'
+import { ArrowUpRight, Plus, PiggyBank, Target, CreditCard } from 'lucide-react'
 import SavingsCharts from './SavingsCharts'
 import { useDashboardData } from '@/app/dashboard/components/providers/DashboardDataProvider'
 import { usePrivacy } from '@/app/dashboard/components/providers/PrivacyProvider'
 import SavingsAccountCard from './SavingsAccountCard'
 import { useState, useMemo } from 'react'
 import AddAccountModal from './AddAccountModal'
+import EmptyStateAlert from '@/app/dashboard/components/EmptyStateAlert'
+import AssetOnboardingHero from '@/app/dashboard/components/AssetOnboardingHero'
 import { formatCurrency } from '@/lib/utils'
 
 export default function SavingsPage() {
@@ -73,14 +75,31 @@ export default function SavingsPage() {
             ) : null}
 
             {savingsAccounts.length === 0 ? (
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-8 text-center backdrop-blur-sm">
-                    <p className="text-white/40 font-medium mb-4">No savings accounts created yet.</p>
-                    <button
-                        onClick={() => setIsAddModalOpen(true)}
-                        className="text-sm font-semibold text-indigo-400 hover:text-indigo-300 transition-colors"
-                    >
-                        Create your first account
-                    </button>
+                <div className="space-y-6">
+                    <EmptyStateAlert
+                        description="No savings accounts tracked yet. Use the Add Account button above to monitor your cash reserves."
+                    />
+
+                    <AssetOnboardingHero
+                        title="Track Your Savings & Goals"
+                        description="Monitor your cash reserves across different accounts and specialized savings pots. FinFit helps you stay on top of your financial safety net."
+                        items={[
+                            {
+                                icon: PiggyBank,
+                                title: "High-Interest Accounts",
+                                description: "Track your main savings accounts, ISAs, and emergency funds. Monitor interest rates and total balances in one place.",
+                                colorClass: "bg-indigo-500/10 border-indigo-500/20 text-indigo-300"
+                            },
+                            {
+                                icon: Target,
+                                title: "Savings Pots",
+                                description: "Divide your savings into specific goals like 'House Deposit' or 'Travel' to track your progress towards what matters most.",
+                                colorClass: "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+                            }
+                        ]}
+                        actionText="Add First Account"
+                        onAction={() => setIsAddModalOpen(true)}
+                    />
                 </div>
             ) : (
                 <div className="grid gap-6 md:grid-cols-2">

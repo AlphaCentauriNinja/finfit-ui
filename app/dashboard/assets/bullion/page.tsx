@@ -1,9 +1,11 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { AlertTriangle, ArrowDownRight, ArrowUpRight, ChevronRight, Coins, LayoutGrid, Minus, Pencil, X } from 'lucide-react'
+import { AlertTriangle, ArrowDownRight, ArrowUpRight, ChevronRight, Coins, LayoutGrid, Minus, Pencil, X, Database, TrendingUp } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { usePrivacy } from '@/app/dashboard/components/providers/PrivacyProvider'
+import EmptyStateAlert from '@/app/dashboard/components/EmptyStateAlert'
+import AssetOnboardingHero from '@/app/dashboard/components/AssetOnboardingHero'
 import AddBullionButton from './AddBullionButton'
 import AddBullionModal from './AddBullionModal'
 import type { BullionCurrencyCode, BullionHoldingDbRow, BullionRow, BullionType } from './types'
@@ -504,6 +506,7 @@ export default function BullionPage() {
         () => groupedBullion.find((group) => group.key === selectedGroupKey) ?? null,
         [groupedBullion, selectedGroupKey]
     )
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false)
     const hasBullionHoldings = bullionRows.length > 0
 
     return (
@@ -533,11 +536,31 @@ export default function BullionPage() {
                     Loading bullion holdings...
                 </div>
             ) : !hasBullionHoldings ? (
-                <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
-                    <div className="flex items-center gap-2">
-                        <AlertTriangle className="h-5 w-5 text-emerald-300" />
-                        <span>No bullion holdings yet. Add gold or silver bars/coins to get started.</span>
-                    </div>
+                <div className="space-y-6">
+                    <EmptyStateAlert 
+                        description="No bullion holdings yet. Add gold or silver bars/coins to get started."
+                    />
+
+                    <AssetOnboardingHero
+                        title="Track Your Bullion Portfolio"
+                        description="Monitor your physical gold and silver assets. FinFit automatically calculates the intrinsic and market values based on live spot prices."
+                        items={[
+                            {
+                                icon: Coins,
+                                title: "Gold & Silver",
+                                description: "Track coins, bars, and Sovereigns. Supports various weights and manufacturers for accurate portfolio management.",
+                                colorClass: "bg-amber-500/10 border-amber-500/20 text-amber-300"
+                            },
+                            {
+                                icon: TrendingUp,
+                                title: "Live Market Sync",
+                                description: "Values are automatically updated based on current gold and silver spot prices, keeping your net worth data accurate.",
+                                colorClass: "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+                            }
+                        ]}
+                        actionText="Add Bullion Holding"
+                        onAction={() => setIsAddModalOpen(true)}
+                    />
                 </div>
             ) : (
                 <>
@@ -664,6 +687,16 @@ export default function BullionPage() {
                     }}
                     onDeleted={(deletedId) => {
                         setBullionRows((prev) => prev.filter((r) => r.id !== deletedId))
+                    }}
+                />
+            ) : null}
+
+            {isAddModalOpen ? (
+                <AddBullionModal
+                    isOpen={isAddModalOpen}
+                    onClose={() => setIsAddModalOpen(false)}
+                    onCreated={(newRow) => {
+                        setBullionRows((prev) => [newRow, ...prev])
                     }}
                 />
             ) : null}

@@ -19,6 +19,7 @@ import {
     type SavingsHistoryRow,
     type CryptoAssetRow,
     type BullionHoldingRow,
+    type InvestmentHoldingRow,
 } from '@/lib/dashboard-data'
 
 export default async function Layout({
@@ -44,6 +45,7 @@ export default async function Layout({
         debtEntriesResult,
         cryptoAssetsResult,
         bullionHoldingsResult,
+        investmentHoldingsResult,
     ] = await Promise.all([
         supabase
             .from('pension_accounts')
@@ -91,6 +93,10 @@ export default async function Layout({
             .from('bullion_holdings')
             .select('id, purchase_value, purchase_currency, amount, tax_rate_pct, tax_amount, total_price_incl_tax')
             .order('created_at', { ascending: false }),
+        supabase
+            .from('investment_holdings')
+            .select('id, current_value')
+            .order('created_at', { ascending: false }),
     ])
 
     const dashboardData = buildDashboardSnapshot({
@@ -124,6 +130,8 @@ export default async function Layout({
         cryptoLoadError: Boolean(cryptoAssetsResult.error),
         bullionHoldings: (bullionHoldingsResult.data as BullionHoldingRow[] | null) ?? [],
         bullionLoadError: Boolean(bullionHoldingsResult.error),
+        investmentHoldings: (investmentHoldingsResult.data as InvestmentHoldingRow[] | null) ?? [],
+        investmentLoadError: Boolean(investmentHoldingsResult.error),
     })
 
     return (

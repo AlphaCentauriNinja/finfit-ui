@@ -6,6 +6,7 @@ import { usePrivacy } from '@/app/dashboard/components/providers/PrivacyProvider
 import AddPensionButton from './AddPensionButton'
 import PensionAccountCard from './PensionAccountCard'
 import PensionPerformanceChart from './PensionPerformanceChart'
+import EmptyStateAlert from '@/app/dashboard/components/EmptyStateAlert'
 import { formatCurrency } from '@/lib/utils'
 
 type PnlState = 'positive' | 'negative' | 'neutral'
@@ -70,9 +71,9 @@ export default function PensionPageContent() {
             ) : null}
 
             {pensions.length === 0 ? (
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-white/70 shadow-sm backdrop-blur-sm">
-                    No pension accounts yet. Use <span className="font-medium text-white">Add Pension</span> to create your first entry.
-                </div>
+                <EmptyStateAlert
+                    description="No pension accounts yet. Use the button above to create your first entry."
+                />
             ) : (
                 <div className="grid gap-6 md:grid-cols-2">
                     {pensions.map((pension) => (
