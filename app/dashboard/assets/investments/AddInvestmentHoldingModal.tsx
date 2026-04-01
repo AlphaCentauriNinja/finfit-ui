@@ -11,7 +11,7 @@ type Props = {
     onClose: () => void
     accounts: InvestmentAccountCardData[]
     selectedAccountId?: string
-    onCreated?: (row: InvestmentHoldingRow) => void
+    onCreated?: (row?: InvestmentHoldingRow) => void
 }
 
 export default function AddInvestmentHoldingModal({ isOpen, onClose, accounts, selectedAccountId, onCreated }: Props) {

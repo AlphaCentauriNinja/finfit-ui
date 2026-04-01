@@ -985,6 +985,7 @@ export default function BudgetPage() {
         () => [...budgetData.expenditures].sort((a, b) => b.amount - a.amount),
         [budgetData.expenditures]
     )
+    const hasBudgetData = expenditures.length > 0 || budgetData.capital.length > 0 || budgetData.profile.monthlyNetSalary > 0
     const [isEditBudgetOpen, setIsEditBudgetOpen] = useState(false)
     const [isAddExpenditureOpen, setIsAddExpenditureOpen] = useState(false)
     const [isAddCapitalOpen, setIsAddCapitalOpen] = useState(false)
@@ -1147,7 +1148,7 @@ export default function BudgetPage() {
                 </div>
             ) : null}
 
-            {!hideValues ? (
+            {!hideValues && hasBudgetData ? (
                 <div className="mt-8 grid gap-6 md:grid-cols-2">
                     <div className="rounded-2xl border border-purple-500/20 bg-purple-500/10 p-6 shadow-sm backdrop-blur-sm">
                         <div className="mb-2 flex items-start justify-between">
@@ -1221,7 +1222,7 @@ export default function BudgetPage() {
                 </div>
             ) : (
                 <div className="mt-8 rounded-2xl border border-white/10 bg-white/5 p-6 text-center text-sm text-white/60">
-                    Charts are hidden while values are hidden.
+                    Charts are hidden while no expenses or capital are defined.
                 </div>
             )}
 

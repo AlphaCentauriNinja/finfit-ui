@@ -192,7 +192,9 @@ export default function AssetsPage() {
             </div>
 
             <div className="grid gap-6 md:grid-cols-2">
-                {assetRoutes.map((route) => {
+                {assetRoutes
+                    .filter((route) => assetValueMap.has(route.name))
+                    .map((route) => {
                     const Icon = route.icon
                     const value = assetValueMap.get(route.name) ?? 0
                     const proportion = totalAssetsValue > 0 ? (value / totalAssetsValue) * 100 : 0
@@ -249,7 +251,7 @@ export default function AssetsPage() {
                             </div>
                         </Link>
                     )
-                })}
+                    })}
             </div>
         </div>
     )

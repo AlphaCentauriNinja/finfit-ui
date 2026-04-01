@@ -35,6 +35,8 @@ export default function SavingsPage() {
     const totalPnlPctLabel = hideValues ? '****' : `+${mockPnlPct.toFixed(2)}%`
     const totalPnlPillTone = 'border-green-500 bg-green-500/20 text-green-200'
 
+    const hasSavings = savingsAccounts.length > 0
+
     return (
         <div className="w-full">
             <div className="mb-6 flex items-center justify-between">
@@ -48,24 +50,28 @@ export default function SavingsPage() {
                 </button>
             </div>
 
-            <div className="mb-8 rounded-2xl border border-white/10 bg-white/5 p-6 shadow-sm backdrop-blur-sm">
-                <p className="text-sm font-medium text-white/60">Total Savings Value</p>
-                <p className="mt-2 text-3xl font-bold text-white">
-                    {formatCurrency(total, hideValues)}
-                </p>
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                    <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${totalPnlPillTone}`}>
-                        <ArrowUpRight className="mr-1 h-3.5 w-3.5" />
-                        PNL {totalPnlLabel}
-                    </span>
-                    <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${totalPnlPillTone}`}>
-                        {totalPnlPctLabel}
-                    </span>
-                </div>
-            </div>
+            {hasSavings ? (
+                <>
+                    <div className="mb-8 rounded-2xl border border-white/10 bg-white/5 p-6 shadow-sm backdrop-blur-sm">
+                        <p className="text-sm font-medium text-white/60">Total Savings Value</p>
+                        <p className="mt-2 text-3xl font-bold text-white">
+                            {formatCurrency(total, hideValues)}
+                        </p>
+                        <div className="mt-3 flex flex-wrap items-center gap-2">
+                            <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${totalPnlPillTone}`}>
+                                <ArrowUpRight className="mr-1 h-3.5 w-3.5" />
+                                PNL {totalPnlLabel}
+                            </span>
+                            <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${totalPnlPillTone}`}>
+                                {totalPnlPctLabel}
+                            </span>
+                        </div>
+                    </div>
 
-            {!hideValues ? (
-                <SavingsCharts pots={allPots} chartData={dashboardData.savings.chartData} />
+                    {!hideValues ? (
+                        <SavingsCharts pots={allPots} chartData={dashboardData.savings.chartData} />
+                    ) : null}
+                </>
             ) : null}
 
             {dashboardData.savings.loadError ? (
@@ -74,7 +80,17 @@ export default function SavingsPage() {
                 </div>
             ) : null}
 
-            {savingsAccounts.length === 0 ? (
+            {hasSavings ? (
+                <div className="grid gap-6 md:grid-cols-2">
+                    {savingsAccounts.map((account) => (
+                        <SavingsAccountCard
+                            key={account.id}
+                            account={account}
+                            totalSavingsValue={total}
+                        />
+                    ))}
+                </div>
+            ) : (
                 <div className="space-y-6">
                     <EmptyStateAlert
                         description="No savings accounts tracked yet. Use the Add Account button above to monitor your cash reserves."
@@ -100,16 +116,6 @@ export default function SavingsPage() {
                         actionText="Add First Account"
                         onAction={() => setIsAddModalOpen(true)}
                     />
-                </div>
-            ) : (
-                <div className="grid gap-6 md:grid-cols-2">
-                    {savingsAccounts.map((account) => (
-                        <SavingsAccountCard
-                            key={account.id}
-                            account={account}
-                            totalSavingsValue={total}
-                        />
-                    ))}
                 </div>
             )}
 

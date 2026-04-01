@@ -1,5 +1,3 @@
-import { assets as mockedAssets } from '@/lib/assets'
-
 export type PensionAccountRow = {
     id: string
     provider_name: string
@@ -88,6 +86,13 @@ export type BullionHoldingRow = {
 export type InvestmentHoldingRow = {
     id: string
     current_value: number | string | null
+}
+
+export type RealEstatePropertyRow = {
+    id: string
+    estimated_value?: number | string | null
+    current_value?: number | string | null
+    market_value?: number | string | null
 }
 
 type ValueSnapshot = {
@@ -231,6 +236,8 @@ type BuildDashboardSnapshotInput = {
     bullionLoadError?: boolean
     investmentHoldings?: InvestmentHoldingRow[] | null
     investmentLoadError?: boolean
+    realEstateProperties?: RealEstatePropertyRow[] | null
+    realEstateLoadError?: boolean
 }
 
 const toNumber = (value: number | string | null | undefined): number => {
@@ -352,6 +359,8 @@ export const buildDashboardSnapshot = ({
     bullionLoadError = false,
     investmentHoldings = [],
     investmentLoadError = false,
+    realEstateProperties = [],
+    realEstateLoadError = false,
 }: BuildDashboardSnapshotInput): DashboardDataSnapshot => {
     const accountRows = pensionAccounts ?? []
     const contributionRows = pensionContributions ?? []
@@ -672,25 +681,22 @@ export const buildDashboardSnapshot = ({
         return sum + toNumber(holding.current_value)
     }, 0)
 
-    const mergedAssets = mockedAssets.map((asset) => {
-        if (asset.name === 'Pension') {
-            return { ...asset, value: totalPensionValue }
-        }
-        if (asset.name === 'Savings') {
-            return { ...asset, value: totalSavingsValue }
-        }
-        if (asset.name === 'Crypto' && cryptoAssets !== undefined) {
-            // Only override if cryptoAssets were fetched (even if empty)
-            return { ...asset, value: totalCryptoValueSnapshot }
-        }
-        if (asset.name === 'Bullion' && bullionHoldings !== undefined) {
-            return { ...asset, value: totalBullionValue }
-        }
-        if (asset.name === 'Investments' && investmentHoldings !== undefined) {
-            return { ...asset, value: totalInvestmentsValue }
-        }
-        return asset
-    })
+    const totalRealEstateValue = (realEstateProperties ?? []).reduce((sum, prop) => {
+        const value =
+            toNumber(prop.current_value) ||
+            toNumber(prop.estimated_value) ||
+            toNumber(prop.market_value)
+        return sum + value
+    }, 0)
+
+    const mergedAssets = [
+        { name: 'Pension', value: totalPensionValue },
+        { name: 'Savings', value: totalSavingsValue },
+        { name: 'Investments', value: totalInvestmentsValue },
+        { name: 'Crypto', value: totalCryptoValueSnapshot },
+        { name: 'Bullion', value: totalBullionValue },
+        { name: 'Real Estate', value: totalRealEstateValue },
+    ]
     const totalAssets = mergedAssets.reduce((sum, asset) => sum + asset.value, 0)
     const assetsWithAllocation: DashboardAsset[] = mergedAssets.map((asset) => ({
         ...asset,

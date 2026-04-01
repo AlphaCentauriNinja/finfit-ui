@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { X, Loader2, Trash2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import DeleteActionModal from '@/app/dashboard/components/DeleteActionModal'
 import type { InvestmentAccountCardData, InvestmentAccountType, InvestmentAccountTaxStatus } from './types'
 
 type Props = {
@@ -20,6 +21,7 @@ export default function EditAccountModal({ isOpen, onClose, account, onUpdated, 
     const [taxStatus, setTaxStatus] = useState<InvestmentAccountTaxStatus>(account.taxStatus)
     const [isLoading, setIsLoading] = useState(false)
     const [isDeleting, setIsDeleting] = useState(false)
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const router = useRouter()
 
@@ -75,11 +77,11 @@ export default function EditAccountModal({ isOpen, onClose, account, onUpdated, 
         router.refresh()
     }
 
-    const handleDelete = async () => {
-        if (!confirm('Are you sure you want to delete this account? All underlying holdings will also be deleted. This action cannot be undone.')) {
-            return
-        }
+    const handleDelete = () => {
+        setShowDeleteConfirm(true)
+    }
 
+    const confirmDelete = async () => {
         setIsDeleting(true)
         setError(null)
         const supabase = createClient()
@@ -92,10 +94,12 @@ export default function EditAccountModal({ isOpen, onClose, account, onUpdated, 
         if (deleteError) {
             setError(deleteError.message)
             setIsDeleting(false)
+            setShowDeleteConfirm(false)
             return
         }
 
         setIsDeleting(false)
+        setShowDeleteConfirm(false)
         if (onDeleted) {
             onDeleted(account.id)
         }
@@ -199,6 +203,16 @@ export default function EditAccountModal({ isOpen, onClose, account, onUpdated, 
                     </div>
                 </form>
             </div>
+
+            <DeleteActionModal
+                isOpen={showDeleteConfirm}
+                onClose={() => setShowDeleteConfirm(false)}
+                onConfirm={confirmDelete}
+                title="Delete Investment Account?"
+                message={`Are you sure you want to delete "${account.name}"? All underlying holdings will also be deleted. This action cannot be undone.`}
+                confirmText="Delete Account"
+                isProcessing={isDeleting}
+            />
         </div>
     )
 }

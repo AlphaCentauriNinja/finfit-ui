@@ -23,7 +23,7 @@ import {
 } from '@/app/dashboard/components/DashboardWidgets'
 import { useDashboardData } from '@/app/dashboard/components/providers/DashboardDataProvider'
 import { usePrivacy } from '@/app/dashboard/components/providers/PrivacyProvider'
-import { initialCryptoRows, USD_TO_GBP, binanceCombinedStreamUrl, CryptoRow } from '@/lib/crypto-data'
+import { USD_TO_GBP, binanceCombinedStreamUrl } from '@/lib/crypto-data'
 import { formatCurrency } from '@/lib/utils'
 
 const getIconForAsset = (name: string) => {
@@ -56,7 +56,6 @@ export default function Overview() {
     const [optimisticHideValues, setOptimisticHideValues] = useState(hideValues)
 
     // Crypto Websocket Logic
-    const [cryptoAssets] = useState<CryptoRow[]>(initialCryptoRows)
     const [liveUsdByTicker, setLiveUsdByTicker] = useState<Record<string, number>>({})
 
     useEffect(() => {
@@ -116,11 +115,11 @@ export default function Overview() {
 
     // Real-time Crypto Value
     const liveCryptoValue = useMemo(() => {
-        return cryptoAssets.reduce((sum, row) => {
+        return dashboardData.crypto.assets.reduce((sum, row) => {
             const liveUsd = liveUsdByTicker[row.ticker] ?? row.usd
             return sum + (row.amount * liveUsd * USD_TO_GBP)
         }, 0)
-    }, [cryptoAssets, liveUsdByTicker])
+    }, [dashboardData.crypto.assets, liveUsdByTicker])
 
     // Replace Crypto value with real-time value and recalculate total
     const dynamicAssetsWithAllocation = useMemo(() => {

@@ -1,11 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { ArrowRightLeft, Loader2, X } from 'lucide-react'
 import DatePickerField from '@/app/dashboard/components/DatePickerField'
-import type { InvestmentAccountCardData, InvestmentHoldingRow } from './types'
+import type { InvestmentAccountCardData } from './types'
 
 type TransactionType = 'BUY' | 'SELL' | 'ADJUSTMENT'
 
@@ -13,11 +13,14 @@ type Props = {
     isOpen: boolean
     onClose: () => void
     account: InvestmentAccountCardData
+    onSaved?: () => void
 }
 
 const todayIso = new Date().toISOString().slice(0, 10)
 
-export default function AccountTransactionModal({ isOpen, onClose, account }: Props) {
+export default function AccountTransactionModal({ isOpen, onClose, account, onSaved }: Props) {
+    const hasHoldings = account.holdings.length > 0
+    const [scope, setScope] = useState<'ACCOUNT' | 'HOLDING'>(hasHoldings ? 'HOLDING' : 'ACCOUNT')
     const [holdingId, setHoldingId] = useState(account.holdings[0]?.id || '')
     const [transactionType, setTransactionType] = useState<TransactionType>('BUY')
     const [amount, setAmount] = useState('')
@@ -26,6 +29,18 @@ export default function AccountTransactionModal({ isOpen, onClose, account }: Pr
     const [isSaving, setIsSaving] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const router = useRouter()
+
+    useEffect(() => {
+        if (!isOpen) return
+        setScope(hasHoldings ? 'HOLDING' : 'ACCOUNT')
+        setTransactionType('BUY')
+        setHoldingId(account.holdings[0]?.id || '')
+        setAmount('')
+        setTransactionDate(todayIso)
+        setNotes('')
+        setError(null)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isOpen, account.id, hasHoldings])
 
     if (!isOpen) return null
 
@@ -39,7 +54,7 @@ export default function AccountTransactionModal({ isOpen, onClose, account }: Pr
             return
         }
 
-        if (!holdingId) {
+        if (scope === 'HOLDING' && !holdingId) {
             setError('Please select a holding (or create one first).')
             return
         }
@@ -54,8 +69,8 @@ export default function AccountTransactionModal({ isOpen, onClose, account }: Pr
             return
         }
 
-        const holding = account.holdings.find(h => h.id === holdingId)
-        if (!holding) {
+        const holding = scope === 'ACCOUNT' ? null : account.holdings.find(h => h.id === holdingId)
+        if (scope === 'HOLDING' && !holding) {
             setError('Holding not found.')
             setIsSaving(false)
             return
@@ -79,7 +94,7 @@ export default function AccountTransactionModal({ isOpen, onClose, account }: Pr
         const { error: txError } = await supabase.from('investment_transactions').insert({
             user_id: user.id,
             account_id: account.id,
-            holding_id: holdingId,
+            holding_id: scope === 'ACCOUNT' ? null : holdingId,
             transaction_type: transactionType,
             amount: parsedAmount,
             invested_amount_impact: investedImpact,
@@ -95,33 +110,39 @@ export default function AccountTransactionModal({ isOpen, onClose, account }: Pr
         }
 
         // 2. Update the holding total
-        const { error: updateError } = await supabase.rpc('update_investment_holding_totals', {
-            target_holding_id: holdingId,
-            v_invested_impact: investedImpact,
-            v_current_impact: currentValueImpact
-        })
+        if (scope === 'HOLDING' && holding) {
+            const { error: updateError } = await supabase.rpc('update_investment_holding_totals', {
+                target_holding_id: holdingId,
+                v_invested_impact: investedImpact,
+                v_current_impact: currentValueImpact
+            })
 
-        if (updateError) {
-            // Manual fallback if RPC fails
-            const { error: manualError } = await supabase
-                .from('investment_holdings')
-                .update({
-                    invested_amount: holding.investedAmount + investedImpact,
-                    current_value: holding.currentValue + currentValueImpact,
-                    updated_at: new Date().toISOString()
-                })
-                .eq('id', holdingId)
+            if (updateError) {
+                // Manual fallback if RPC fails
+                const { error: manualError } = await supabase
+                    .from('investment_holdings')
+                    .update({
+                        invested_amount: holding.investedAmount + investedImpact,
+                        current_value: holding.currentValue + currentValueImpact,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', holdingId)
 
-            if (manualError) {
-                setError(manualError.message)
-                setIsSaving(false)
-                return
+                if (manualError) {
+                    setError(manualError.message)
+                    setIsSaving(false)
+                    return
+                }
             }
         }
 
         setIsSaving(false)
         onClose()
-        router.refresh()
+        if (onSaved) {
+            onSaved()
+        } else {
+            router.refresh()
+        }
     }
 
     return (
@@ -141,13 +162,27 @@ export default function AccountTransactionModal({ isOpen, onClose, account }: Pr
                 </div>
 
                 <form onSubmit={handleSave} className="p-6 space-y-4">
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-white/80">Select Holding</label>
-                        {account.holdings.length === 0 ? (
-                            <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-200 text-xs text-center font-medium">
-                                No holdings found. Add a holding to this account first.
-                            </div>
-                        ) : (
+                <div className="space-y-2">
+                    <label className="text-sm font-medium text-white/80">Apply To</label>
+                    <div className="grid grid-cols-2 gap-2">
+                        {(['ACCOUNT', 'HOLDING'] as const).map((target) => (
+                            <button
+                                key={target}
+                                type="button"
+                                onClick={() => setScope(target)}
+                                className={`rounded-xl border py-2.5 text-xs font-semibold transition-all ${
+                                    scope === target
+                                        ? 'border-indigo-500/50 bg-indigo-500/15 text-indigo-300 shadow-sm shadow-indigo-500/10'
+                                        : 'border-white/10 bg-slate-900 text-white/60 hover:bg-white/5'
+                                }`}
+                                disabled={!hasHoldings && target === 'HOLDING'}
+                            >
+                                {target === 'ACCOUNT' ? 'Whole account' : 'Specific holding'}
+                            </button>
+                        ))}
+                    </div>
+                    {scope === 'HOLDING' ? (
+                        hasHoldings ? (
                             <select
                                 value={holdingId}
                                 onChange={(e) => setHoldingId(e.target.value)}
@@ -159,26 +194,46 @@ export default function AccountTransactionModal({ isOpen, onClose, account }: Pr
                                     </option>
                                 ))}
                             </select>
-                        )}
-                    </div>
+                        ) : (
+                            <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-200 text-xs text-center font-medium">
+                                No holdings yet. Add a holding or switch to account-level deposit.
+                            </div>
+                        )
+                    ) : (
+                        <div className="p-3 bg-white/5 border border-white/10 rounded-xl text-white/70 text-xs">
+                            Account-level entries let you track deposits or withdrawals before you add individual holdings.
+                        </div>
+                    )}
+                </div>
 
                     <div className="space-y-2">
                         <label className="text-sm font-medium text-white/80">Transaction Type</label>
                         <div className="grid grid-cols-3 gap-2">
-                            {(['BUY', 'SELL', 'ADJUSTMENT'] as const).map((type) => (
-                                <button
-                                    key={type}
-                                    type="button"
-                                    onClick={() => setTransactionType(type)}
-                                    className={`rounded-xl border py-2.5 text-xs font-semibold transition-all ${
-                                        transactionType === type
-                                            ? 'border-indigo-500/50 bg-indigo-500/15 text-indigo-300 shadow-sm shadow-indigo-500/10'
-                                            : 'border-white/10 bg-slate-900 text-white/60 hover:bg-white/5'
-                                    }`}
-                                >
-                                    {type}
-                                </button>
-                            ))}
+                            {(['BUY', 'SELL', 'ADJUSTMENT'] as const).map((type) => {
+                                const label = type === 'BUY' && scope === 'ACCOUNT'
+                                    ? 'Deposit'
+                                    : type === 'SELL' && scope === 'ACCOUNT'
+                                        ? 'Withdrawal'
+                                        : type === 'BUY'
+                                            ? 'Buy'
+                                            : type === 'SELL'
+                                                ? 'Sell'
+                                                : 'Adjust'
+                                return (
+                                    <button
+                                        key={type}
+                                        type="button"
+                                        onClick={() => setTransactionType(type)}
+                                        className={`rounded-xl border py-2.5 text-xs font-semibold transition-all ${
+                                            transactionType === type
+                                                ? 'border-indigo-500/50 bg-indigo-500/15 text-indigo-300 shadow-sm shadow-indigo-500/10'
+                                                : 'border-white/10 bg-slate-900 text-white/60 hover:bg-white/5'
+                                        }`}
+                                    >
+                                        {label}
+                                    </button>
+                                )
+                            })}
                         </div>
                     </div>
 
@@ -191,7 +246,7 @@ export default function AccountTransactionModal({ isOpen, onClose, account }: Pr
                             step="any"
                             value={amount}
                             onChange={(e) => setAmount(e.target.value)}
-                            placeholder="0.00"
+                            placeholder={scope === 'ACCOUNT' ? 'e.g. 200 monthly deposit' : '0.00'}
                             className="w-full h-12 bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all text-sm font-semibold"
                         />
                     </div>
@@ -230,7 +285,7 @@ export default function AccountTransactionModal({ isOpen, onClose, account }: Pr
                         </button>
                         <button
                             type="submit"
-                            disabled={isSaving || !holdingId}
+                            disabled={isSaving || (scope === 'HOLDING' && !holdingId)}
                             className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 text-white px-4 py-3 text-sm font-semibold hover:bg-indigo-500 disabled:opacity-60 transition-all"
                         >
                             {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}

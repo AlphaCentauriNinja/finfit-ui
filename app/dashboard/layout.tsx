@@ -46,6 +46,7 @@ export default async function Layout({
         cryptoAssetsResult,
         bullionHoldingsResult,
         investmentHoldingsResult,
+        realEstateResult,
     ] = await Promise.all([
         supabase
             .from('pension_accounts')
@@ -97,6 +98,10 @@ export default async function Layout({
             .from('investment_holdings')
             .select('id, current_value')
             .order('created_at', { ascending: false }),
+        supabase
+            .from('real_estate_properties')
+            .select('id, estimated_value, current_value, market_value')
+            .order('created_at', { ascending: false }),
     ])
 
     const dashboardData = buildDashboardSnapshot({
@@ -132,6 +137,8 @@ export default async function Layout({
         bullionLoadError: Boolean(bullionHoldingsResult.error),
         investmentHoldings: (investmentHoldingsResult.data as InvestmentHoldingRow[] | null) ?? [],
         investmentLoadError: Boolean(investmentHoldingsResult.error),
+        realEstateProperties: (realEstateResult.data as any) ?? [],
+        realEstateLoadError: Boolean(realEstateResult.error),
     })
 
     return (

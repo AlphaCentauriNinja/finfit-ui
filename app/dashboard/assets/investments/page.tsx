@@ -1,7 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
     CandlestickChart,
     ArrowUpRight,
@@ -25,6 +24,8 @@ import InvestmentTransactionModal from './InvestmentTransactionModal'
 import InvestmentHistoryModal from './InvestmentHistoryModal'
 import AddInvestmentAccountModal from './AddInvestmentAccountModal'
 import AddInvestmentHoldingModal from './AddInvestmentHoldingModal'
+import { useDashboardDataActions } from '@/app/dashboard/components/providers/DashboardDataProvider'
+import InvestmentPerformanceModal from './InvestmentPerformanceModal'
 import type { InvestmentAccountDbRow, InvestmentHoldingDbRow, InvestmentHoldingRow, InvestmentAccountCardData } from './types'
 
 type CurrencyCode = 'GBP' | 'EUR' | 'USD' | 'CHF' | 'CAD'
@@ -59,8 +60,8 @@ function formatSignedCurrency(value: number, currency: string): string {
 }
 
 export default function InvestmentsPage() {
-    const router = useRouter()
     const { hideValues } = usePrivacy()
+    const { updateInvestmentsValue } = useDashboardDataActions()
     const [preferredCurrency, setPreferredCurrency] = useState<CurrencyCode>('GBP')
 
     const [accounts, setAccounts] = useState<InvestmentAccountCardData[]>([])
@@ -75,6 +76,7 @@ export default function InvestmentsPage() {
     const [editingAccount, setEditingAccount] = useState<InvestmentAccountCardData | null>(null)
     const [transactionAccount, setTransactionAccount] = useState<InvestmentAccountCardData | null>(null)
     const [historyAccount, setHistoryAccount] = useState<InvestmentAccountCardData | null>(null)
+    const [isPerformanceOpen, setIsPerformanceOpen] = useState(false)
 
     // Holding Management states
     const [editingHolding, setEditingHolding] = useState<InvestmentHoldingRow | null>(null)
@@ -82,89 +84,135 @@ export default function InvestmentsPage() {
     const [historyHolding, setHistoryHolding] = useState<InvestmentHoldingRow | null>(null)
 
     // Load data from Supabase
-    useEffect(() => {
-        let isMounted = true
+    const loadData = useCallback(async () => {
+        setIsLoading(true)
+        setLoadError(null)
 
-        const loadData = async () => {
-            const supabase = createClient()
+        const supabase = createClient()
 
-            const { data: { user }, error: userError } = await supabase.auth.getUser()
-            
-            if (!isMounted) return
-
-            if (userError || !user) {
-                setLoadError('Please sign in to view your investments.')
-                setIsLoading(false)
-                return
-            }
-
-            const [settingsRes, accountsRes, holdingsRes] = await Promise.all([
-                supabase.from('user_settings').select('preferred_currency').maybeSingle(),
-                supabase.from('investment_accounts').select('*').order('created_at', { ascending: true }),
-                supabase.from('investment_holdings').select('*').order('created_at', { ascending: false }),
-            ])
-
-            if (!isMounted) return
-
-            if (settingsRes.data) {
-                setPreferredCurrency(normalizeCurrency(settingsRes.data.preferred_currency))
-            }
-
-            if (accountsRes.error) {
-                setLoadError(accountsRes.error.message)
-                setIsLoading(false)
-                return
-            }
-
-            const dbAccounts = (accountsRes.data ?? []) as InvestmentAccountDbRow[]
-            const dbHoldings = (holdingsRes.data ?? []) as InvestmentHoldingDbRow[]
-
-            // Map and aggregate
-            const parsedAccounts: InvestmentAccountCardData[] = dbAccounts.map((acc) => {
-                const accHoldings = dbHoldings
-                    .filter((h) => h.account_id === acc.id)
-                    .map((h) => ({
-                        id: h.id,
-                        accountId: h.account_id,
-                        ticker: h.ticker,
-                        name: h.name,
-                        investedAmount: Number(h.invested_amount),
-                        currentValue: Number(h.current_value),
-                    }))
-
-                const totalInvested = accHoldings.reduce((sum, h) => sum + h.investedAmount, 0)
-                const totalCurrentValue = accHoldings.reduce((sum, h) => sum + h.currentValue, 0)
-                const pnl = totalCurrentValue - totalInvested
-                const pnlPct = totalInvested > 0 ? (pnl / totalInvested) * 100 : 0
-
-                return {
-                    id: acc.id,
-                    name: acc.name,
-                    type: acc.type,
-                    taxStatus: acc.tax_status,
-                    holdings: accHoldings,
-                    totalInvested,
-                    totalCurrentValue,
-                    pnl,
-                    pnlPct,
-                }
-            })
-
-            setAccounts(parsedAccounts)
-            setLoadError(null)
+        const { data: { user }, error: userError } = await supabase.auth.getUser()
+        
+        if (userError || !user) {
+            setLoadError('Please sign in to view your investments.')
             setIsLoading(false)
+            return
         }
 
-        void loadData()
+        const [settingsRes, accountsRes, holdingsRes, accountTxRes] = await Promise.all([
+            supabase.from('user_settings').select('preferred_currency').maybeSingle(),
+            supabase.from('investment_accounts').select('*').order('created_at', { ascending: true }),
+            supabase.from('investment_holdings').select('*').order('created_at', { ascending: false }),
+            supabase
+                .from('investment_transactions')
+                .select('account_id, invested_amount_impact, current_value_impact, holding_id')
+                .is('holding_id', null)
+                .eq('user_id', user.id)
+        ])
 
-        return () => { isMounted = false }
+        if (settingsRes.data) {
+            setPreferredCurrency(normalizeCurrency(settingsRes.data.preferred_currency))
+        }
+
+        if (accountsRes.error) {
+            setLoadError(accountsRes.error.message)
+            setIsLoading(false)
+            return
+        }
+
+        if (accountTxRes.error) {
+            setLoadError(accountTxRes.error.message)
+            setIsLoading(false)
+            return
+        }
+
+        const dbAccounts = (accountsRes.data ?? []) as InvestmentAccountDbRow[]
+        const dbHoldings = (holdingsRes.data ?? []) as InvestmentHoldingDbRow[]
+        const accountOnlyTransactions = accountTxRes.data ?? []
+
+        const accountAdjustments = accountOnlyTransactions.reduce<Record<string, { invested: number; current: number }>>((acc, tx) => {
+            const key = tx.account_id
+            if (!acc[key]) acc[key] = { invested: 0, current: 0 }
+            acc[key].invested += Number(tx.invested_amount_impact) || 0
+            acc[key].current += Number(tx.current_value_impact) || 0
+            return acc
+        }, {})
+
+        // Map and aggregate
+        const parsedAccounts: InvestmentAccountCardData[] = dbAccounts.map((acc) => {
+            const accHoldings = dbHoldings
+                .filter((h) => h.account_id === acc.id)
+                .map((h) => ({
+                    id: h.id,
+                    accountId: h.account_id,
+                    ticker: h.ticker,
+                    name: h.name,
+                    investedAmount: Number(h.invested_amount),
+                    currentValue: Number(h.current_value),
+                }))
+
+            const adj = accountAdjustments[acc.id] || { invested: 0, current: 0 }
+
+            const holdingsInvested = accHoldings.reduce((sum, h) => sum + h.investedAmount, 0)
+            const holdingsCurrent = accHoldings.reduce((sum, h) => sum + h.currentValue, 0)
+            const totalInvested = holdingsInvested + adj.invested
+            const totalCurrentValue = holdingsCurrent + adj.current
+            const pnl = totalCurrentValue - totalInvested
+            const pnlPct = totalInvested > 0 ? (pnl / totalInvested) * 100 : 0
+
+            return {
+                id: acc.id,
+                name: acc.name,
+                type: acc.type,
+                taxStatus: acc.tax_status,
+                holdings: accHoldings,
+                totalInvested,
+                totalCurrentValue,
+                pnl,
+                pnlPct,
+            }
+        })
+
+        setAccounts(parsedAccounts)
+        const nextTotalInvestments = parsedAccounts.reduce((sum, acc) => sum + acc.totalCurrentValue, 0)
+        updateInvestmentsValue(nextTotalInvestments)
+        setLoadError(null)
+        setIsLoading(false)
     }, [])
 
-    // Global aggregations
-    const allHoldings = useMemo(() => accounts.flatMap((a) => a.holdings), [accounts])
-    
-    const globalInvested = useMemo(() => allHoldings.reduce((s, h) => s + h.investedAmount, 0), [allHoldings])
-    const globalCurrent = useMemo(() => allHoldings.reduce((s, h) => s + h.currentValue, 0), [allHoldings])
+    useEffect(() => {
+        void loadData()
+    }, [loadData])
+
+    // Real-time sync for investment tables
+    useEffect(() => {
+        const supabase = createClient()
+        const channel = supabase
+            .channel('investment-live-sync')
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'investment_holdings' },
+                () => { void loadData() }
+            )
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'investment_transactions' },
+                () => { void loadData() }
+            )
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'investment_accounts' },
+                () => { void loadData() }
+            )
+            .subscribe()
+
+        return () => {
+            void supabase.removeChannel(channel)
+        }
+    }, [loadData])
+
+    // Global aggregations (include account-level adjustments)
+    const globalInvested = useMemo(() => accounts.reduce((sum, acc) => sum + acc.totalInvested, 0), [accounts])
+    const globalCurrent = useMemo(() => accounts.reduce((sum, acc) => sum + acc.totalCurrentValue, 0), [accounts])
     const globalPnl = globalCurrent - globalInvested
     const globalPnlPct = globalInvested > 0 ? (globalPnl / globalInvested) * 100 : 0
     const globalIsUp = globalPnl > 0
@@ -241,7 +289,7 @@ export default function InvestmentsPage() {
                 <AddInvestmentAccountModal
                     isOpen={isAddAccountOpen}
                     onClose={() => setIsAddAccountOpen(false)}
-                    onCreated={() => { window.location.reload() }}
+                    onCreated={loadData}
                 />
             </div>
         )
@@ -277,6 +325,14 @@ export default function InvestmentsPage() {
                     >
                         <TrendingUp className="h-4 w-4" />
                         Add Investment
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setIsPerformanceOpen(true)}
+                        className="inline-flex items-center gap-2 rounded-xl border border-amber-400/40 bg-amber-500/10 px-4 py-2.5 text-sm font-semibold text-amber-100 hover:bg-amber-500/20 transition-all active:scale-95"
+                    >
+                        <CandlestickChart className="h-4 w-4" />
+                        Performance
                     </button>
                 </div>
             </div>
@@ -336,7 +392,7 @@ export default function InvestmentsPage() {
             <AddInvestmentAccountModal
                 isOpen={isAddAccountOpen}
                 onClose={() => setIsAddAccountOpen(false)}
-                onCreated={() => { window.location.reload() }}
+                onCreated={loadData}
             />
 
             {editingAccount && (
@@ -352,6 +408,7 @@ export default function InvestmentsPage() {
                     isOpen={true}
                     onClose={() => setTransactionAccount(null)}
                     account={transactionAccount}
+                    onSaved={loadData}
                 />
             )}
 
@@ -362,6 +419,7 @@ export default function InvestmentsPage() {
                     account={historyAccount}
                     preferredCurrency={preferredCurrency}
                     formatCurrency={formatCurrency}
+                    onChanged={loadData}
                 />
             )}
 
@@ -374,7 +432,7 @@ export default function InvestmentsPage() {
                 }}
                 accounts={accounts}
                 selectedAccountId={selectedAccountId}
-                onCreated={() => { router.refresh() }}
+                onCreated={() => { void loadData() }}
             />
 
             {editingHolding && (
@@ -382,10 +440,10 @@ export default function InvestmentsPage() {
                     isOpen={true}
                     onClose={() => setEditingHolding(null)}
                     holding={editingHolding}
-                    onUpdated={() => router.refresh()}
+                    onUpdated={() => void loadData()}
                     onDeleted={() => {
                         setEditingHolding(null)
-                        router.refresh()
+                        void loadData()
                     }}
                 />
             )}
@@ -395,6 +453,7 @@ export default function InvestmentsPage() {
                     isOpen={true}
                     onClose={() => setTransactionHolding(null)}
                     holding={transactionHolding}
+                    onSaved={loadData}
                 />
             )}
 
@@ -407,7 +466,11 @@ export default function InvestmentsPage() {
                     formatCurrency={formatCurrency}
                 />
             )}
+
+            <InvestmentPerformanceModal
+                isOpen={isPerformanceOpen}
+                onClose={() => setIsPerformanceOpen(false)}
+            />
         </div>
     )
 }
-

@@ -23,6 +23,7 @@ type Props = {
     account: InvestmentAccountCardData
     preferredCurrency: string
     formatCurrency: (val: number, curr: any) => string
+    onChanged?: () => void
 }
 
 export default function AccountHistoryModal({ 
@@ -30,7 +31,8 @@ export default function AccountHistoryModal({
     onClose, 
     account, 
     preferredCurrency,
-    formatCurrency 
+    formatCurrency,
+    onChanged,
 }: Props) {
     const [transactions, setTransactions] = useState<Transaction[]>([])
     const [isLoading, setIsLoading] = useState(true)
@@ -94,6 +96,7 @@ export default function AccountHistoryModal({
         }
 
         setTransactions(prev => prev.filter(t => t.id !== tx.id))
+        if (onChanged) onChanged()
     }
 
     return (
@@ -136,6 +139,7 @@ export default function AccountHistoryModal({
                         <div className="space-y-3">
                             {transactions.map((tx) => {
                                 const holding = account.holdings.find(h => h.id === tx.holding_id)
+                                const isAccountLevel = !tx.holding_id
                                 
                                 return (
                                     <div key={tx.id} className="bg-white/5 border border-white/10 rounded-xl p-4 transition-colors hover:bg-white/[0.07] group">
@@ -156,6 +160,11 @@ export default function AccountHistoryModal({
                                                         {holding && (
                                                             <span className="text-xs bg-white/10 text-white/60 px-1.5 py-0.5 rounded">
                                                                 {holding.ticker}
+                                                            </span>
+                                                        )}
+                                                        {isAccountLevel && (
+                                                            <span className="text-xs bg-indigo-500/15 text-indigo-200 px-1.5 py-0.5 rounded">
+                                                                Account
                                                             </span>
                                                         )}
                                                         <span className="text-xs text-white/40">

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { ArrowRightLeft, ChevronRight, History, Landmark, Pencil, Plus, TrendingUp } from 'lucide-react'
+import { ArrowRightLeft, ChevronRight, History, Landmark, Pencil, Plus } from 'lucide-react'
 import type { InvestmentAccountCardData, InvestmentHoldingRow } from './types'
 import { usePrivacy } from '@/app/dashboard/components/providers/PrivacyProvider'
 
@@ -26,7 +26,7 @@ export default function InvestmentAccountCard({
     onTransaction,
     onHistory,
     onAddHolding,
-    onEditHolding
+    onEditHolding,
 }: Props) {
     const { hideValues } = usePrivacy()
     const [isHoldingsExpanded, setIsHoldingsExpanded] = useState(false)

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Plus, X, Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
@@ -13,13 +13,15 @@ type Props = {
     isOpen: boolean
     onClose: () => void
     holding: InvestmentHoldingRow
+    onSaved?: () => void
 }
 
 const todayIso = new Date().toISOString().slice(0, 10)
 
-export default function InvestmentTransactionModal({ isOpen, onClose, holding }: Props) {
+export default function InvestmentTransactionModal({ isOpen, onClose, holding, onSaved }: Props) {
     const [transactionType, setTransactionType] = useState<TransactionType>('BUY')
     const [amount, setAmount] = useState('')
+    const [setAsCurrentValue, setSetAsCurrentValue] = useState(false)
     const [transactionDate, setTransactionDate] = useState(todayIso)
     const [notes, setNotes] = useState('')
     const [isSaving, setIsSaving] = useState(false)
@@ -61,14 +63,16 @@ export default function InvestmentTransactionModal({ isOpen, onClose, holding }:
             investedImpact = -parsedAmount
             currentValueImpact = -parsedAmount
         } else if (transactionType === 'ADJUSTMENT') {
-            // Adjustment in this context means "Set new current value" or "Relative adjustment"
-            // For simplicity, let's treat it as a relative adjustment to the total current value
-            currentValueImpact = parsedAmount
+            currentValueImpact = setAsCurrentValue
+                ? parsedAmount - holding.currentValue
+                : parsedAmount
         }
 
         // 1. Record the transaction
         const { error: txError } = await supabase.from('investment_transactions').insert({
             user_id: user.id,
+            account_id: holding.accountId,
+            account_id: holding.accountId,
             holding_id: holding.id,
             transaction_type: transactionType,
             amount: parsedAmount,
@@ -91,7 +95,6 @@ export default function InvestmentTransactionModal({ isOpen, onClose, holding }:
             v_current_impact: currentValueImpact
         })
 
-        // Fallback if RPC doesn't exist yet (I'll create it in a separate migration or just use manual update)
         if (updateError) {
             const { error: manualError } = await supabase
                 .from('investment_holdings')
@@ -111,8 +114,22 @@ export default function InvestmentTransactionModal({ isOpen, onClose, holding }:
 
         setIsSaving(false)
         onClose()
-        router.refresh()
+        if (onSaved) {
+            onSaved()
+        } else {
+            router.refresh()
+        }
     }
+
+    useEffect(() => {
+        if (!isOpen) return
+        setTransactionType('BUY')
+        setAmount('')
+        setSetAsCurrentValue(false)
+        setTransactionDate(todayIso)
+        setNotes('')
+        setError(null)
+    }, [isOpen, holding.id])
 
     return (
         <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
@@ -152,18 +169,29 @@ export default function InvestmentTransactionModal({ isOpen, onClose, holding }:
 
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-white/80">
-                                {transactionType === 'ADJUSTMENT' ? 'Adjustment Amount (Relative)' : 'Total Amount (GBP)'}
+                                {transactionType === 'ADJUSTMENT' && setAsCurrentValue ? 'New Current Value (GBP)' : transactionType === 'ADJUSTMENT' ? 'Adjustment Amount (Relative)' : 'Total Amount (GBP)'}
                             </label>
                             <input
                                 type="number"
                                 required
-                                min={transactionType === 'ADJUSTMENT' ? undefined : "0"}
+                                min={transactionType === 'ADJUSTMENT' && !setAsCurrentValue ? undefined : "0"}
                                 step="any"
                                 value={amount}
                                 onChange={(event) => setAmount(event.target.value)}
                                 className="h-12 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                                 placeholder="0.00"
                             />
+                            {transactionType === 'ADJUSTMENT' ? (
+                                <label className="flex items-center gap-2 text-xs text-white/70">
+                                    <input
+                                        type="checkbox"
+                                        checked={setAsCurrentValue}
+                                        onChange={(e) => setSetAsCurrentValue(e.target.checked)}
+                                        className="h-4 w-4 rounded border-white/20 bg-slate-900 text-indigo-500 focus:ring-indigo-500"
+                                    />
+                                    Treat amount as the new total current value (not a delta)
+                                </label>
+                            ) : null}
                         </div>
 
                         <DatePickerField
