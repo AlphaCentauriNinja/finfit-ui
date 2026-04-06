@@ -8,8 +8,13 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test": "node --no-warnings --test tests/*.test.ts",
-    "test:coverage": "node --no-warnings --experimental-test-coverage --test tests/*.test.ts"
+    "test": "npm run test:unit",
+    "test:unit": "node --no-warnings --test tests/*.test.ts",
+    "test:components": "vitest run --config vitest.config.ts",
+    "test:components:coverage": "vitest run --config vitest.config.ts --coverage",
+    "test:all": "npm run test:unit && npm run test:components",
+    "test:coverage:unit": "c8 --all --include 'lib/**/*.ts' --exclude '**/*.d.ts' --check-coverage --lines 80 --reporter=text --reporter=html npm run test:unit",
+    "test:coverage": "npm run test:coverage:unit && npm run test:components"
   },
   "dependencies": {
     "@radix-ui/react-popover": "^1.1.15",
@@ -32,12 +37,19 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitest/coverage-v8": "^4.1.2",
+    "c8": "^11.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
+    "happy-dom": "^20.8.9",
+    "jsdom": "^29.0.1",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.2"
   }
 }
