@@ -1,33 +1,26 @@
 'use client'
 
 import { useState } from 'react'
-import LoginModal from '@/components/LoginModal'
-import HeroSection from '@/components/HeroSection'
-import FeaturesSection from '@/components/FeaturesSection'
-import PricingSection from '@/components/PricingSection'
-import SocialProofSection from '@/components/SocialProofSection'
-import CtaSection from '@/components/CtaSection'
+import LoginModal from '@/app/components/LoginModal'
+import HeroSection from '@/app/components/HeroSection'
+import FeaturesSection from '@/app/components/FeaturesSection'
+import PricingSection from '@/app/components/PricingSection'
+import FaqSection from '@/app/components/FaqSection'
+import SocialProofSection from '@/app/components/SocialProofSection'
+import CtaSection from '@/app/components/CtaSection'
 
 export default function LandingPage() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
 
   return (
-    <div className="min-h-screen bg-[#080d1a] relative overflow-hidden font-sans selection:bg-blue-400/30 scroll-smooth">
-      {/* Subtle grid */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          backgroundImage:
-            'linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px)',
-          backgroundSize: '72px 72px',
-        }}
-      />
+    <div className="min-h-screen bg-[#080d1a] relative overflow-x-hidden font-sans selection:bg-blue-400/30 scroll-smooth">
+
       {/* Top ambient glow */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[400px] bg-[radial-gradient(ellipse_at_top,rgba(30,64,175,0.18),transparent_70%)] pointer-events-none" />
 
       {/* Navbar */}
-      <nav className="sticky top-0 z-30 border-b border-white/[0.06] bg-[#080d1a]/80 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto flex items-center justify-between px-6 sm:px-8 h-16">
+      <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/[0.06] bg-[#080d1a]/80 backdrop-blur-xl">
+        <div className="max-w-[80%] mx-auto flex items-center justify-between h-16 px-4 sm:px-0">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-md bg-blue-600 flex items-center justify-center">
               <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -40,30 +33,27 @@ export default function LandingPage() {
             <a href="#hero" className="hover:text-white transition-colors">Home</a>
             <a href="#features" className="hover:text-white transition-colors">Features</a>
             <a href="#pricing" className="hover:text-white transition-colors">Pricing</a>
+            <a href="#faq" className="hover:text-white transition-colors">FAQ</a>
           </div>
           <div className="flex items-center gap-3">
             <button
               onClick={() => setIsLoginModalOpen(true)}
-              className="text-sm text-slate-400 hover:text-white transition-colors px-3 py-2"
+              className="text-sm font-semibold bg-blue-600 text-white px-5 py-2.5 rounded-md hover:bg-blue-500 transition-all active:scale-95 shadow-lg shadow-blue-500/20"
             >
               Sign In
-            </button>
-            <button
-              onClick={() => setIsLoginModalOpen(true)}
-              className="text-sm font-medium bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-500 transition-colors"
-            >
-              Get Started
             </button>
           </div>
         </div>
       </nav>
 
-      <main className="relative z-10 w-full max-w-7xl mx-auto px-6 sm:px-8 pb-32">
+      {/* Main Content Wrapper with top padding for fixed navbar */}
+      <main className="relative z-10 w-full max-w-[80%] mx-auto pb-32 pt-16">
         <div className="w-full flex flex-col gap-28 md:gap-36">
           <HeroSection onOpenLogin={() => setIsLoginModalOpen(true)} />
           <SocialProofSection />
           <FeaturesSection />
           <PricingSection onOpenLogin={() => setIsLoginModalOpen(true)} />
+          <FaqSection />
           <CtaSection onOpenLogin={() => setIsLoginModalOpen(true)} />
         </div>
       </main>
