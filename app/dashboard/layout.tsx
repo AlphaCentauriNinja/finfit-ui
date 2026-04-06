@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import Sidebar from '@/app/dashboard/components/Sidebar'
 import Navbar from '@/app/dashboard/components/Navbar'
 import MobileNav from '@/app/dashboard/components/mobile/MobileNav'
+import AutoLogoutHandler from '@/app/dashboard/components/Auth/AutoLogoutHandler'
 import { DashboardDataProvider } from '@/app/dashboard/components/providers/DashboardDataProvider'
 import { PrivacyProvider } from '@/app/dashboard/components/providers/PrivacyProvider'
 import {
@@ -143,6 +144,7 @@ export default async function Layout({
 
     return (
         <div data-dashboard-root className="min-h-screen bg-slate-950 relative overflow-hidden font-sans text-gray-100">
+            <AutoLogoutHandler />
             {/* Dynamic Background Gradients */}
             <div className="absolute top-0 -left-1/4 w-1/2 h-1/2 bg-purple-700/30 blur-[120px] rounded-full pointer-events-none mix-blend-screen" />
             <div className="absolute bottom-0 -right-1/4 w-1/2 h-1/2 bg-indigo-600/20 blur-[120px] rounded-full pointer-events-none mix-blend-screen" />
