@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Plus, X, Loader2 } from 'lucide-react'
+import { X, Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import DatePickerField from '@/app/dashboard/components/DatePickerField'
 import type { InvestmentHoldingRow } from './types'
@@ -27,8 +27,6 @@ export default function InvestmentTransactionModal({ isOpen, onClose, holding, o
     const [isSaving, setIsSaving] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const router = useRouter()
-
-    if (!isOpen) return null
 
     const handleSubmit = async (event: React.FormEvent) => {
         event.preventDefault()
@@ -71,7 +69,6 @@ export default function InvestmentTransactionModal({ isOpen, onClose, holding, o
         // 1. Record the transaction
         const { error: txError } = await supabase.from('investment_transactions').insert({
             user_id: user.id,
-            account_id: holding.accountId,
             account_id: holding.accountId,
             holding_id: holding.id,
             transaction_type: transactionType,
@@ -121,15 +118,7 @@ export default function InvestmentTransactionModal({ isOpen, onClose, holding, o
         }
     }
 
-    useEffect(() => {
-        if (!isOpen) return
-        setTransactionType('BUY')
-        setAmount('')
-        setSetAsCurrentValue(false)
-        setTransactionDate(todayIso)
-        setNotes('')
-        setError(null)
-    }, [isOpen, holding.id])
+    if (!isOpen) return null
 
     return (
         <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">

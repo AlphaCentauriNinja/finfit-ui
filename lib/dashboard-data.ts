@@ -88,6 +88,12 @@ export type InvestmentHoldingRow = {
     current_value: number | string | null
 }
 
+export type InvestmentAccountTransactionRow = {
+    account_id: string | null
+    holding_id: string | null
+    current_value_impact: number | string | null
+}
+
 export type RealEstatePropertyRow = {
     id: string
     estimated_value?: number | string | null
@@ -236,6 +242,7 @@ type BuildDashboardSnapshotInput = {
     bullionHoldings?: BullionHoldingRow[] | null
     bullionLoadError?: boolean
     investmentHoldings?: InvestmentHoldingRow[] | null
+    investmentAccountTransactions?: InvestmentAccountTransactionRow[] | null
     investmentLoadError?: boolean
     realEstateProperties?: RealEstatePropertyRow[] | null
     realEstateLoadError?: boolean
@@ -359,6 +366,7 @@ export const buildDashboardSnapshot = ({
     bullionHoldings = [],
     bullionLoadError = false,
     investmentHoldings = [],
+    investmentAccountTransactions = [],
     investmentLoadError = false,
     realEstateProperties = [],
     realEstateLoadError = false,
@@ -632,7 +640,7 @@ export const buildDashboardSnapshot = ({
         const amount = toNumber(row.amount);
         const usd = toNumber(row.usd);
         const investedGbp = toNumber(row.invested_gbp);
-        
+
         return {
             id: row.id,
             ticker: row.ticker,
@@ -646,11 +654,11 @@ export const buildDashboardSnapshot = ({
 
     const USD_TO_GBP = 0.746;
     const totalCryptoValueSnapshot = cryptoAssetsSummary.reduce(
-        (sum, asset) => sum + (asset.amount * asset.usd * USD_TO_GBP), 
+        (sum, asset) => sum + (asset.amount * asset.usd * USD_TO_GBP),
         0
     );
     const totalCryptoInvested = cryptoAssetsSummary.reduce(
-        (sum, asset) => sum + asset.investedGbp, 
+        (sum, asset) => sum + asset.investedGbp,
         0
     );
 
@@ -681,6 +689,11 @@ export const buildDashboardSnapshot = ({
     const totalInvestmentsValue = (investmentHoldings ?? []).reduce((sum, holding) => {
         return sum + toNumber(holding.current_value)
     }, 0)
+    const accountLevelInvestmentCurrentValue = (investmentAccountTransactions ?? []).reduce((sum, tx) => {
+        if (tx.holding_id) return sum
+        return sum + toNumber(tx.current_value_impact)
+    }, 0)
+    const totalInvestmentsCurrentValue = totalInvestmentsValue + accountLevelInvestmentCurrentValue
 
     const totalRealEstateValue = (realEstateProperties ?? []).reduce((sum, prop) => {
         const value =
@@ -698,7 +711,7 @@ export const buildDashboardSnapshot = ({
     const mergedAssets = [
         { name: 'Pension', value: totalPensionValue },
         { name: 'Savings', value: totalSavingsValue },
-        { name: 'Investments', value: totalInvestmentsValue },
+        { name: 'Investments', value: totalInvestmentsCurrentValue },
         { name: 'Crypto', value: totalCryptoValueSnapshot },
         { name: 'Bullion', value: totalBullionValue },
         { name: 'Real Estate', value: totalRealEstateEquity },

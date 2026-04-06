@@ -80,7 +80,7 @@ const assetRoutes: AssetRoute[] = [
     {
         name: 'Real Estate',
         href: '/dashboard/assets/real-estate',
-        description: 'Property holdings & market value',
+        description: 'Current equity after mortgage balances',
         icon: Home,
         iconBg: 'bg-rose-500/10',
         iconColor: 'text-rose-400',
@@ -195,62 +195,62 @@ export default function AssetsPage() {
                 {assetRoutes
                     .filter((route) => assetValueMap.has(route.name))
                     .map((route) => {
-                    const Icon = route.icon
-                    const value = assetValueMap.get(route.name) ?? 0
-                    const proportion = totalAssetsValue > 0 ? (value / totalAssetsValue) * 100 : 0
+                        const Icon = route.icon
+                        const value = assetValueMap.get(route.name) ?? 0
+                        const proportion = totalAssetsValue > 0 ? (value / totalAssetsValue) * 100 : 0
 
-                    return (
-                        <Link
-                            key={route.href}
-                            href={route.href}
-                            className="group/card block"
-                        >
-                            <div className="bg-white/5 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/10 hover:bg-white/10 transition-colors flex flex-col h-full">
-                                <div className="flex items-start justify-between mb-2">
-                                    <div>
-                                        <h3 className="text-sm font-medium text-white/60">{route.name}</h3>
-                                        <p className="text-2xl font-bold text-white mt-1">
-                                            {formatCurrency(value, hideValues)}
-                                        </p>
+                        return (
+                            <Link
+                                key={route.href}
+                                href={route.href}
+                                className="group/card block"
+                            >
+                                <div className="bg-white/5 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/10 hover:bg-white/10 transition-colors flex flex-col h-full">
+                                    <div className="flex items-start justify-between mb-2">
+                                        <div>
+                                            <h3 className="text-sm font-medium text-white/60">{route.name}</h3>
+                                            <p className="text-2xl font-bold text-white mt-1">
+                                                {formatCurrency(value, hideValues)}
+                                            </p>
+                                        </div>
+                                        <div className={`w-10 h-10 rounded-full ${route.iconBg} flex items-center justify-center ${route.iconColor} font-bold border ${route.iconBorder} group-hover/card:scale-110 transition-transform`}>
+                                            <Icon className="w-5 h-5" />
+                                        </div>
                                     </div>
-                                    <div className={`w-10 h-10 rounded-full ${route.iconBg} flex items-center justify-center ${route.iconColor} font-bold border ${route.iconBorder} group-hover/card:scale-110 transition-transform`}>
-                                        <Icon className="w-5 h-5" />
-                                    </div>
-                                </div>
 
-                                <div className="flex items-center gap-3 mt-4 mb-6">
-                                    <div className="flex-1 bg-white/5 rounded-full h-1.5">
-                                        <div
-                                            className="h-1.5 rounded-full transition-all duration-500"
-                                            style={{ width: hideValues ? '0%' : `${proportion}%`, backgroundColor: route.barHex }}
-                                        />
+                                    <div className="flex items-center gap-3 mt-4 mb-6">
+                                        <div className="flex-1 bg-white/5 rounded-full h-1.5">
+                                            <div
+                                                className="h-1.5 rounded-full transition-all duration-500"
+                                                style={{ width: hideValues ? '0%' : `${proportion}%`, backgroundColor: route.barHex }}
+                                            />
+                                        </div>
+                                        <span className="text-xs font-medium text-white/50 tabular-nums w-12 text-right">
+                                            {hideValues ? '****' : `${proportion.toFixed(1)}%`}
+                                        </span>
                                     </div>
-                                    <span className="text-xs font-medium text-white/50 tabular-nums w-12 text-right">
-                                        {hideValues ? '****' : `${proportion.toFixed(1)}%`}
-                                    </span>
-                                </div>
 
-                                <div className="flex-1">
-                                    <div className={`p-4 rounded-xl border border-white/10 bg-white/5 group-hover/card:bg-white/10 ${route.hoverBorder} transition-all duration-300`}>
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-3">
-                                                <div className={`p-2 rounded-lg ${route.iconBg} ${route.iconColor} border ${route.iconBorder} group-hover/card:scale-110 transition-transform`}>
-                                                    <Icon className="w-4 h-4" />
+                                    <div className="flex-1">
+                                        <div className={`p-4 rounded-xl border border-white/10 bg-white/5 group-hover/card:bg-white/10 ${route.hoverBorder} transition-all duration-300`}>
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-3">
+                                                    <div className={`p-2 rounded-lg ${route.iconBg} ${route.iconColor} border ${route.iconBorder} group-hover/card:scale-110 transition-transform`}>
+                                                        <Icon className="w-4 h-4" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs font-semibold text-white/40 uppercase tracking-wider">{route.name}</p>
+                                                        <p className="text-sm font-medium text-white/70 mt-0.5">
+                                                            {route.description}
+                                                        </p>
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <p className="text-xs font-semibold text-white/40 uppercase tracking-wider">{route.name}</p>
-                                                    <p className="text-sm font-medium text-white/70 mt-0.5">
-                                                        {route.description}
-                                                    </p>
-                                                </div>
+                                                <ChevronRight className="w-4 h-4 text-white/20 group-hover/card:text-white/60 group-hover/card:translate-x-1 transition-all" />
                                             </div>
-                                            <ChevronRight className="w-4 h-4 text-white/20 group-hover/card:text-white/60 group-hover/card:translate-x-1 transition-all" />
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        </Link>
-                    )
+                            </Link>
+                        )
                     })}
             </div>
         </div>

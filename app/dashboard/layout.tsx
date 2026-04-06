@@ -21,6 +21,8 @@ import {
     type CryptoAssetRow,
     type BullionHoldingRow,
     type InvestmentHoldingRow,
+    type InvestmentAccountTransactionRow,
+    type RealEstatePropertyRow,
 } from '@/lib/dashboard-data'
 
 export default async function Layout({
@@ -47,6 +49,7 @@ export default async function Layout({
         cryptoAssetsResult,
         bullionHoldingsResult,
         investmentHoldingsResult,
+        investmentAccountTransactionsResult,
         realEstateResult,
     ] = await Promise.all([
         supabase
@@ -100,8 +103,12 @@ export default async function Layout({
             .select('id, current_value')
             .order('created_at', { ascending: false }),
         supabase
+            .from('investment_transactions')
+            .select('account_id, holding_id, current_value_impact')
+            .is('holding_id', null),
+        supabase
             .from('real_estate_properties')
-            .select('id, estimated_value, current_value, market_value')
+            .select('id, estimated_value, current_value, market_value, mortgage_balance')
             .order('created_at', { ascending: false }),
     ])
 
@@ -137,8 +144,9 @@ export default async function Layout({
         bullionHoldings: (bullionHoldingsResult.data as BullionHoldingRow[] | null) ?? [],
         bullionLoadError: Boolean(bullionHoldingsResult.error),
         investmentHoldings: (investmentHoldingsResult.data as InvestmentHoldingRow[] | null) ?? [],
-        investmentLoadError: Boolean(investmentHoldingsResult.error),
-        realEstateProperties: (realEstateResult.data as any) ?? [],
+        investmentAccountTransactions: (investmentAccountTransactionsResult.data as InvestmentAccountTransactionRow[] | null) ?? [],
+        investmentLoadError: Boolean(investmentHoldingsResult.error || investmentAccountTransactionsResult.error),
+        realEstateProperties: (realEstateResult.data as RealEstatePropertyRow[] | null) ?? [],
         realEstateLoadError: Boolean(realEstateResult.error),
     })
 

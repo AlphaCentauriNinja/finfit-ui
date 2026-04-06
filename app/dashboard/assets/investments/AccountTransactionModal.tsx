@@ -23,6 +23,7 @@ export default function AccountTransactionModal({ isOpen, onClose, account, onSa
     const [scope, setScope] = useState<'ACCOUNT' | 'HOLDING'>(hasHoldings ? 'HOLDING' : 'ACCOUNT')
     const [holdingId, setHoldingId] = useState(account.holdings[0]?.id || '')
     const [transactionType, setTransactionType] = useState<TransactionType>('BUY')
+    const [setAsCurrentValue, setSetAsCurrentValue] = useState(false)
     const [amount, setAmount] = useState('')
     const [transactionDate, setTransactionDate] = useState(todayIso)
     const [notes, setNotes] = useState('')
@@ -33,7 +34,8 @@ export default function AccountTransactionModal({ isOpen, onClose, account, onSa
     useEffect(() => {
         if (!isOpen) return
         setScope(hasHoldings ? 'HOLDING' : 'ACCOUNT')
-        setTransactionType('BUY')
+        setTransactionType(hasHoldings ? 'BUY' : 'ADJUSTMENT')
+        setSetAsCurrentValue(!hasHoldings)
         setHoldingId(account.holdings[0]?.id || '')
         setAmount('')
         setTransactionDate(todayIso)
@@ -49,8 +51,23 @@ export default function AccountTransactionModal({ isOpen, onClose, account, onSa
         setError(null)
 
         const parsedAmount = Number(amount)
-        if (!Number.isFinite(parsedAmount) || parsedAmount === 0) {
-            setError('Amount must be a valid non-zero number.')
+        if (!Number.isFinite(parsedAmount)) {
+            setError('Amount must be a valid number.')
+            return
+        }
+
+        if (transactionType === 'BUY' || transactionType === 'SELL') {
+            if (parsedAmount <= 0) {
+                setError('Amount must be greater than 0.')
+                return
+            }
+        } else if (setAsCurrentValue) {
+            if (parsedAmount < 0) {
+                setError('Current value must be 0 or greater.')
+                return
+            }
+        } else if (parsedAmount === 0) {
+            setError('Adjustment amount must be non-zero.')
             return
         }
 
@@ -76,6 +93,10 @@ export default function AccountTransactionModal({ isOpen, onClose, account, onSa
             return
         }
 
+        const referenceCurrentValue = scope === 'ACCOUNT'
+            ? account.totalCurrentValue
+            : (holding?.currentValue ?? 0)
+
         // Calculate impacts
         let investedImpact = 0
         let currentValueImpact = 0
@@ -87,7 +108,9 @@ export default function AccountTransactionModal({ isOpen, onClose, account, onSa
             investedImpact = -parsedAmount
             currentValueImpact = -parsedAmount
         } else if (transactionType === 'ADJUSTMENT') {
-            currentValueImpact = parsedAmount
+            currentValueImpact = setAsCurrentValue
+                ? parsedAmount - referenceCurrentValue
+                : parsedAmount
         }
 
         // 1. Record the transaction
@@ -201,7 +224,7 @@ export default function AccountTransactionModal({ isOpen, onClose, account, onSa
                         )
                     ) : (
                         <div className="p-3 bg-white/5 border border-white/10 rounded-xl text-white/70 text-xs">
-                            Account-level entries let you track deposits or withdrawals before you add individual holdings.
+                            Account-level entries let you track deposits, withdrawals, or set a live cash value before adding individual holdings.
                         </div>
                     )}
                 </div>
@@ -218,12 +241,17 @@ export default function AccountTransactionModal({ isOpen, onClose, account, onSa
                                             ? 'Buy'
                                             : type === 'SELL'
                                                 ? 'Sell'
-                                                : 'Adjust'
+                                                : 'Adjust Value'
                                 return (
                                     <button
                                         key={type}
                                         type="button"
-                                        onClick={() => setTransactionType(type)}
+                                        onClick={() => {
+                                            setTransactionType(type)
+                                            if (type === 'ADJUSTMENT') {
+                                                setSetAsCurrentValue(true)
+                                            }
+                                        }}
                                         className={`rounded-xl border py-2.5 text-xs font-semibold transition-all ${
                                             transactionType === type
                                                 ? 'border-indigo-500/50 bg-indigo-500/15 text-indigo-300 shadow-sm shadow-indigo-500/10'
@@ -238,17 +266,42 @@ export default function AccountTransactionModal({ isOpen, onClose, account, onSa
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-white/80">Amount (£)</label>
+                        <label className="text-sm font-medium text-white/80">
+                            {transactionType === 'ADJUSTMENT' && setAsCurrentValue
+                                ? `New ${scope === 'ACCOUNT' ? 'Account' : 'Holding'} Current Value (£)`
+                                : transactionType === 'ADJUSTMENT'
+                                    ? 'Adjustment Amount (Relative)'
+                                    : 'Amount (£)'}
+                        </label>
                         <input
                             type="number"
                             required
-                            min={transactionType === 'ADJUSTMENT' ? undefined : "0"}
+                            min={transactionType === 'ADJUSTMENT' && !setAsCurrentValue ? undefined : "0"}
                             step="any"
                             value={amount}
                             onChange={(e) => setAmount(e.target.value)}
-                            placeholder={scope === 'ACCOUNT' ? 'e.g. 200 monthly deposit' : '0.00'}
+                            placeholder={
+                                transactionType === 'ADJUSTMENT' && setAsCurrentValue
+                                    ? scope === 'ACCOUNT'
+                                        ? 'e.g. 10250 total account value'
+                                        : 'e.g. 1250 total holding value'
+                                    : scope === 'ACCOUNT'
+                                        ? 'e.g. 200 monthly deposit'
+                                        : '0.00'
+                            }
                             className="w-full h-12 bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all text-sm font-semibold"
                         />
+                        {transactionType === 'ADJUSTMENT' ? (
+                            <label className="flex items-center gap-2 text-xs text-white/70">
+                                <input
+                                    type="checkbox"
+                                    checked={setAsCurrentValue}
+                                    onChange={(e) => setSetAsCurrentValue(e.target.checked)}
+                                    className="h-4 w-4 rounded border-white/20 bg-slate-900 text-indigo-500 focus:ring-indigo-500"
+                                />
+                                Treat amount as the new total current value
+                            </label>
+                        ) : null}
                     </div>
 
                     <DatePickerField
