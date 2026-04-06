@@ -93,6 +93,7 @@ export type RealEstatePropertyRow = {
     estimated_value?: number | string | null
     current_value?: number | string | null
     market_value?: number | string | null
+    mortgage_balance?: number | string | null
 }
 
 type ValueSnapshot = {
@@ -688,6 +689,11 @@ export const buildDashboardSnapshot = ({
             toNumber(prop.market_value)
         return sum + value
     }, 0)
+    const totalRealEstateMortgage = (realEstateProperties ?? []).reduce((sum, prop) => {
+        const mortgage = toNumber(prop.mortgage_balance)
+        return sum + (Number.isFinite(mortgage) ? mortgage : 0)
+    }, 0)
+    const totalRealEstateEquity = totalRealEstateValue - totalRealEstateMortgage
 
     const mergedAssets = [
         { name: 'Pension', value: totalPensionValue },
@@ -695,7 +701,7 @@ export const buildDashboardSnapshot = ({
         { name: 'Investments', value: totalInvestmentsValue },
         { name: 'Crypto', value: totalCryptoValueSnapshot },
         { name: 'Bullion', value: totalBullionValue },
-        { name: 'Real Estate', value: totalRealEstateValue },
+        { name: 'Real Estate', value: totalRealEstateEquity },
     ]
     const totalAssets = mergedAssets.reduce((sum, asset) => sum + asset.value, 0)
     const assetsWithAllocation: DashboardAsset[] = mergedAssets.map((asset) => ({

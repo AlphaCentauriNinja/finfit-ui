@@ -25,7 +25,6 @@ import InvestmentHistoryModal from './InvestmentHistoryModal'
 import AddInvestmentAccountModal from './AddInvestmentAccountModal'
 import AddInvestmentHoldingModal from './AddInvestmentHoldingModal'
 import { useDashboardDataActions } from '@/app/dashboard/components/providers/DashboardDataProvider'
-import InvestmentPerformanceModal from './InvestmentPerformanceModal'
 import type { InvestmentAccountDbRow, InvestmentHoldingDbRow, InvestmentHoldingRow, InvestmentAccountCardData } from './types'
 
 type CurrencyCode = 'GBP' | 'EUR' | 'USD' | 'CHF' | 'CAD'
@@ -76,7 +75,6 @@ export default function InvestmentsPage() {
     const [editingAccount, setEditingAccount] = useState<InvestmentAccountCardData | null>(null)
     const [transactionAccount, setTransactionAccount] = useState<InvestmentAccountCardData | null>(null)
     const [historyAccount, setHistoryAccount] = useState<InvestmentAccountCardData | null>(null)
-    const [isPerformanceOpen, setIsPerformanceOpen] = useState(false)
 
     // Holding Management states
     const [editingHolding, setEditingHolding] = useState<InvestmentHoldingRow | null>(null)
@@ -326,14 +324,6 @@ export default function InvestmentsPage() {
                         <TrendingUp className="h-4 w-4" />
                         Add Investment
                     </button>
-                    <button
-                        type="button"
-                        onClick={() => setIsPerformanceOpen(true)}
-                        className="inline-flex items-center gap-2 rounded-xl border border-amber-400/40 bg-amber-500/10 px-4 py-2.5 text-sm font-semibold text-amber-100 hover:bg-amber-500/20 transition-all active:scale-95"
-                    >
-                        <CandlestickChart className="h-4 w-4" />
-                        Performance
-                    </button>
                 </div>
             </div>
 
@@ -466,11 +456,6 @@ export default function InvestmentsPage() {
                     formatCurrency={formatCurrency}
                 />
             )}
-
-            <InvestmentPerformanceModal
-                isOpen={isPerformanceOpen}
-                onClose={() => setIsPerformanceOpen(false)}
-            />
         </div>
     )
 }

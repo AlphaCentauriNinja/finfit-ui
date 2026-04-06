@@ -1,11 +1,12 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Home, Plus, Building2, Landmark } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { usePrivacy } from '@/app/dashboard/components/providers/PrivacyProvider'
 import EmptyStateAlert from '@/app/dashboard/components/EmptyStateAlert'
 import AssetOnboardingHero from '@/app/dashboard/components/AssetOnboardingHero'
+import RealEstatePropertyCard from './RealEstatePropertyCard'
 
 type PropertyRow = {
     id: string
@@ -30,33 +31,58 @@ export default function RealEstatePage() {
     const [isAddOpen, setIsAddOpen] = useState(false)
     const [form, setForm] = useState({ name: '', address: '', value: '', mortgage: '' })
 
-    useEffect(() => {
-        const load = async () => {
-            setIsLoading(true)
-            setError(null)
-            const supabase = createClient()
-            const { data: { user } } = await supabase.auth.getUser()
-            if (!user) {
-                setError('Please sign in to view properties.')
-                setIsLoading(false)
-                return
-            }
-            const { data, error: fetchError } = await supabase
-                .from('real_estate_properties')
-                .select('id, name, address, estimated_value, current_value, market_value, mortgage_balance')
-                .order('created_at', { ascending: true })
-
-            if (fetchError) setError(fetchError.message)
-            setProperties((data ?? []) as PropertyRow[])
+    const loadData = useCallback(async () => {
+        setIsLoading(true)
+        setError(null)
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+            setError('Please sign in to view properties.')
             setIsLoading(false)
+            return
         }
-        void load()
+        const { data, error: fetchError } = await supabase
+            .from('real_estate_properties')
+            .select('id, name, address, estimated_value, current_value, market_value, mortgage_balance')
+            .order('created_at', { ascending: true })
+
+        if (fetchError) setError(fetchError.message)
+        setProperties((data ?? []) as PropertyRow[])
+        setIsLoading(false)
     }, [])
 
-    const totalValue = useMemo(
-        () => properties.reduce((sum, p) => sum + (p.current_value ?? p.estimated_value ?? p.market_value ?? 0), 0),
-        [properties]
-    )
+    useEffect(() => {
+        void loadData()
+    }, [loadData])
+
+    // Real-time sync
+    useEffect(() => {
+        const supabase = createClient()
+        const channel = supabase
+            .channel('real-estate-live-sync')
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'real_estate_properties' },
+                () => { void loadData() }
+            )
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'real_estate_transactions' },
+                () => { void loadData() }
+            )
+            .subscribe()
+
+        return () => {
+            void supabase.removeChannel(channel)
+        }
+    }, [loadData])
+
+    const totals = useMemo(() => {
+        const value = properties.reduce((sum, p) => sum + (p.current_value ?? p.estimated_value ?? p.market_value ?? 0), 0)
+        const mortgage = properties.reduce((sum, p) => sum + (p.mortgage_balance ?? 0), 0)
+        const equity = value - mortgage
+        return { value, mortgage, equity }
+    }, [properties])
 
     const handleSave = async () => {
         setError(null)
@@ -145,40 +171,33 @@ export default function RealEstatePage() {
                     />
                 </div>
             ) : (
-                <div className="bg-white/5 backdrop-blur-sm p-8 rounded-2xl shadow-sm border border-white/10 mb-6">
-                    <div className="flex justify-between items-start mb-6">
-                        <div>
-                            <p className="text-sm font-medium text-white/60">Total Property Value</p>
-                            <p className="text-4xl font-bold text-white mt-2">{formatCurrency(totalValue, hideValues)}</p>
+                <>
+                    <div className="grid gap-4 md:grid-cols-3 mb-6">
+                        <div className="bg-white/5 backdrop-blur-sm p-5 rounded-2xl border border-white/10 shadow-sm">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-white/50">House Value</p>
+                            <p className="text-2xl font-bold text-white mt-2">{formatCurrency(totals.value, hideValues)}</p>
                         </div>
-                        <div className="p-3 bg-white/5 rounded-xl border border-white/10">
-                            <Landmark className="w-6 h-6 text-white/80" />
+                        <div className="bg-white/5 backdrop-blur-sm p-5 rounded-2xl border border-white/10 shadow-sm">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-white/50">Mortgage Remaining</p>
+                            <p className="text-2xl font-bold text-rose-200 mt-2">{formatCurrency(totals.mortgage, hideValues)}</p>
+                        </div>
+                        <div className="bg-white/5 backdrop-blur-sm p-5 rounded-2xl border border-white/10 shadow-sm">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-white/50">Current Equity</p>
+                            <p className="text-2xl font-bold text-emerald-200 mt-2">{formatCurrency(totals.equity, hideValues)}</p>
                         </div>
                     </div>
 
                     <div className="grid gap-4 md:grid-cols-2">
-                        {properties.map((prop) => {
-                            const value = prop.current_value ?? prop.estimated_value ?? prop.market_value ?? 0
-                            return (
-                                <div key={prop.id} className="rounded-xl border border-white/10 bg-white/5 p-4">
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <p className="text-sm font-semibold text-white">{prop.name}</p>
-                                            {prop.address ? <p className="text-xs text-white/50 mt-0.5">{prop.address}</p> : null}
-                                        </div>
-                                        <Home className="w-5 h-5 text-white/50" />
-                                    </div>
-                                    <p className="text-2xl font-bold text-white mt-3">{formatCurrency(value, hideValues)}</p>
-                                    {prop.mortgage_balance !== null && prop.mortgage_balance !== undefined ? (
-                                        <p className="text-xs text-white/50 mt-2">
-                                            Mortgage: {formatCurrency(prop.mortgage_balance ?? 0, hideValues)}
-                                        </p>
-                                    ) : null}
-                                </div>
-                            )
-                        })}
+                        {properties.map((prop) => (
+                            <RealEstatePropertyCard
+                                key={prop.id}
+                                property={prop}
+                                totalPortfolioValue={totals.value}
+                                onRefresh={loadData}
+                            />
+                        ))}
                     </div>
-                </div>
+                </>
             )}
 
             {isAddOpen ? (

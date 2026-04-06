@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Plus, X, Loader2, Trash2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import DeleteActionModal from '@/app/dashboard/components/DeleteActionModal'
 import type { InvestmentHoldingRow } from './types'
 
 type Props = {
@@ -21,6 +22,7 @@ export default function InvestmentEditModal({ isOpen, onClose, holding, onUpdate
     const [currentValue, setCurrentValue] = useState(holding.currentValue.toString())
     const [isSaving, setIsSaving] = useState(false)
     const [isDeleting, setIsDeleting] = useState(false)
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const router = useRouter()
 
@@ -95,11 +97,11 @@ export default function InvestmentEditModal({ isOpen, onClose, holding, onUpdate
         router.refresh()
     }
 
-    const handleDelete = async () => {
-        if (!confirm('Are you sure you want to delete this investment? This action cannot be undone.')) {
-            return
-        }
+    const handleDelete = () => {
+        setShowDeleteConfirm(true)
+    }
 
+    const confirmDelete = async () => {
         setIsDeleting(true)
         setError(null)
         const supabase = createClient()
@@ -112,10 +114,12 @@ export default function InvestmentEditModal({ isOpen, onClose, holding, onUpdate
         if (deleteError) {
             setError(deleteError.message || 'Unable to delete investment holding.')
             setIsDeleting(false)
+            setShowDeleteConfirm(false)
             return
         }
 
         setIsDeleting(false)
+        setShowDeleteConfirm(false)
         if (onDeleted) {
             onDeleted(holding.id)
         }
@@ -232,6 +236,16 @@ export default function InvestmentEditModal({ isOpen, onClose, holding, onUpdate
                     </div>
                 </form>
             </div>
+
+            <DeleteActionModal
+                isOpen={showDeleteConfirm}
+                onClose={() => setShowDeleteConfirm(false)}
+                onConfirm={confirmDelete}
+                title="Delete Investment?"
+                message={`Are you sure you want to delete "${holding.name}" (${holding.ticker})? This action cannot be undone.`}
+                confirmText="Delete Investment"
+                isProcessing={isDeleting}
+            />
         </div>
     )
 }
