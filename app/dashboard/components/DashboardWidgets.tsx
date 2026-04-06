@@ -12,9 +12,15 @@ import { usePrivacy } from '@/app/dashboard/components/providers/PrivacyProvider
 
 import { useMemo } from 'react'
 
-export function PortfolioGraph() {
-    const dashboardData = useDashboardData()
-    const totalAssets = dashboardData.portfolio.totalAssets
+type PortfolioGraphProps = {
+    totalAssets: number
+    ytdPnl: number
+    ytdPercentage: number
+}
+
+export function PortfolioGraph({ totalAssets, ytdPnl, ytdPercentage }: PortfolioGraphProps) {
+    const ytdIsUp = ytdPnl > 0
+    const ytdIsDown = ytdPnl < 0
 
     const portfolioData = useMemo(() => {
         const currentMonth = new Date().getMonth()
@@ -38,8 +44,16 @@ export function PortfolioGraph() {
         <div className="bg-white/5 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/10">
             <div className="mb-4 flex items-center justify-between">
                 <h3 className="text-lg font-bold text-white">Portfolio Performance</h3>
-                <span className="text-xs font-semibold px-2 py-1 bg-emerald-500/10 text-emerald-400 rounded-lg">
-                    +12.5% YTD
+                <span
+                    className={`text-xs font-semibold px-2 py-1 rounded-lg ${
+                        ytdIsUp
+                            ? 'bg-emerald-500/10 text-emerald-400'
+                            : ytdIsDown
+                                ? 'bg-rose-500/10 text-rose-400'
+                                : 'bg-white/10 text-white/70'
+                    }`}
+                >
+                    YTD PNL {ytdPnl >= 0 ? '+' : '-'}£{Math.abs(ytdPnl).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ({ytdPercentage >= 0 ? '+' : ''}{ytdPercentage.toFixed(2)}%)
                 </span>
             </div>
             <div className="h-[300px] w-full mt-6">

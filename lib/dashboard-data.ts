@@ -92,6 +92,7 @@ export type InvestmentAccountTransactionRow = {
     account_id: string | null
     holding_id: string | null
     current_value_impact: number | string | null
+    transaction_date?: string | null
 }
 
 export type RealEstatePropertyRow = {
@@ -175,6 +176,9 @@ export type DashboardDataSnapshot = {
     portfolio: {
         totalAssets: number
         assetsWithAllocation: DashboardAsset[]
+        startOfYearValue: number
+        ytdPnl: number
+        ytdPercentage: number
     }
     crypto: {
         assets: {
@@ -858,10 +862,48 @@ export const buildDashboardSnapshot = ({
     const totalDebt = normalizedDebtAmounts.reduce((sum, amount) => sum + amount, 0)
     const debtCount = normalizedDebtAmounts.filter((amount) => amount > 0).length
 
+    const todayIso = getTodayIso()
+    const currentYear = todayIso.slice(0, 4)
+    const startOfYearDayKey = `${currentYear}-01-01`
+    const startOfYearMonthKey = `${currentYear}-01`
+
+    const pensionStartOfYearValue = pensionAccountsSummary.reduce((sum, pension) => {
+        const janValue = valueAtMonth(pension.id, startOfYearMonthKey)
+        return sum + (janValue ?? pension.value)
+    }, 0)
+
+    const savingsFlowSinceStartOfYear = savingsTransactions.reduce((sum, transaction) => {
+        if (transaction.dayKey >= startOfYearDayKey) {
+            return sum + transaction.amount
+        }
+        return sum
+    }, 0)
+    const savingsStartOfYearValue = totalSavingsValue - savingsFlowSinceStartOfYear
+
+    const investmentCurrentFlowSinceStartOfYear = (investmentAccountTransactions ?? []).reduce((sum, transaction) => {
+        const dayKey = parseDayKey(transaction.transaction_date || '')
+        if (!dayKey || dayKey < startOfYearDayKey) return sum
+        return sum + toNumber(transaction.current_value_impact)
+    }, 0)
+    const investmentsStartOfYearValue = totalInvestmentsCurrentValue - investmentCurrentFlowSinceStartOfYear
+
+    const startOfYearValue =
+        pensionStartOfYearValue +
+        savingsStartOfYearValue +
+        investmentsStartOfYearValue +
+        totalCryptoValueSnapshot +
+        totalBullionValue +
+        totalRealEstateEquity
+    const ytdPnl = totalAssets - startOfYearValue
+    const ytdPercentage = startOfYearValue > 0 ? (ytdPnl / startOfYearValue) * 100 : 0
+
     return {
         portfolio: {
             totalAssets,
             assetsWithAllocation,
+            startOfYearValue,
+            ytdPnl,
+            ytdPercentage,
         },
         crypto: {
             assets: cryptoAssetsSummary,

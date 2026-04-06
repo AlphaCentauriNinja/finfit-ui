@@ -104,8 +104,7 @@ export default async function Layout({
             .order('created_at', { ascending: false }),
         supabase
             .from('investment_transactions')
-            .select('account_id, holding_id, current_value_impact')
-            .is('holding_id', null),
+            .select('account_id, holding_id, current_value_impact, transaction_date'),
         supabase
             .from('real_estate_properties')
             .select('id, estimated_value, current_value, market_value, mortgage_balance')

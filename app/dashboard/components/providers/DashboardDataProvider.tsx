@@ -29,6 +29,10 @@ export function DashboardDataProvider({
                 ...asset,
                 allocation: nextTotalAssets > 0 ? (asset.value / nextTotalAssets) * 100 : 0,
             }))
+            const ytdPnl = nextTotalAssets - previous.portfolio.startOfYearValue
+            const ytdPercentage = previous.portfolio.startOfYearValue > 0
+                ? (ytdPnl / previous.portfolio.startOfYearValue) * 100
+                : 0
 
             return {
                 ...previous,
@@ -36,6 +40,8 @@ export function DashboardDataProvider({
                     ...previous.portfolio,
                     totalAssets: nextTotalAssets,
                     assetsWithAllocation,
+                    ytdPnl,
+                    ytdPercentage,
                 },
             }
         })

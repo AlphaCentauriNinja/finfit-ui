@@ -138,6 +138,16 @@ export default function Overview() {
     }, [dashboardData.portfolio.assetsWithAllocation, liveCryptoValue])
 
     const totalAssets = dynamicAssetsWithAllocation.reduce((sum, asset) => sum + asset.value, 0)
+    const dynamicYtdPnl = useMemo(() => {
+        const totalDeltaFromSnapshot = totalAssets - dashboardData.portfolio.totalAssets
+        return dashboardData.portfolio.ytdPnl + totalDeltaFromSnapshot
+    }, [totalAssets, dashboardData.portfolio.totalAssets, dashboardData.portfolio.ytdPnl])
+    const dynamicYtdPercentage = useMemo(() => {
+        return dashboardData.portfolio.startOfYearValue > 0
+            ? (dynamicYtdPnl / dashboardData.portfolio.startOfYearValue) * 100
+            : 0
+    }, [dynamicYtdPnl, dashboardData.portfolio.startOfYearValue])
+    const ytdChangeLabel = `${dynamicYtdPercentage >= 0 ? '+' : ''}${dynamicYtdPercentage.toFixed(2)}% YTD`
 
     return (
         <div className="flex flex-col xl:flex-row gap-8">
@@ -161,7 +171,7 @@ export default function Overview() {
                     <StatCard
                         title="Total Net Assets"
                         value={formatCurrency(totalAssets, optimisticHideValues)}
-                        change="+12.5% YTD"
+                        change={ytdChangeLabel}
                         icon={Wallet}
                     />
                 </section>
@@ -169,7 +179,11 @@ export default function Overview() {
                 {/* Portfolio Graph */}
                 {!optimisticHideValues ? (
                     <section>
-                        <PortfolioGraph />
+                        <PortfolioGraph
+                            totalAssets={totalAssets}
+                            ytdPnl={dynamicYtdPnl}
+                            ytdPercentage={dynamicYtdPercentage}
+                        />
                     </section>
                 ) : null}
 
