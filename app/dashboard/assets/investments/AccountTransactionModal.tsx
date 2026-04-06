@@ -171,7 +171,7 @@ export default function AccountTransactionModal({ isOpen, onClose, account, onSa
     return (
         <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" onClick={onClose} />
-            <div className="relative w-full max-w-md overflow-hidden rounded-2xl border border-white/10 bg-[#0f172a] shadow-xl">
+            <div className="relative w-full max-w-xl overflow-hidden rounded-2xl border border-white/10 bg-[#0f172a] shadow-xl">
                 <div className="flex items-center justify-between border-b border-white/10 p-6">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-400 border border-indigo-500/20">

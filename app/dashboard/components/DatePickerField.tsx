@@ -60,9 +60,10 @@ export default function DatePickerField({ label, value, onChange, disabled = fal
                     </Button>
                 </PopoverTrigger>
                 <PopoverContent
-                    className="datepicker-popover z-[120] w-auto p-0 !bg-[#020617] border-white/10 shadow-2xl rounded-xl"
+                    className="datepicker-popover z-[120] w-[360px] max-w-[calc(100vw-2rem)] p-0 !bg-[#020617] border-white/10 shadow-2xl rounded-xl"
                     style={{ backgroundColor: "#020617", opacity: 1 }}
                     align="start"
+                    side="bottom"
                     sideOffset={8}
                 >
                     <Calendar
