@@ -15,6 +15,7 @@ export type BullionRow = {
     marketPriceGbp: number
     marketTotalGbp: number
     intrinsicTotalGbp: number
+    investedTotalGbp: number
     type: BullionType
     manufacturer: string
     country: string

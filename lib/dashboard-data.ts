@@ -75,6 +75,8 @@ export type CryptoAssetRow = {
 
 export type BullionHoldingRow = {
     id: string
+    metal: string | null
+    weight_per_item_grams: number | string | null
     purchase_value: number | string | null
     purchase_currency: string | null
     amount: number | string | null
@@ -190,6 +192,17 @@ export type DashboardDataSnapshot = {
             investedGbp: number
         }[]
         totalValue: number
+        totalInvested: number
+        loadError: boolean
+    }
+    bullion: {
+        holdings: {
+            id: string
+            metal: string
+            amount: number
+            weightPerItemGrams: number
+            investedGbp: number
+        }[]
         totalInvested: number
         loadError: boolean
     }
@@ -674,21 +687,35 @@ export const buildDashboardSnapshot = ({
         CAD: 1 / 1.74,
     }
 
-    const totalBullionValue = (bullionHoldings ?? []).reduce((sum, holding) => {
+    const bullionHoldingsSummary = (bullionHoldings ?? []).map((holding) => {
         const currency = holding.purchase_currency || 'GBP'
         const rate = CURRENCY_TO_GBP[currency] ?? 1
+        const amount = toNumber(holding.amount)
+        const parsedAmount = Number.isFinite(amount) ? amount : 0
+        const weightPerItemGrams = toNumber(holding.weight_per_item_grams)
+        const parsedWeight = Number.isFinite(weightPerItemGrams) ? weightPerItemGrams : 0
 
-        // Use pre-computed total_price_incl_tax if available, otherwise fall back to purchase_value with tax calc
+        let investedPerUnit = 0
         const totalInclTax = toNumber(holding.total_price_incl_tax)
         if (Number.isFinite(totalInclTax) && totalInclTax > 0) {
-            return sum + (totalInclTax * rate)
+            investedPerUnit = totalInclTax * rate
+        } else {
+            const value = toNumber(holding.purchase_value)
+            const taxPct = toNumber(holding.tax_rate_pct)
+            const taxMultiplier = Number.isFinite(taxPct) && taxPct > 0 ? 1 + taxPct / 100 : 1
+            investedPerUnit = value * rate * taxMultiplier
         }
 
-        const value = toNumber(holding.purchase_value)
-        const taxPct = toNumber(holding.tax_rate_pct)
-        const taxMultiplier = Number.isFinite(taxPct) && taxPct > 0 ? 1 + taxPct / 100 : 1
-        return sum + (value * rate * taxMultiplier)
-    }, 0)
+        return {
+            id: holding.id,
+            metal: holding.metal === 'GOLD' || holding.metal === 'SILVER' ? holding.metal : 'GOLD',
+            amount: parsedAmount,
+            weightPerItemGrams: parsedWeight,
+            investedGbp: investedPerUnit * parsedAmount,
+        }
+    })
+
+    const totalBullionInvested = bullionHoldingsSummary.reduce((sum, holding) => sum + holding.investedGbp, 0)
 
     const totalInvestmentsValue = (investmentHoldings ?? []).reduce((sum, holding) => {
         return sum + toNumber(holding.current_value)
@@ -717,7 +744,7 @@ export const buildDashboardSnapshot = ({
         { name: 'Savings', value: totalSavingsValue },
         { name: 'Investments', value: totalInvestmentsCurrentValue },
         { name: 'Crypto', value: totalCryptoValueSnapshot },
-        { name: 'Bullion', value: totalBullionValue },
+        { name: 'Bullion', value: totalBullionInvested },
         { name: 'Real Estate', value: totalRealEstateEquity },
     ]
     const totalAssets = mergedAssets.reduce((sum, asset) => sum + asset.value, 0)
@@ -892,7 +919,7 @@ export const buildDashboardSnapshot = ({
         savingsStartOfYearValue +
         investmentsStartOfYearValue +
         totalCryptoValueSnapshot +
-        totalBullionValue +
+        totalBullionInvested +
         totalRealEstateEquity
     const ytdPnl = totalAssets - startOfYearValue
     const ytdPercentage = startOfYearValue > 0 ? (ytdPnl / startOfYearValue) * 100 : 0
@@ -910,6 +937,11 @@ export const buildDashboardSnapshot = ({
             totalValue: totalCryptoValueSnapshot,
             totalInvested: totalCryptoInvested,
             loadError: cryptoLoadError || false,
+        },
+        bullion: {
+            holdings: bullionHoldingsSummary,
+            totalInvested: totalBullionInvested,
+            loadError: bullionLoadError,
         },
         pension: {
             accounts: pensionAccountsSummary,

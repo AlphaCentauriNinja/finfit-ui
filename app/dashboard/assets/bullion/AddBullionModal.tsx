@@ -424,6 +424,7 @@ export default function AddBullionModal({ isOpen, onClose, onCreated, onUpdated,
             marketPriceGbp: 0,
             marketTotalGbp: 0,
             intrinsicTotalGbp: 0,
+            investedTotalGbp: 0,
             type,
             manufacturer: '',
             country: selectedProduct.country ?? '',
@@ -563,7 +564,7 @@ export default function AddBullionModal({ isOpen, onClose, onCreated, onUpdated,
                             disabled={isSaving}
                         />
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-white/80">{`Price (${preferredCurrency})`}</label>
+                            <label className="text-sm font-medium text-white/80">{`Price per item (${preferredCurrency})`}</label>
                             <input
                                 type="number"
                                 required

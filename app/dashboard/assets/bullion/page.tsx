@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { AlertTriangle, ArrowDownRight, ArrowUpRight, ChevronRight, Coins, LayoutGrid, Minus, Pencil, X, Database, TrendingUp } from 'lucide-react'
+import { AlertTriangle, ArrowDownRight, ArrowUpRight, ChevronRight, Coins, LayoutGrid, Minus, Pencil, X, Database, TrendingUp, Wifi, WifiOff } from 'lucide-react'
+import { useSpotPrices } from './useSpotPrices'
 import { createClient } from '@/lib/supabase/client'
 import { usePrivacy } from '@/app/dashboard/components/providers/PrivacyProvider'
 import EmptyStateAlert from '@/app/dashboard/components/EmptyStateAlert'
@@ -24,6 +25,7 @@ type BullionGroup = {
     totalUnits: number
     marketTotalGbp: number
     intrinsicTotalGbp: number
+    investedTotalGbp: number
     pnlGbp: number
     pnlPct: number
     allocationPct: number
@@ -114,6 +116,7 @@ function mapBullionHoldingRow(row: BullionHoldingDbRow): BullionRow | null {
         marketPriceGbp: 0,
         marketTotalGbp: 0,
         intrinsicTotalGbp: 0,
+        investedTotalGbp: 0,
         type,
         manufacturer: row.manufacturer?.trim() ?? '',
         country: row.country?.trim() ?? '',
@@ -224,7 +227,7 @@ function BullionHoldingsModal({
                 <div className="flex-1 overflow-y-auto p-6">
                     <div className="mb-6 grid gap-4 md:grid-cols-3">
                         <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                            <p className="text-xs font-semibold uppercase tracking-wider text-white/45">Current Value</p>
+                            <p className="text-xs font-semibold uppercase tracking-wider text-white/45">Market Value</p>
                             <p className="mt-2 text-2xl font-bold text-white">
                                 {hideValues ? '****' : formatCurrency(convertFromGbp(group.marketTotalGbp, preferredCurrency), preferredCurrency)}
                             </p>
@@ -253,7 +256,7 @@ function BullionHoldingsModal({
                     ) : (
                         <div className="grid gap-4 md:grid-cols-2">
                             {group.rows.map((row) => {
-                                const rowPnlGbp = row.marketTotalGbp - row.intrinsicTotalGbp
+                                const rowPnlGbp = row.marketTotalGbp - row.investedTotalGbp
                                 const rowPnlClassName = rowPnlGbp > 0
                                     ? 'text-emerald-400'
                                     : rowPnlGbp < 0
@@ -382,6 +385,39 @@ export default function BullionPage() {
     const [selectedGroupKey, setSelectedGroupKey] = useState<BullionGroupKey | null>(null)
     const [editingRow, setEditingRow] = useState<BullionRow | null>(null)
 
+    // Live spot prices — uses the user's preferred currency
+    const spotPrices = useSpotPrices(preferredCurrency)
+
+    // Enrich bullion rows with live intrinsic values from spot prices
+    const enrichedBullionRows = useMemo<BullionRow[]>(() => {
+        if (spotPrices.goldPricePerGram === null || spotPrices.silverPricePerGram === null) {
+            return bullionRows
+        }
+
+        return bullionRows.map((row) => {
+            const spotPricePerGram = row.metal === 'GOLD'
+                ? spotPrices.goldPricePerGram!
+                : spotPrices.silverPricePerGram!
+
+            const intrinsicPriceGbp = spotPricePerGram * row.weightPerItemGrams
+            const intrinsicTotalGbp = intrinsicPriceGbp * row.amount
+
+            const rawInvestedPerUnit = row.totalPriceInclTax ?? row.purchaseValue ?? 0
+            const rawInvestedTotal = rawInvestedPerUnit * row.amount
+            const investedCurrency = row.purchaseCurrency ?? 'GBP'
+            const investedGbp = rawInvestedTotal / (GBP_TO_CURRENCY_RATE[investedCurrency] || 1)
+
+            return {
+                ...row,
+                marketPriceGbp: intrinsicPriceGbp,
+                marketTotalGbp: intrinsicTotalGbp,
+                intrinsicPriceGbp,
+                intrinsicTotalGbp,
+                investedTotalGbp: investedGbp,
+            }
+        })
+    }, [bullionRows, spotPrices.goldPricePerGram, spotPrices.silverPricePerGram])
+
     useEffect(() => {
         let isMounted = true
 
@@ -460,15 +496,19 @@ export default function BullionPage() {
     }, [])
 
     const totalMarketGbp = useMemo(
-        () => bullionRows.reduce((sum, row) => sum + row.marketTotalGbp, 0),
-        [bullionRows]
+        () => enrichedBullionRows.reduce((sum, row) => sum + row.marketTotalGbp, 0),
+        [enrichedBullionRows]
     )
     const totalIntrinsicGbp = useMemo(
-        () => bullionRows.reduce((sum, row) => sum + row.intrinsicTotalGbp, 0),
-        [bullionRows]
+        () => enrichedBullionRows.reduce((sum, row) => sum + row.intrinsicTotalGbp, 0),
+        [enrichedBullionRows]
     )
-    const totalPnlGbp = totalMarketGbp - totalIntrinsicGbp
-    const totalPnlPct = totalIntrinsicGbp > 0 ? (totalPnlGbp / totalIntrinsicGbp) * 100 : 0
+    const totalInvestedGbp = useMemo(
+        () => enrichedBullionRows.reduce((sum, row) => sum + row.investedTotalGbp, 0),
+        [enrichedBullionRows]
+    )
+    const totalPnlGbp = totalMarketGbp - totalInvestedGbp
+    const totalPnlPct = totalInvestedGbp > 0 ? (totalPnlGbp / totalInvestedGbp) * 100 : 0
     const totalPnlClassName = totalPnlGbp > 0
         ? 'text-emerald-400'
         : totalPnlGbp < 0
@@ -481,12 +521,13 @@ export default function BullionPage() {
             : 'text-amber-300 bg-amber-500/10'
     const groupedBullion = useMemo<BullionGroup[]>(() => {
         return BULLION_GROUP_CONFIG.map((config) => {
-            const rows = bullionRows.filter((row) => row.metal === config.metal && row.type === config.type)
+            const rows = enrichedBullionRows.filter((row) => row.metal === config.metal && row.type === config.type)
             const marketTotalGbp = rows.reduce((sum, row) => sum + row.marketTotalGbp, 0)
             const intrinsicTotalGbp = rows.reduce((sum, row) => sum + row.intrinsicTotalGbp, 0)
+            const investedTotalGbp = rows.reduce((sum, row) => sum + row.investedTotalGbp, 0)
             const totalUnits = rows.reduce((sum, row) => sum + row.amount, 0)
-            const pnlGbp = marketTotalGbp - intrinsicTotalGbp
-            const pnlPct = intrinsicTotalGbp > 0 ? (pnlGbp / intrinsicTotalGbp) * 100 : 0
+            const pnlGbp = marketTotalGbp - investedTotalGbp
+            const pnlPct = investedTotalGbp > 0 ? (pnlGbp / investedTotalGbp) * 100 : 0
             const allocationPct = totalMarketGbp > 0 ? (marketTotalGbp / totalMarketGbp) * 100 : 0
 
             return {
@@ -496,27 +537,48 @@ export default function BullionPage() {
                 totalUnits,
                 marketTotalGbp,
                 intrinsicTotalGbp,
+                investedTotalGbp,
                 pnlGbp,
                 pnlPct,
                 allocationPct,
             }
         }).filter((group) => group.holdingCount > 0)
-    }, [bullionRows, totalMarketGbp])
+    }, [enrichedBullionRows, totalMarketGbp])
     const selectedGroup = useMemo(
         () => groupedBullion.find((group) => group.key === selectedGroupKey) ?? null,
         [groupedBullion, selectedGroupKey]
     )
     const [isAddModalOpen, setIsAddModalOpen] = useState(false)
-    const hasBullionHoldings = bullionRows.length > 0
+    const hasBullionHoldings = enrichedBullionRows.length > 0
 
     return (
         <div className="w-full">
             <div className="mb-6 flex flex-wrap items-start justify-between gap-6">
                 <div>
                     <h1 className="text-2xl font-bold text-white">Bullion Portfolio</h1>
-                    <p className="mt-1 text-sm text-white/65">
-                        Gold and silver holdings. Pricing is synced separately by the backend.
-                    </p>
+                    <div className="mt-1 flex items-center gap-3">
+                        <p className="text-sm text-white/65">
+                            Gold and silver holdings with live spot prices.
+                        </p>
+                        <div className="flex items-center gap-1.5">
+                            {spotPrices.isConnected ? (
+                                <>
+                                    <span className="relative flex h-2.5 w-2.5">
+                                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                                        <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                                    </span>
+                                    <span className="text-xs text-emerald-400/80">Live</span>
+                                </>
+                            ) : (
+                                <>
+                                    <span className="relative flex h-2.5 w-2.5">
+                                        <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-white/20" />
+                                    </span>
+                                    <span className="text-xs text-white/40">Offline</span>
+                                </>
+                            )}
+                        </div>
+                    </div>
                 </div>
                 <AddBullionButton
                     onCreated={(row) => {
@@ -524,6 +586,35 @@ export default function BullionPage() {
                     }}
                 />
             </div>
+
+            {/* Spot price ticker */}
+            {spotPrices.isConnected && spotPrices.goldPricePerOz !== null && spotPrices.silverPricePerOz !== null ? (
+                <div className="mb-6 flex flex-wrap items-center gap-4">
+                    <div className="flex items-center gap-2 rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-2">
+                        <span className="text-xs font-semibold uppercase tracking-wider text-amber-400/70">Gold</span>
+                        <span className="text-sm font-bold text-amber-300">
+                            {formatCurrency(spotPrices.goldPricePerOz ?? 0, preferredCurrency)}/oz
+                        </span>
+                        <span className="text-xs font-medium text-amber-500/70">
+                            ({formatCurrency(spotPrices.goldPricePerGram ?? 0, preferredCurrency)}/g)
+                        </span>
+                    </div>
+                    <div className="flex items-center gap-2 rounded-xl border border-sky-500/20 bg-sky-500/5 px-4 py-2">
+                        <span className="text-xs font-semibold uppercase tracking-wider text-sky-400/70">Silver</span>
+                        <span className="text-sm font-bold text-sky-300">
+                            {formatCurrency(spotPrices.silverPricePerOz ?? 0, preferredCurrency)}/oz
+                        </span>
+                        <span className="text-xs font-medium text-sky-500/70">
+                            ({formatCurrency(spotPrices.silverPricePerGram ?? 0, preferredCurrency)}/g)
+                        </span>
+                    </div>
+                    {spotPrices.lastUpdated ? (
+                        <span className="text-xs text-white/35">
+                            Updated {spotPrices.lastUpdated.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                        </span>
+                    ) : null}
+                </div>
+            ) : null}
 
             {loadError ? (
                 <div className="mb-6 rounded-2xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
@@ -564,11 +655,17 @@ export default function BullionPage() {
                 </div>
             ) : (
                 <>
-                    <div className="mb-8 grid gap-6 md:grid-cols-3">
+                    <div className="mb-8 grid gap-4 md:grid-cols-4">
                         <div className="rounded-2xl border border-white/10 bg-white/5 p-6 shadow-sm backdrop-blur-sm">
-                            <p className="text-sm font-medium text-white/60">Current Value</p>
+                            <p className="text-sm font-medium text-white/60">Market Value</p>
                             <p className="mt-2 text-3xl font-bold text-white">
                                 {hideValues ? '****' : formatCurrency(convertFromGbp(totalMarketGbp, preferredCurrency), preferredCurrency)}
+                            </p>
+                        </div>
+                        <div className="rounded-2xl border border-white/10 bg-white/5 p-6 shadow-sm backdrop-blur-sm">
+                            <p className="text-sm font-medium text-white/60">Total Invested</p>
+                            <p className="mt-2 text-3xl font-bold text-white">
+                                {hideValues ? '****' : formatCurrency(convertFromGbp(totalInvestedGbp, preferredCurrency), preferredCurrency)}
                             </p>
                         </div>
                         <div className="rounded-2xl border border-white/10 bg-white/5 p-6 shadow-sm backdrop-blur-sm">
