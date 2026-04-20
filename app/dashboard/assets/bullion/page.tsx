@@ -50,11 +50,27 @@ const CURRENCY_LOCALE: Record<CurrencyCode, string> = {
     CAD: 'en-CA',
 }
 
+const BULLION_IMAGES_BUCKET = 'bullion_images'
+
 function normalizeCurrency(value: string | null | undefined): CurrencyCode {
     if (value === 'GBP' || value === 'EUR' || value === 'USD' || value === 'CHF' || value === 'CAD') {
         return value
     }
     return 'GBP'
+}
+
+function buildBullionImagePublicUrl(imagePath: string | null | undefined): string | null {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const normalizedPath = imagePath?.trim() ?? ''
+
+    if (!supabaseUrl || !normalizedPath) return null
+
+    const encodedPath = normalizedPath
+        .split('/')
+        .map((segment) => encodeURIComponent(segment))
+        .join('/')
+
+    return `${supabaseUrl}/storage/v1/object/public/${BULLION_IMAGES_BUCKET}/${encodedPath}`
 }
 
 function convertFromGbp(valueGbp: number, currency: CurrencyCode): number {
@@ -98,6 +114,7 @@ function normalizeStoredCurrency(value: string | null | undefined): BullionCurre
 function mapBullionHoldingRow(row: BullionHoldingDbRow): BullionRow | null {
     const metal = row.metal === 'GOLD' || row.metal === 'SILVER' ? row.metal : null
     const type = row.type === 'COIN' || row.type === 'BAR' ? row.type : null
+    const title = row.title?.trim() ? row.title.trim() : null
     const description = row.description?.trim() ?? ''
     const amount = toNumber(row.amount)
     const weightPerItemGrams = toNumber(row.weight_per_item_grams)
@@ -108,6 +125,7 @@ function mapBullionHoldingRow(row: BullionHoldingDbRow): BullionRow | null {
     return {
         id: row.id,
         metal,
+        title,
         description,
         amount,
         weightPerItemGrams,
@@ -130,6 +148,9 @@ function mapBullionHoldingRow(row: BullionHoldingDbRow): BullionRow | null {
         taxRatePct: row.tax_rate_pct === null || row.tax_rate_pct === undefined ? null : toNumber(row.tax_rate_pct),
         taxAmount: row.tax_amount === null || row.tax_amount === undefined ? null : toNumber(row.tax_amount),
         totalPriceInclTax: row.total_price_incl_tax === null || row.total_price_incl_tax === undefined ? null : toNumber(row.total_price_incl_tax),
+        marketPremiumPct: row.market_premium_pct === null || row.market_premium_pct === undefined ? 0 : toNumber(row.market_premium_pct),
+        notes: row.notes?.trim() ? row.notes.trim() : null,
+        imagePath: row.image_path?.trim() ? row.image_path.trim() : null,
     }
 }
 
@@ -178,6 +199,29 @@ function BullionGroupIcon({ type, className }: { type: BullionType; className?: 
     }
 
     return <BarIcon className={className} />
+}
+
+function BullionHoldingImage({ imagePath, label }: { imagePath: string | null; label: string }) {
+    const [hasLoadError, setHasLoadError] = useState(false)
+    const imageUrl = useMemo(() => buildBullionImagePublicUrl(imagePath), [imagePath])
+
+    if (!imageUrl || hasLoadError) {
+        return (
+            <div className="flex h-36 items-center justify-center rounded-lg border border-dashed border-white/15 bg-slate-900/40 text-xs text-white/45">
+                No image uploaded
+            </div>
+        )
+    }
+
+    return (
+        <img
+            src={imageUrl}
+            alt={`${label} holding image`}
+            loading="lazy"
+            onError={() => setHasLoadError(true)}
+            className="h-36 w-full rounded-lg border border-white/10 object-cover"
+        />
+    )
 }
 
 function BullionHoldingsModal({
@@ -257,17 +301,25 @@ function BullionHoldingsModal({
                         <div className="grid gap-4 md:grid-cols-2">
                             {group.rows.map((row) => {
                                 const rowPnlGbp = row.marketTotalGbp - row.investedTotalGbp
+                                const rowDisplayTitle = row.title?.trim() || row.description
                                 const rowPnlClassName = rowPnlGbp > 0
                                     ? 'text-emerald-400'
                                     : rowPnlGbp < 0
                                         ? 'text-rose-400'
                                         : 'text-white'
+                                const rowMarketPremiumClassName = row.marketPremiumPct >= 0
+                                    ? 'border-amber-500/40 bg-amber-500/10 text-amber-300'
+                                    : 'border-rose-500/40 bg-rose-500/10 text-rose-300'
+                                const rowMarketPremiumLabel = hideValues
+                                    ? '****'
+                                    : `${row.marketPremiumPct >= 0 ? '+' : ''}${row.marketPremiumPct.toLocaleString('en-GB', { maximumFractionDigits: 2 })}%`
 
                                 return (
                                     <div key={row.id} className="rounded-2xl border border-white/10 bg-white/5 p-5">
                                         <div className="flex items-start justify-between gap-3">
                                             <div className="min-w-0">
-                                                <h3 className="truncate font-bold text-white">{row.description}</h3>
+                                                <h3 className="truncate font-bold text-white">{rowDisplayTitle}</h3>
+                                                <p className="mt-0.5 text-xs text-white/40">{row.description}</p>
                                                 <p className="mt-1 text-xs text-white/50">
                                                     {row.country || 'Unknown'}{row.year ? ` · ${row.year}` : ''}
                                                 </p>
@@ -298,6 +350,23 @@ function BullionHoldingsModal({
                                                 <p className="text-xs uppercase tracking-wider text-white/45">Intrinsic Total</p>
                                                 <p className="mt-1 font-medium text-white/85">
                                                     {hideValues ? '****' : formatCurrency(convertFromGbp(row.intrinsicTotalGbp, preferredCurrency), preferredCurrency)}
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <div className="mt-3 flex items-center justify-between gap-3 text-xs text-white/55">
+                                            <span>Market Premium</span>
+                                            <span className={`inline-flex items-center rounded-full border px-2.5 py-1 font-semibold ${rowMarketPremiumClassName}`}>
+                                                {rowMarketPremiumLabel}
+                                            </span>
+                                        </div>
+
+                                        <div className="mt-4 space-y-2">
+                                            <BullionHoldingImage imagePath={row.imagePath} label={rowDisplayTitle} />
+                                            <div className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2">
+                                                <p className="text-xs uppercase tracking-wider text-white/45">Notes</p>
+                                                <p className="mt-1 whitespace-pre-wrap text-sm text-white/75">
+                                                    {row.notes?.trim() || 'No notes added.'}
                                                 </p>
                                             </div>
                                         </div>
@@ -401,6 +470,10 @@ export default function BullionPage() {
 
             const intrinsicPriceGbp = spotPricePerGram * row.weightPerItemGrams
             const intrinsicTotalGbp = intrinsicPriceGbp * row.amount
+            const marketPremiumPct = Number.isFinite(row.marketPremiumPct) ? row.marketPremiumPct : 0
+            const marketMultiplier = 1 + marketPremiumPct / 100
+            const marketPriceGbp = intrinsicPriceGbp * marketMultiplier
+            const marketTotalGbp = intrinsicTotalGbp * marketMultiplier
 
             const rawInvestedPerUnit = row.totalPriceInclTax ?? row.purchaseValue ?? 0
             const rawInvestedTotal = rawInvestedPerUnit * row.amount
@@ -409,8 +482,8 @@ export default function BullionPage() {
 
             return {
                 ...row,
-                marketPriceGbp: intrinsicPriceGbp,
-                marketTotalGbp: intrinsicTotalGbp,
+                marketPriceGbp,
+                marketTotalGbp,
                 intrinsicPriceGbp,
                 intrinsicTotalGbp,
                 investedTotalGbp: investedGbp,
@@ -467,7 +540,7 @@ export default function BullionPage() {
 
             const { data, error } = await supabase
                 .from('bullion_holdings')
-                .select('id, metal, description, amount, weight_per_item_grams, type, manufacturer, country, mint_year, link_label, catalog_product_id, catalog_variant_id, purchase_date, purchase_value, purchase_currency, tax_rate_pct, tax_amount, total_price_incl_tax')
+                .select('id, metal, title, description, amount, weight_per_item_grams, type, manufacturer, country, mint_year, link_label, catalog_product_id, catalog_variant_id, purchase_date, purchase_value, purchase_currency, tax_rate_pct, tax_amount, total_price_incl_tax, market_premium_pct, notes, image_path')
                 .eq('user_id', user.id)
                 .order('created_at', { ascending: false })
 

@@ -1,10 +1,11 @@
 'use client'
 
-import { FormEvent, useEffect, useMemo, useState } from 'react'
+import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Loader2, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import DatePickerField from '@/app/dashboard/components/DatePickerField'
+import DeleteActionModal from '@/app/dashboard/components/DeleteActionModal'
 import type {
     BullionCatalogProduct,
     BullionCatalogProductRow,
@@ -26,6 +27,9 @@ type Props = {
 }
 
 const DEFAULT_CURRENCY: BullionCurrencyCode = 'GBP'
+const BULLION_IMAGES_BUCKET = 'bullion_images'
+const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024
+const ALLOWED_IMAGE_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'])
 
 const getTodayIsoDate = (): string => {
     const now = new Date()
@@ -42,6 +46,31 @@ const normalizeCurrency = (value: string | null | undefined): BullionCurrencyCod
     }
 
     return DEFAULT_CURRENCY
+}
+
+const buildBullionImagePublicUrl = (imagePath: string | null | undefined): string | null => {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const normalizedPath = imagePath?.trim() ?? ''
+
+    if (!supabaseUrl || !normalizedPath) return null
+
+    const encodedPath = normalizedPath
+        .split('/')
+        .map((segment) => encodeURIComponent(segment))
+        .join('/')
+
+    return `${supabaseUrl}/storage/v1/object/public/${BULLION_IMAGES_BUCKET}/${encodedPath}`
+}
+
+const resolveImageExtension = (file: File): string => {
+    const fromName = file.name.split('.').pop()?.trim().toLowerCase()
+    if (fromName) return fromName
+
+    if (file.type === 'image/png') return 'png'
+    if (file.type === 'image/webp') return 'webp'
+    if (file.type === 'image/heic') return 'heic'
+    if (file.type === 'image/heif') return 'heif'
+    return 'jpg'
 }
 
 const toNumber = (value: number | string | null | undefined): number | null => {
@@ -116,10 +145,17 @@ export default function AddBullionModal({ isOpen, onClose, onCreated, onUpdated,
     const [type, setType] = useState<BullionType>('COIN')
     const [selectedProductId, setSelectedProductId] = useState('')
     const [selectedVariantId, setSelectedVariantId] = useState('')
+    const [holdingTitle, setHoldingTitle] = useState('')
     const [amount, setAmount] = useState('')
     const [mintYear, setMintYear] = useState('')
     const [purchaseDate, setPurchaseDate] = useState(getTodayIsoDate())
     const [purchasePrice, setPurchasePrice] = useState('')
+    const [marketPremiumPct, setMarketPremiumPct] = useState('0')
+    const [notes, setNotes] = useState('')
+    const [storedImagePath, setStoredImagePath] = useState<string | null>(null)
+    const [imageFile, setImageFile] = useState<File | null>(null)
+    const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null)
+    const [isImageMarkedForRemoval, setIsImageMarkedForRemoval] = useState(false)
     const [taxRate, setTaxRate] = useState<number | null>(null)
     const [preferredCurrency, setPreferredCurrency] = useState<BullionCurrencyCode>(DEFAULT_CURRENCY)
     const [catalogProducts, setCatalogProducts] = useState<BullionCatalogProduct[]>([])
@@ -127,15 +163,23 @@ export default function AddBullionModal({ isOpen, onClose, onCreated, onUpdated,
     const [isCatalogLoading, setIsCatalogLoading] = useState(true)
     const [catalogError, setCatalogError] = useState<string | null>(null)
     const [isSaving, setIsSaving] = useState(false)
+    const [isDeleting, setIsDeleting] = useState(false)
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
     const [formError, setFormError] = useState<string | null>(null)
     const router = useRouter()
 
     const parsedAmount = Number(amount)
     const parsedPurchasePrice = Number(purchasePrice)
+    const parsedMarketPremiumPct = Number(marketPremiumPct)
     const priceInclTax = Number.isFinite(parsedPurchasePrice) && parsedPurchasePrice > 0 && taxRate !== null
         ? parsedPurchasePrice * (1 + taxRate / 100)
         : null
     const isSilver = metal === 'SILVER'
+    const persistedImagePreviewUrl = useMemo(
+        () => isImageMarkedForRemoval ? null : buildBullionImagePublicUrl(storedImagePath),
+        [isImageMarkedForRemoval, storedImagePath]
+    )
+    const activeImagePreviewUrl = imagePreviewUrl ?? persistedImagePreviewUrl
 
     // Reset selection when metal or type changes (but respect edit initialization)
     useEffect(() => {
@@ -166,10 +210,17 @@ export default function AddBullionModal({ isOpen, onClose, onCreated, onUpdated,
             setType(editHolding.type)
             setSelectedProductId(editHolding.catalogProductId || '')
             setSelectedVariantId(editHolding.catalogVariantId || '')
+            setHoldingTitle(editHolding.title ?? '')
             setAmount(editHolding.amount.toString())
             setMintYear(editHolding.year || '')
             setPurchaseDate(editHolding.purchaseDate || getTodayIsoDate())
             setPurchasePrice(editHolding.purchaseValue?.toString() || '')
+            setMarketPremiumPct(editHolding.marketPremiumPct.toString())
+            setNotes(editHolding.notes ?? '')
+            setStoredImagePath(editHolding.imagePath ?? null)
+            setImageFile(null)
+            setImagePreviewUrl(null)
+            setIsImageMarkedForRemoval(false)
             if (editHolding.metal === 'SILVER' && editHolding.taxRatePct !== null && editHolding.taxRatePct !== undefined) {
                 setTaxRate(editHolding.taxRatePct)
             }
@@ -178,6 +229,20 @@ export default function AddBullionModal({ isOpen, onClose, onCreated, onUpdated,
             }
         }
     }, [isOpen, editHolding])
+
+    useEffect(() => {
+        if (!imageFile) {
+            setImagePreviewUrl(null)
+            return
+        }
+
+        const previewObjectUrl = URL.createObjectURL(imageFile)
+        setImagePreviewUrl(previewObjectUrl)
+
+        return () => {
+            URL.revokeObjectURL(previewObjectUrl)
+        }
+    }, [imageFile])
 
     useEffect(() => {
         if (!isOpen) return
@@ -287,17 +352,83 @@ export default function AddBullionModal({ isOpen, onClose, onCreated, onUpdated,
         setType('COIN')
         setSelectedProductId('')
         setSelectedVariantId('')
+        setHoldingTitle('')
         setAmount('')
         setMintYear('')
         setPurchaseDate(getTodayIsoDate())
         setPurchasePrice('')
+        setMarketPremiumPct('0')
+        setNotes('')
+        setStoredImagePath(null)
+        setImageFile(null)
+        setImagePreviewUrl(null)
+        setIsImageMarkedForRemoval(false)
         setTaxRate(null)
+        setShowDeleteConfirm(false)
         setFormError(null)
     }
 
     const handleClose = () => {
-        if (isSaving) return
+        if (isSaving || isDeleting) return
         onClose()
+    }
+
+    const handleDeleteHolding = async () => {
+        if (!editHolding?.id) return
+
+        setFormError(null)
+        setIsDeleting(true)
+        const supabase = createClient()
+        const { error } = await supabase.from('bullion_holdings').delete().match({ id: editHolding.id })
+
+        if (error) {
+            setFormError(error.message)
+            setIsDeleting(false)
+            return
+        }
+
+        if (editHolding.imagePath) {
+            await supabase.storage.from(BULLION_IMAGES_BUCKET).remove([editHolding.imagePath])
+        }
+
+        setIsDeleting(false)
+        setShowDeleteConfirm(false)
+        if (onDeleted) onDeleted(editHolding.id)
+        onClose()
+        router.refresh()
+    }
+
+    const handleImageSelected = (event: ChangeEvent<HTMLInputElement>) => {
+        const selectedFile = event.target.files?.[0] ?? null
+        event.target.value = ''
+
+        if (!selectedFile) return
+
+        if (!selectedFile.type.startsWith('image/')) {
+            setFormError('Please select a valid image file.')
+            return
+        }
+
+        if (selectedFile.type && !ALLOWED_IMAGE_MIME_TYPES.has(selectedFile.type)) {
+            setFormError('Use JPG, PNG, WEBP, HEIC, or HEIF for bullion images.')
+            return
+        }
+
+        if (selectedFile.size > MAX_IMAGE_SIZE_BYTES) {
+            setFormError('Image size must be 5MB or less.')
+            return
+        }
+
+        setImageFile(selectedFile)
+        setIsImageMarkedForRemoval(false)
+        setFormError(null)
+    }
+
+    const handleRemoveImage = () => {
+        if (!imageFile && !storedImagePath) return
+        setImageFile(null)
+        setIsImageMarkedForRemoval(Boolean(storedImagePath))
+        setFormError(null)
     }
 
     const handleSubmit = async (event: FormEvent) => {
@@ -305,6 +436,8 @@ export default function AddBullionModal({ isOpen, onClose, onCreated, onUpdated,
         setFormError(null)
 
         const cleanMintYear = mintYear.trim()
+        const cleanHoldingTitle = holdingTitle.trim()
+        const cleanNotes = notes.trim()
 
         if (!selectedProduct || !selectedVariant) {
             setFormError('Please choose a bullion item and size/variant.')
@@ -323,6 +456,11 @@ export default function AddBullionModal({ isOpen, onClose, onCreated, onUpdated,
 
         if (!Number.isFinite(parsedPurchasePrice) || parsedPurchasePrice <= 0) {
             setFormError(`Price must be greater than 0 in ${preferredCurrency}.`)
+            return
+        }
+
+        if (!Number.isFinite(parsedMarketPremiumPct)) {
+            setFormError('Market premium must be a valid percentage.')
             return
         }
 
@@ -358,6 +496,34 @@ export default function AddBullionModal({ isOpen, onClose, onCreated, onUpdated,
         const computedTotalInclTax = computedTaxAmount !== null
             ? Math.round((parsedPurchasePrice + computedTaxAmount) * 100) / 100
             : null
+        const previousImagePath = storedImagePath
+        let finalImagePath = isImageMarkedForRemoval ? null : storedImagePath
+        let uploadedImagePath: string | null = null
+
+        if (imageFile) {
+            const imageExtension = resolveImageExtension(imageFile)
+            const randomId = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+                ? crypto.randomUUID()
+                : `${Date.now()}-${Math.round(Math.random() * 1_000_000)}`
+            const uploadPath = `${user.id}/${randomId}.${imageExtension}`
+            const { error: uploadError } = await supabase
+                .storage
+                .from(BULLION_IMAGES_BUCKET)
+                .upload(uploadPath, imageFile, {
+                    cacheControl: '3600',
+                    upsert: false,
+                    contentType: imageFile.type || undefined,
+                })
+
+            if (uploadError) {
+                setFormError(uploadError.message || 'Unable to upload the selected image.')
+                setIsSaving(false)
+                return
+            }
+
+            finalImagePath = uploadPath
+            uploadedImagePath = uploadPath
+        }
 
         const holdingPayload = {
             user_id: user.id,
@@ -365,6 +531,7 @@ export default function AddBullionModal({ isOpen, onClose, onCreated, onUpdated,
             catalog_variant_id: selectedVariant.id,
             metal,
             type,
+            title: cleanHoldingTitle || null,
             description,
             amount: parsedAmount,
             weight_per_item_grams: weightPerItemGrams,
@@ -377,6 +544,9 @@ export default function AddBullionModal({ isOpen, onClose, onCreated, onUpdated,
             tax_rate_pct: effectiveTaxRate,
             tax_amount: computedTaxAmount,
             total_price_incl_tax: computedTotalInclTax,
+            market_premium_pct: parsedMarketPremiumPct,
+            notes: cleanNotes || null,
+            image_path: finalImagePath,
         }
 
         let dbId = editHolding?.id
@@ -388,6 +558,9 @@ export default function AddBullionModal({ isOpen, onClose, onCreated, onUpdated,
                 .match({ id: editHolding.id, user_id: user.id })
 
             if (error) {
+                if (uploadedImagePath) {
+                    await supabase.storage.from(BULLION_IMAGES_BUCKET).remove([uploadedImagePath])
+                }
                 setFormError(error.message || 'Unable to update bullion holding.')
                 setIsSaving(false)
                 return
@@ -400,6 +573,9 @@ export default function AddBullionModal({ isOpen, onClose, onCreated, onUpdated,
                 .single()
 
             if (error || !data?.id) {
+                if (uploadedImagePath) {
+                    await supabase.storage.from(BULLION_IMAGES_BUCKET).remove([uploadedImagePath])
+                }
                 setFormError(error?.message || 'Unable to save bullion holding.')
                 setIsSaving(false)
                 return
@@ -408,14 +584,22 @@ export default function AddBullionModal({ isOpen, onClose, onCreated, onUpdated,
         }
 
         if (!dbId) {
+            if (uploadedImagePath) {
+                await supabase.storage.from(BULLION_IMAGES_BUCKET).remove([uploadedImagePath])
+            }
             setFormError('Failed to confirm holding ID.')
             setIsSaving(false)
             return
         }
 
+        if (previousImagePath && previousImagePath !== finalImagePath) {
+            await supabase.storage.from(BULLION_IMAGES_BUCKET).remove([previousImagePath])
+        }
+
         const submittedRow: BullionRow = {
             id: dbId,
             metal,
+            title: cleanHoldingTitle || null,
             description,
             amount: parsedAmount,
             weightPerItemGrams: weightPerItemGrams,
@@ -438,6 +622,9 @@ export default function AddBullionModal({ isOpen, onClose, onCreated, onUpdated,
             taxRatePct: effectiveTaxRate,
             taxAmount: computedTaxAmount,
             totalPriceInclTax: computedTotalInclTax,
+            marketPremiumPct: parsedMarketPremiumPct,
+            notes: cleanNotes || null,
+            imagePath: finalImagePath,
         }
 
         if (editHolding?.id && onUpdated) {
@@ -529,6 +716,21 @@ export default function AddBullionModal({ isOpen, onClose, onCreated, onUpdated,
                     </div>
 
                     <div className="grid gap-4 md:grid-cols-2">
+                        <div className="space-y-2 md:col-span-2">
+                            <label className="text-sm font-medium text-white/80">Holding Title (Optional)</label>
+                            <input
+                                type="text"
+                                value={holdingTitle}
+                                onChange={(event) => setHoldingTitle(event.target.value)}
+                                disabled={isSaving}
+                                className="h-12 w-full rounded-xl border border-white/10 bg-slate-900 px-4 text-sm text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                                placeholder="e.g. Emergency stack, Gift set, Vault allocation"
+                            />
+                            <p className="text-xs text-white/45">
+                                This is your custom entry title and does not replace the catalog description.
+                            </p>
+                        </div>
+
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-white/80">Amount</label>
                             <input
@@ -576,6 +778,76 @@ export default function AddBullionModal({ isOpen, onClose, onCreated, onUpdated,
                                 className="h-12 w-full rounded-xl border border-white/10 bg-slate-900 px-4 text-sm text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                                 placeholder="0.00"
                             />
+                        </div>
+                    </div>
+
+                    <div className="grid gap-4 md:grid-cols-2">
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-white/80">Market Premium %</label>
+                            <input
+                                type="number"
+                                step="0.01"
+                                value={marketPremiumPct}
+                                onChange={(event) => setMarketPremiumPct(event.target.value)}
+                                disabled={isSaving}
+                                className="h-12 w-full rounded-xl border border-white/10 bg-slate-900 px-4 text-sm text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                                placeholder="0.00"
+                            />
+                            <p className="text-xs text-white/45">
+                                Enter a positive or negative premium over intrinsic spot value.
+                            </p>
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-white/80">Notes (Optional)</label>
+                            <textarea
+                                rows={4}
+                                value={notes}
+                                onChange={(event) => setNotes(event.target.value)}
+                                disabled={isSaving}
+                                className="w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-sm text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                                placeholder="Add notes about this holding..."
+                            />
+                        </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-white/80">Holding Image (Optional)</label>
+                            <input
+                                type="file"
+                                accept="image/png,image/jpeg,image/webp,image/heic,image/heif"
+                                onChange={handleImageSelected}
+                                disabled={isSaving}
+                                className="block w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-sm text-white file:mr-4 file:rounded-lg file:border-0 file:bg-indigo-500/20 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-indigo-200 hover:file:bg-indigo-500/30"
+                            />
+                            <p className="text-xs text-white/45">Supported formats: JPG, PNG, WEBP, HEIC, HEIF (max 5MB).</p>
+                        </div>
+
+                        <div className="mt-3 space-y-2">
+                            {activeImagePreviewUrl ? (
+                                <>
+                                    <img
+                                        src={activeImagePreviewUrl}
+                                        alt="Bullion holding preview"
+                                        className="h-44 w-full rounded-xl border border-white/10 object-cover"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={handleRemoveImage}
+                                        disabled={isSaving}
+                                        className="rounded-lg border border-rose-500/35 px-3 py-1.5 text-xs font-semibold text-rose-300 transition-colors hover:bg-rose-500/10 disabled:opacity-60"
+                                    >
+                                        Remove image
+                                    </button>
+                                </>
+                            ) : (
+                                <div className="flex h-32 items-center justify-center rounded-xl border border-dashed border-white/15 bg-slate-900/40 text-xs text-white/45">
+                                    No image selected.
+                                </div>
+                            )}
+                            {isImageMarkedForRemoval && !activeImagePreviewUrl ? (
+                                <p className="text-xs text-amber-300/80">Image will be removed when you save.</p>
+                            ) : null}
                         </div>
                     </div>
 
@@ -667,21 +939,8 @@ export default function AddBullionModal({ isOpen, onClose, onCreated, onUpdated,
                         {editHolding ? (
                             <button
                                 type="button"
-                                disabled={isSaving}
-                                onClick={async () => {
-                                    if (!confirm('Are you sure you want to permanently delete this holding?')) return
-                                    const supabase = createClient()
-                                    setIsSaving(true)
-                                    const { error } = await supabase.from('bullion_holdings').delete().match({ id: editHolding.id })
-                                    if (error) {
-                                        setFormError(error.message)
-                                        setIsSaving(false)
-                                    } else {
-                                        if (onDeleted) onDeleted(editHolding.id)
-                                        onClose()
-                                        router.refresh()
-                                    }
-                                }}
+                                disabled={isSaving || isDeleting}
+                                onClick={() => setShowDeleteConfirm(true)}
                                 className="rounded-xl border border-rose-500/35 px-4 py-3 text-sm font-semibold text-rose-300 transition-colors hover:bg-rose-500/10 disabled:opacity-60"
                             >
                                 Delete
@@ -690,14 +949,14 @@ export default function AddBullionModal({ isOpen, onClose, onCreated, onUpdated,
                         <button
                             type="button"
                             onClick={handleClose}
-                            disabled={isSaving}
+                            disabled={isSaving || isDeleting}
                             className="flex-1 rounded-xl border border-rose-500/35 text-rose-300 px-4 py-3 text-sm font-semibold hover:bg-rose-500/10 transition-colors disabled:opacity-60"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
-                            disabled={isSaving || isCatalogLoading || filteredProducts.length === 0 || filteredVariants.length === 0}
+                            disabled={isSaving || isDeleting || isCatalogLoading || filteredProducts.length === 0 || filteredVariants.length === 0}
                             className="flex-1 rounded-xl bg-gradient-to-r from-purple-500 to-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition-all hover:from-purple-400 hover:to-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
                         >
                             <span className="inline-flex items-center justify-center gap-2">
@@ -708,6 +967,21 @@ export default function AddBullionModal({ isOpen, onClose, onCreated, onUpdated,
                     </div>
                 </form>
             </div>
+
+            <DeleteActionModal
+                isOpen={showDeleteConfirm}
+                onClose={() => {
+                    if (isDeleting) return
+                    setShowDeleteConfirm(false)
+                }}
+                onConfirm={() => {
+                    void handleDeleteHolding()
+                }}
+                title="Delete Bullion Holding?"
+                message={`Are you sure you want to permanently delete "${editHolding?.title?.trim() || editHolding?.description || 'this holding'}"? This action cannot be undone.`}
+                confirmText="Delete Permanently"
+                isProcessing={isDeleting}
+            />
         </div>
     )
 }
