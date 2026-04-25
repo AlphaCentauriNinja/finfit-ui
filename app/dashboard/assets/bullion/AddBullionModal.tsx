@@ -29,6 +29,7 @@ type Props = {
 const DEFAULT_CURRENCY: BullionCurrencyCode = 'GBP'
 const BULLION_IMAGES_BUCKET = 'bullion_images'
 const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024
+const TARGET_IMAGE_SIZE_PX = 64
 const ALLOWED_IMAGE_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'])
 
 const getTodayIsoDate = (): string => {
@@ -71,6 +72,57 @@ const resolveImageExtension = (file: File): string => {
     if (file.type === 'image/heic') return 'heic'
     if (file.type === 'image/heif') return 'heif'
     return 'jpg'
+}
+
+const resizeImageToSquare = async (file: File, sizePx: number): Promise<File> => {
+    const imageObjectUrl = URL.createObjectURL(file)
+
+    try {
+        const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+            const img = new Image()
+            img.onload = () => resolve(img)
+            img.onerror = () => reject(new Error('Failed to read image data.'))
+            img.src = imageObjectUrl
+        })
+
+        const canvas = document.createElement('canvas')
+        canvas.width = sizePx
+        canvas.height = sizePx
+
+        const context = canvas.getContext('2d')
+        if (!context) {
+            throw new Error('Failed to prepare image processing context.')
+        }
+
+        // Cover-fit the source image into a square output while preserving aspect ratio.
+        const scale = Math.max(sizePx / image.width, sizePx / image.height)
+        const scaledWidth = image.width * scale
+        const scaledHeight = image.height * scale
+        const offsetX = (sizePx - scaledWidth) / 2
+        const offsetY = (sizePx - scaledHeight) / 2
+
+        context.clearRect(0, 0, sizePx, sizePx)
+        context.imageSmoothingEnabled = true
+        context.imageSmoothingQuality = 'high'
+        context.drawImage(image, offsetX, offsetY, scaledWidth, scaledHeight)
+
+        const outputBlob = await new Promise<Blob | null>((resolve) => {
+            canvas.toBlob(resolve, 'image/png')
+        })
+
+        if (!outputBlob) {
+            throw new Error('Failed to process selected image.')
+        }
+
+        const originalNameWithoutExt = file.name.replace(/\.[^.]+$/, '')
+        return new File(
+            [outputBlob],
+            `${originalNameWithoutExt || 'bullion-holding'}-${sizePx}x${sizePx}.png`,
+            { type: 'image/png', lastModified: Date.now() }
+        )
+    } finally {
+        URL.revokeObjectURL(imageObjectUrl)
+    }
 }
 
 const toNumber = (value: number | string | null | undefined): number | null => {
@@ -398,7 +450,7 @@ export default function AddBullionModal({ isOpen, onClose, onCreated, onUpdated,
         router.refresh()
     }
 
-    const handleImageSelected = (event: ChangeEvent<HTMLInputElement>) => {
+    const handleImageSelected = async (event: ChangeEvent<HTMLInputElement>) => {
         const selectedFile = event.target.files?.[0] ?? null
         event.target.value = ''
 
@@ -419,9 +471,14 @@ export default function AddBullionModal({ isOpen, onClose, onCreated, onUpdated,
             return
         }
 
-        setImageFile(selectedFile)
-        setIsImageMarkedForRemoval(false)
-        setFormError(null)
+        try {
+            const resizedFile = await resizeImageToSquare(selectedFile, TARGET_IMAGE_SIZE_PX)
+            setImageFile(resizedFile)
+            setIsImageMarkedForRemoval(false)
+            setFormError(null)
+        } catch {
+            setFormError('Unable to process the selected image. Please choose another file.')
+        }
     }
 
     const handleRemoveImage = () => {
@@ -642,10 +699,10 @@ export default function AddBullionModal({ isOpen, onClose, onCreated, onUpdated,
     if (!isOpen) return null
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-3 sm:p-4">
             <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" onClick={handleClose} />
 
-            <div className="relative w-full max-w-3xl overflow-hidden rounded-2xl border border-white/10 bg-[#0f172a] shadow-xl animate-in fade-in zoom-in-95 duration-200">
+            <div className="relative flex max-h-[94vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0f172a] shadow-xl animate-in fade-in zoom-in-95 duration-200">
                 <div className="flex items-center justify-between border-b border-white/10 p-6">
                     <div>
                         <h2 className="text-xl font-bold text-white">{editHolding ? 'Edit Bullion' : 'Add Bullion'}</h2>
@@ -656,7 +713,7 @@ export default function AddBullionModal({ isOpen, onClose, onCreated, onUpdated,
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-5 p-6">
+                <form onSubmit={handleSubmit} className="flex-1 space-y-5 overflow-y-auto p-4 sm:p-6">
                     <div className="grid gap-4 md:grid-cols-2">
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-white/80">Metal</label>
@@ -820,7 +877,7 @@ export default function AddBullionModal({ isOpen, onClose, onCreated, onUpdated,
                                 disabled={isSaving}
                                 className="block w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-sm text-white file:mr-4 file:rounded-lg file:border-0 file:bg-indigo-500/20 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-indigo-200 hover:file:bg-indigo-500/30"
                             />
-                            <p className="text-xs text-white/45">Supported formats: JPG, PNG, WEBP, HEIC, HEIF (max 5MB).</p>
+                            <p className="text-xs text-white/45">Supported formats: JPG, PNG, WEBP, HEIC, HEIF (max 5MB). Image is resized to 64x64 before upload.</p>
                         </div>
 
                         <div className="mt-3 space-y-2">

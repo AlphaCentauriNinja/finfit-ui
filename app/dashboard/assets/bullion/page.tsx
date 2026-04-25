@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { AlertTriangle, ArrowDownRight, ArrowUpRight, ChevronRight, Coins, LayoutGrid, Minus, Pencil, X, Database, TrendingUp, Wifi, WifiOff } from 'lucide-react'
 import { useSpotPrices } from './useSpotPrices'
 import { createClient } from '@/lib/supabase/client'
@@ -201,13 +202,25 @@ function BullionGroupIcon({ type, className }: { type: BullionType; className?: 
     return <BarIcon className={className} />
 }
 
-function BullionHoldingImage({ imagePath, label }: { imagePath: string | null; label: string }) {
+function BullionHoldingImage({
+    imagePath,
+    label,
+    className,
+}: {
+    imagePath: string | null
+    label: string
+    className?: string
+}) {
     const [hasLoadError, setHasLoadError] = useState(false)
     const imageUrl = useMemo(() => buildBullionImagePublicUrl(imagePath), [imagePath])
+    const resolvedClassName = className ?? 'h-36 w-full rounded-lg border border-white/10 object-cover'
+    const fallbackClassName = className
+        ? `${className.replace('object-cover', '')} flex items-center justify-center border-dashed bg-slate-900/40 text-xs text-white/45`
+        : 'flex h-36 items-center justify-center rounded-lg border border-dashed border-white/15 bg-slate-900/40 text-xs text-white/45'
 
     if (!imageUrl || hasLoadError) {
         return (
-            <div className="flex h-36 items-center justify-center rounded-lg border border-dashed border-white/15 bg-slate-900/40 text-xs text-white/45">
+            <div className={fallbackClassName}>
                 No image uploaded
             </div>
         )
@@ -219,7 +232,7 @@ function BullionHoldingImage({ imagePath, label }: { imagePath: string | null; l
             alt={`${label} holding image`}
             loading="lazy"
             onError={() => setHasLoadError(true)}
-            className="h-36 w-full rounded-lg border border-white/10 object-cover"
+            className={resolvedClassName}
         />
     )
 }
@@ -250,7 +263,7 @@ function BullionHoldingsModal({
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" onClick={onClose} />
-            <div className="relative flex max-h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0f172a] shadow-xl">
+            <div className="relative flex max-h-[90vh] w-full max-w-7xl flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0f172a] shadow-xl">
                 <div className="flex items-center justify-between border-b border-white/10 p-6">
                     <div className="flex items-center gap-3">
                         <div className={`flex h-10 w-10 items-center justify-center rounded-full border ${group.iconToneClassName}`}>
@@ -298,117 +311,77 @@ function BullionHoldingsModal({
                             No holdings in this category yet.
                         </div>
                     ) : (
-                        <div className="grid gap-4 md:grid-cols-2">
-                            {group.rows.map((row) => {
-                                const rowPnlGbp = row.marketTotalGbp - row.investedTotalGbp
-                                const rowDisplayTitle = row.title?.trim() || row.description
-                                const rowPnlClassName = rowPnlGbp > 0
-                                    ? 'text-emerald-400'
-                                    : rowPnlGbp < 0
-                                        ? 'text-rose-400'
-                                        : 'text-white'
-                                const rowMarketPremiumClassName = row.marketPremiumPct >= 0
-                                    ? 'border-amber-500/40 bg-amber-500/10 text-amber-300'
-                                    : 'border-rose-500/40 bg-rose-500/10 text-rose-300'
-                                const rowMarketPremiumLabel = hideValues
-                                    ? '****'
-                                    : `${row.marketPremiumPct >= 0 ? '+' : ''}${row.marketPremiumPct.toLocaleString('en-GB', { maximumFractionDigits: 2 })}%`
+                        <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5">
+                            <div className="w-full overflow-x-auto">
+                                <table className="w-full min-w-[1160px] text-left text-sm">
+                                    <thead className="bg-white/[0.03]">
+                                        <tr className="text-white/60">
+                                            <th className="px-4 py-3 font-medium">Title</th>
+                                            <th className="px-4 py-3 font-medium">Description</th>
+                                            <th className="px-4 py-3 font-medium">Origin</th>
+                                            <th className="px-4 py-3 font-medium">Year</th>
+                                            <th className="px-4 py-3 font-medium">Units</th>
+                                            <th className="px-4 py-3 font-medium">Weight</th>
+                                            <th className="px-4 py-3 font-medium">Market</th>
+                                            <th className="px-4 py-3 font-medium">Intrinsic</th>
+                                            <th className="px-4 py-3 font-medium">Premium</th>
+                                            <th className="px-4 py-3 font-medium">Notes</th>
+                                            <th className="px-4 py-3 font-medium">Image</th>
+                                            <th className="px-4 py-3 text-right font-medium">Edit</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {group.rows.map((row) => {
+                                            const rowDisplayTitle = row.title?.trim() || row.description
+                                            const rowMarketPremiumClassName = row.marketPremiumPct >= 0
+                                                ? 'border-amber-500/40 bg-amber-500/10 text-amber-300'
+                                                : 'border-rose-500/40 bg-rose-500/10 text-rose-300'
+                                            const rowMarketPremiumLabel = hideValues
+                                                ? '****'
+                                                : `${row.marketPremiumPct >= 0 ? '+' : ''}${row.marketPremiumPct.toLocaleString('en-GB', { maximumFractionDigits: 2 })}%`
+                                            const originLabel = row.country?.trim() || 'Unknown'
 
-                                return (
-                                    <div key={row.id} className="rounded-2xl border border-white/10 bg-white/5 p-5">
-                                        <div className="flex items-start justify-between gap-3">
-                                            <div className="min-w-0">
-                                                <h3 className="truncate font-bold text-white">{rowDisplayTitle}</h3>
-                                                <p className="mt-0.5 text-xs text-white/40">{row.description}</p>
-                                                <p className="mt-1 text-xs text-white/50">
-                                                    {row.country || 'Unknown'}{row.year ? ` · ${row.year}` : ''}
-                                                </p>
-                                            </div>
-                                            <span className={`inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl border ${group.iconToneClassName}`}>
-                                                <BullionGroupIcon type={row.type} className="h-4 w-4" />
-                                            </span>
-                                        </div>
-
-                                        <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-                                            <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2">
-                                                <p className="text-xs uppercase tracking-wider text-white/45">Units</p>
-                                                <p className="mt-1 font-medium text-white/85">{hideValues ? '****' : row.amount.toLocaleString('en-GB')}</p>
-                                            </div>
-                                            <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2">
-                                                <p className="text-xs uppercase tracking-wider text-white/45">Weight</p>
-                                                <p className="mt-1 font-medium text-white/85">
-                                                    {hideValues ? '****' : `${formatWeight(row.amount * row.weightPerItemGrams)} g`}
-                                                </p>
-                                            </div>
-                                            <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2">
-                                                <p className="text-xs uppercase tracking-wider text-white/45">Market Total</p>
-                                                <p className="mt-1 font-medium text-white/85">
-                                                    {hideValues ? '****' : formatCurrency(convertFromGbp(row.marketTotalGbp, preferredCurrency), preferredCurrency)}
-                                                </p>
-                                            </div>
-                                            <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2">
-                                                <p className="text-xs uppercase tracking-wider text-white/45">Intrinsic Total</p>
-                                                <p className="mt-1 font-medium text-white/85">
-                                                    {hideValues ? '****' : formatCurrency(convertFromGbp(row.intrinsicTotalGbp, preferredCurrency), preferredCurrency)}
-                                                </p>
-                                            </div>
-                                        </div>
-
-                                        <div className="mt-3 flex items-center justify-between gap-3 text-xs text-white/55">
-                                            <span>Market Premium</span>
-                                            <span className={`inline-flex items-center rounded-full border px-2.5 py-1 font-semibold ${rowMarketPremiumClassName}`}>
-                                                {rowMarketPremiumLabel}
-                                            </span>
-                                        </div>
-
-                                        <div className="mt-4 space-y-2">
-                                            <BullionHoldingImage imagePath={row.imagePath} label={rowDisplayTitle} />
-                                            <div className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2">
-                                                <p className="text-xs uppercase tracking-wider text-white/45">Notes</p>
-                                                <p className="mt-1 whitespace-pre-wrap text-sm text-white/75">
-                                                    {row.notes?.trim() || 'No notes added.'}
-                                                </p>
-                                            </div>
-                                        </div>
-
-                                        <div className="mt-4 flex items-center justify-between gap-4">
-                                            <p className={`text-sm font-semibold ${rowPnlClassName}`}>
-                                                {hideValues ? '****' : `PNL ${formatSignedCurrency(convertFromGbp(rowPnlGbp, preferredCurrency), preferredCurrency)}`}
-                                            </p>
-                                            <button
-                                                type="button"
-                                                onClick={() => onEditHolding(row)}
-                                                className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-400 transition-colors hover:bg-emerald-500/20"
-                                            >
-                                                <Pencil className="h-3.5 w-3.5" />
-                                                Edit
-                                            </button>
-                                        </div>
-
-                                        {row.metal === 'SILVER' && row.taxRatePct !== null && row.taxRatePct !== undefined ? (
-                                            <div className="mt-3 flex flex-wrap items-center gap-2">
-                                                <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${
-                                                    row.taxRatePct === 0
-                                                        ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300'
-                                                        : 'border-amber-500/40 bg-amber-500/10 text-amber-300'
-                                                }`}>
-                                                    {row.taxRatePct === 0 ? 'VAT Free' : `VAT ${row.taxRatePct}%`}
-                                                </span>
-                                                {row.taxAmount !== null && row.taxAmount !== undefined && row.taxAmount > 0 ? (
-                                                    <span className="text-xs text-white/50">
-                                                        {hideValues ? '****' : `Tax: ${formatCurrency(row.taxAmount, preferredCurrency)}`}
-                                                    </span>
-                                                ) : null}
-                                                {row.totalPriceInclTax !== null && row.totalPriceInclTax !== undefined ? (
-                                                    <span className="text-xs text-white/50">
-                                                        {hideValues ? '****' : `Total: ${formatCurrency(row.totalPriceInclTax, preferredCurrency)}`}
-                                                    </span>
-                                                ) : null}
-                                            </div>
-                                        ) : null}
-                                    </div>
-                                )
-                            })}
+                                            return (
+                                                <tr key={row.id} className="border-t border-white/10 align-top text-white/80">
+                                                    <td className="px-4 py-3 font-semibold text-white">{rowDisplayTitle}</td>
+                                                    <td className="px-4 py-3 text-white/70">{row.description}</td>
+                                                    <td className="px-4 py-3">{originLabel}</td>
+                                                    <td className="px-4 py-3">{row.year || '-'}</td>
+                                                    <td className="px-4 py-3">{hideValues ? '****' : row.amount.toLocaleString('en-GB')}</td>
+                                                    <td className="px-4 py-3">{hideValues ? '****' : `${formatWeight(row.amount * row.weightPerItemGrams)} g`}</td>
+                                                    <td className="px-4 py-3">{hideValues ? '****' : formatCurrency(convertFromGbp(row.marketTotalGbp, preferredCurrency), preferredCurrency)}</td>
+                                                    <td className="px-4 py-3">{hideValues ? '****' : formatCurrency(convertFromGbp(row.intrinsicTotalGbp, preferredCurrency), preferredCurrency)}</td>
+                                                    <td className="px-4 py-3">
+                                                        <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${rowMarketPremiumClassName}`}>
+                                                            {rowMarketPremiumLabel}
+                                                        </span>
+                                                    </td>
+                                                    <td className="max-w-xs px-4 py-3 text-white/65">
+                                                        <p className="max-w-xs whitespace-pre-wrap break-words">{row.notes?.trim() || '-'}</p>
+                                                    </td>
+                                                    <td className="px-4 py-3">
+                                                        <BullionHoldingImage
+                                                            imagePath={row.imagePath}
+                                                            label={rowDisplayTitle}
+                                                            className="h-14 w-14 rounded-lg border border-white/10 object-cover"
+                                                        />
+                                                    </td>
+                                                    <td className="px-4 py-3 text-right">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => onEditHolding(row)}
+                                                            className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-400 transition-colors hover:bg-emerald-500/20"
+                                                        >
+                                                            <Pencil className="h-3.5 w-3.5" />
+                                                            Edit
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            )
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     )}
                 </div>
@@ -446,13 +419,13 @@ function BarIcon({ className }: { className?: string }) {
 }
 
 export default function BullionPage() {
+    const router = useRouter()
     const { hideValues } = usePrivacy()
     const [preferredCurrency, setPreferredCurrency] = useState<CurrencyCode>('GBP')
     const [bullionRows, setBullionRows] = useState<BullionRow[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [loadError, setLoadError] = useState<string | null>(null)
     const [selectedGroupKey, setSelectedGroupKey] = useState<BullionGroupKey | null>(null)
-    const [editingRow, setEditingRow] = useState<BullionRow | null>(null)
 
     // Live spot prices — uses the user's preferred currency
     const spotPrices = useSpotPrices(preferredCurrency)
@@ -644,10 +617,8 @@ export default function BullionPage() {
                                 </>
                             ) : (
                                 <>
-                                    <span className="relative flex h-2.5 w-2.5">
-                                        <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-white/20" />
-                                    </span>
-                                    <span className="text-xs text-white/40">Offline</span>
+                                    <WifiOff className="h-3.5 w-3.5 text-rose-400" />
+                                    <span className="text-xs font-medium text-rose-400">Connection Failed</span>
                                 </>
                             )}
                         </div>
@@ -842,24 +813,11 @@ export default function BullionPage() {
                 preferredCurrency={preferredCurrency}
                 hideValues={hideValues}
                 onEditHolding={(row) => {
+                    const editRoute = `/dashboard/asset/bullion/${row.metal.toLowerCase()}/${row.type.toLowerCase()}/${row.id}`
                     setSelectedGroupKey(null)
-                    setEditingRow(row)
+                    router.push(editRoute)
                 }}
             />
-
-            {editingRow !== null ? (
-                <AddBullionModal
-                    isOpen={editingRow !== null}
-                    onClose={() => setEditingRow(null)}
-                    editHolding={editingRow}
-                    onUpdated={(updatedRow) => {
-                        setBullionRows((prev) => prev.map((r) => (r.id === updatedRow.id ? updatedRow : r)))
-                    }}
-                    onDeleted={(deletedId) => {
-                        setBullionRows((prev) => prev.filter((r) => r.id !== deletedId))
-                    }}
-                />
-            ) : null}
 
             {isAddModalOpen ? (
                 <AddBullionModal
