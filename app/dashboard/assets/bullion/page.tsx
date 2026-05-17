@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { AlertTriangle, ArrowDownRight, ArrowUpRight, ChevronRight, Coins, LayoutGrid, Minus, Pencil, X, Database, TrendingUp, Wifi, WifiOff } from 'lucide-react'
+import { AlertTriangle, ArrowDownRight, ArrowUpRight, ChevronRight, Coins, LayoutGrid, Minus, X, Database, TrendingUp, Wifi, WifiOff } from 'lucide-react'
 import { useSpotPrices } from './useSpotPrices'
 import { createClient } from '@/lib/supabase/client'
 import { usePrivacy } from '@/app/dashboard/components/providers/PrivacyProvider'
@@ -237,159 +237,90 @@ function BullionHoldingImage({
     )
 }
 
-function BullionHoldingsModal({
+function BullionHoldingsListModal({
     group,
     isOpen,
     onClose,
     preferredCurrency,
     hideValues,
-    onEditHolding,
 }: {
     group: BullionGroup | null
     isOpen: boolean
     onClose: () => void
     preferredCurrency: CurrencyCode
     hideValues: boolean
-    onEditHolding: (row: BullionRow) => void
 }) {
-    if (!isOpen || !group) return null
+    const router = useRouter()
 
-    const pnlClassName = group.pnlGbp > 0
-        ? 'text-emerald-400'
-        : group.pnlGbp < 0
-            ? 'text-rose-400'
-            : 'text-white'
+    if (!isOpen || !group) return null
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" onClick={onClose} />
-            <div className="relative flex max-h-[90vh] w-full max-w-7xl flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0f172a] shadow-xl">
-                <div className="flex items-center justify-between border-b border-white/10 p-6">
+            <div className="relative flex max-h-[85vh] w-full max-w-xl flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0f172a] shadow-xl">
+                <div className="flex items-center justify-between border-b border-white/10 p-5">
                     <div className="flex items-center gap-3">
                         <div className={`flex h-10 w-10 items-center justify-center rounded-full border ${group.iconToneClassName}`}>
                             <BullionGroupIcon type={group.type} className="h-5 w-5" />
                         </div>
                         <div>
-                            <h2 className="text-xl font-bold text-white">{group.title}</h2>
-                            <p className="mt-1 text-xs text-white/60">
+                            <h2 className="text-lg font-bold text-white">{group.title}</h2>
+                            <p className="mt-0.5 text-xs text-white/50">
                                 {group.holdingCount} {group.holdingCount === 1 ? 'holding' : 'holdings'} · {hideValues ? '****' : `${group.totalUnits.toLocaleString('en-GB')} units`}
                             </p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="p-1 text-rose-300 transition-colors hover:text-rose-200">
+                    <button onClick={onClose} className="p-1 text-white/40 transition-colors hover:text-white/70">
                         <X className="h-5 w-5" />
                     </button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-6">
-                    <div className="mb-6 grid gap-4 md:grid-cols-3">
-                        <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                            <p className="text-xs font-semibold uppercase tracking-wider text-white/45">Market Value</p>
-                            <p className="mt-2 text-2xl font-bold text-white">
-                                {hideValues ? '****' : formatCurrency(convertFromGbp(group.marketTotalGbp, preferredCurrency), preferredCurrency)}
-                            </p>
-                        </div>
-                        <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                            <p className="text-xs font-semibold uppercase tracking-wider text-white/45">Intrinsic Value</p>
-                            <p className="mt-2 text-2xl font-bold text-white">
-                                {hideValues ? '****' : formatCurrency(convertFromGbp(group.intrinsicTotalGbp, preferredCurrency), preferredCurrency)}
-                            </p>
-                        </div>
-                        <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                            <p className="text-xs font-semibold uppercase tracking-wider text-white/45">PNL</p>
-                            <p className={`mt-2 text-2xl font-bold ${pnlClassName}`}>
-                                {hideValues ? '****' : formatSignedCurrency(convertFromGbp(group.pnlGbp, preferredCurrency), preferredCurrency)}
-                            </p>
-                            <p className={`mt-1 text-xs ${pnlClassName}`}>
-                                {hideValues ? '****' : `${group.pnlGbp >= 0 ? '+' : ''}${group.pnlPct.toFixed(2)}%`}
-                            </p>
-                        </div>
-                    </div>
-
+                <div className="flex-1 overflow-y-auto p-4">
                     {group.rows.length === 0 ? (
-                        <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-10 text-center text-sm text-white/50">
+                        <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-10 text-center text-sm text-white/50">
                             No holdings in this category yet.
                         </div>
                     ) : (
-                        <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5">
-                            <div className="w-full overflow-x-auto">
-                                <table className="w-full min-w-[1160px] text-left text-sm">
-                                    <thead className="bg-white/[0.03]">
-                                        <tr className="text-white/60">
-                                            <th className="px-4 py-3 font-medium">Title</th>
-                                            <th className="px-4 py-3 font-medium">Description</th>
-                                            <th className="px-4 py-3 font-medium">Origin</th>
-                                            <th className="px-4 py-3 font-medium">Year</th>
-                                            <th className="px-4 py-3 font-medium">Units</th>
-                                            <th className="px-4 py-3 font-medium">Weight</th>
-                                            <th className="px-4 py-3 font-medium">Market</th>
-                                            <th className="px-4 py-3 font-medium">Intrinsic</th>
-                                            <th className="px-4 py-3 font-medium">Premium</th>
-                                            <th className="px-4 py-3 font-medium">Notes</th>
-                                            <th className="px-4 py-3 font-medium">Image</th>
-                                            <th className="px-4 py-3 text-right font-medium">Edit</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {group.rows.map((row) => {
-                                            const rowDisplayTitle = row.title?.trim() || row.description
-                                            const rowMarketPremiumClassName = row.marketPremiumPct >= 0
-                                                ? 'border-amber-500/40 bg-amber-500/10 text-amber-300'
-                                                : 'border-rose-500/40 bg-rose-500/10 text-rose-300'
-                                            const rowMarketPremiumLabel = hideValues
-                                                ? '****'
-                                                : `${row.marketPremiumPct >= 0 ? '+' : ''}${row.marketPremiumPct.toLocaleString('en-GB', { maximumFractionDigits: 2 })}%`
-                                            const originLabel = row.country?.trim() || 'Unknown'
+                        <div className="space-y-2">
+                            {group.rows.map((row) => {
+                                const rowDisplayTitle = row.title?.trim() || row.description
+                                const holdingRoute = `/dashboard/assets/bullion/${row.metal.toLowerCase()}/${row.type.toLowerCase()}/${row.id}`
 
-                                            return (
-                                                <tr key={row.id} className="border-t border-white/10 align-top text-white/80">
-                                                    <td className="px-4 py-3 font-semibold text-white">{rowDisplayTitle}</td>
-                                                    <td className="px-4 py-3 text-white/70">{row.description}</td>
-                                                    <td className="px-4 py-3">{originLabel}</td>
-                                                    <td className="px-4 py-3">{row.year || '-'}</td>
-                                                    <td className="px-4 py-3">{hideValues ? '****' : row.amount.toLocaleString('en-GB')}</td>
-                                                    <td className="px-4 py-3">{hideValues ? '****' : `${formatWeight(row.amount * row.weightPerItemGrams)} g`}</td>
-                                                    <td className="px-4 py-3">{hideValues ? '****' : formatCurrency(convertFromGbp(row.marketTotalGbp, preferredCurrency), preferredCurrency)}</td>
-                                                    <td className="px-4 py-3">{hideValues ? '****' : formatCurrency(convertFromGbp(row.intrinsicTotalGbp, preferredCurrency), preferredCurrency)}</td>
-                                                    <td className="px-4 py-3">
-                                                        <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${rowMarketPremiumClassName}`}>
-                                                            {rowMarketPremiumLabel}
-                                                        </span>
-                                                    </td>
-                                                    <td className="max-w-xs px-4 py-3 text-white/65">
-                                                        <p className="max-w-xs whitespace-pre-wrap break-words">{row.notes?.trim() || '-'}</p>
-                                                    </td>
-                                                    <td className="px-4 py-3">
-                                                        <BullionHoldingImage
-                                                            imagePath={row.imagePath}
-                                                            label={rowDisplayTitle}
-                                                            className="h-14 w-14 rounded-lg border border-white/10 object-cover"
-                                                        />
-                                                    </td>
-                                                    <td className="px-4 py-3 text-right">
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => onEditHolding(row)}
-                                                            className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-400 transition-colors hover:bg-emerald-500/20"
-                                                        >
-                                                            <Pencil className="h-3.5 w-3.5" />
-                                                            Edit
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            )
-                                        })}
-                                    </tbody>
-                                </table>
-                            </div>
+                                return (
+                                    <button
+                                        key={row.id}
+                                        type="button"
+                                        onClick={() => {
+                                            onClose()
+                                            router.push(holdingRoute)
+                                        }}
+                                        className="group/row w-full text-left"
+                                    >
+                                        <div className={`flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.03] p-3.5 transition-all duration-200 hover:border-white/15 hover:bg-white/[0.07]`}>
+                                            <BullionHoldingImage
+                                                imagePath={row.imagePath}
+                                                label={rowDisplayTitle}
+                                                className="h-11 w-11 rounded-lg border border-white/10 object-cover"
+                                            />
+                                            <div className="min-w-0 flex-1">
+                                                <p className="truncate text-sm font-semibold text-white">{rowDisplayTitle}</p>
+                                                <p className="mt-0.5 text-xs text-white/45">
+                                                    {hideValues ? '****' : `${row.amount.toLocaleString('en-GB')} units · ${formatCurrency(convertFromGbp(row.marketTotalGbp, preferredCurrency), preferredCurrency)}`}
+                                                </p>
+                                            </div>
+                                            <ChevronRight className="h-4 w-4 shrink-0 text-white/15 transition-all group-hover/row:translate-x-0.5 group-hover/row:text-white/40" />
+                                        </div>
+                                    </button>
+                                )
+                            })}
                         </div>
                     )}
                 </div>
 
-                <div className="border-t border-white/10 bg-white/[0.02] p-6">
+                <div className="border-t border-white/10 bg-white/[0.02] p-4">
                     <button
                         onClick={onClose}
-                        className="w-full rounded-xl border border-rose-500/35 px-4 py-3 text-sm font-semibold text-rose-300 transition-all hover:bg-rose-500/10"
+                        className="w-full rounded-xl border border-white/10 px-4 py-2.5 text-sm font-medium text-white/50 transition-all hover:bg-white/5 hover:text-white/70"
                     >
                         Close
                     </button>
@@ -426,6 +357,7 @@ export default function BullionPage() {
     const [isLoading, setIsLoading] = useState(true)
     const [loadError, setLoadError] = useState<string | null>(null)
     const [selectedGroupKey, setSelectedGroupKey] = useState<BullionGroupKey | null>(null)
+
 
     // Live spot prices — uses the user's preferred currency
     const spotPrices = useSpotPrices(preferredCurrency)
@@ -594,6 +526,7 @@ export default function BullionPage() {
         () => groupedBullion.find((group) => group.key === selectedGroupKey) ?? null,
         [groupedBullion, selectedGroupKey]
     )
+
     const [isAddModalOpen, setIsAddModalOpen] = useState(false)
     const hasBullionHoldings = enrichedBullionRows.length > 0
 
@@ -775,7 +708,7 @@ export default function BullionPage() {
                                         />
                                     </div>
 
-                                    <div className="flex-1 space-y-4">
+                                    <div className="flex-1">
                                         <button
                                             type="button"
                                             onClick={() => setSelectedGroupKey(group.key)}
@@ -806,17 +739,12 @@ export default function BullionPage() {
                 </>
             )}
 
-            <BullionHoldingsModal
+            <BullionHoldingsListModal
                 group={selectedGroup}
                 isOpen={selectedGroup !== null}
                 onClose={() => setSelectedGroupKey(null)}
                 preferredCurrency={preferredCurrency}
                 hideValues={hideValues}
-                onEditHolding={(row) => {
-                    const editRoute = `/dashboard/asset/bullion/${row.metal.toLowerCase()}/${row.type.toLowerCase()}/${row.id}`
-                    setSelectedGroupKey(null)
-                    router.push(editRoute)
-                }}
             />
 
             {isAddModalOpen ? (
