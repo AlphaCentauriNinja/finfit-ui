@@ -156,7 +156,9 @@ export default function AssetsPage() {
         }
         return dashboardData.bullion.holdings.reduce((sum, row) => {
             const price = row.metal === 'GOLD' ? spotPrices.goldPricePerGram! : spotPrices.silverPricePerGram!
-            return sum + (price * row.weightPerItemGrams * row.amount)
+            const intrinsicTotal = price * row.weightPerItemGrams * row.amount
+            const premiumMultiplier = 1 + ((row.marketPremiumPct || 0) / 100)
+            return sum + (intrinsicTotal * premiumMultiplier)
         }, 0)
     }, [dashboardData.bullion, spotPrices.goldPricePerGram, spotPrices.silverPricePerGram])
 

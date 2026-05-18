@@ -20,6 +20,7 @@ import {
     type SavingsHistoryRow,
     type CryptoAssetRow,
     type BullionHoldingRow,
+    type InvestmentAccountRow,
     type InvestmentHoldingRow,
     type InvestmentAccountTransactionRow,
     type RealEstatePropertyRow,
@@ -48,6 +49,7 @@ export default async function Layout({
         debtEntriesResult,
         cryptoAssetsResult,
         bullionHoldingsResult,
+        investmentAccountsResult,
         investmentHoldingsResult,
         investmentAccountTransactionsResult,
         realEstateResult,
@@ -96,18 +98,22 @@ export default async function Layout({
             .order('created_at', { ascending: false }),
         supabase
             .from('bullion_holdings')
-            .select('id, metal, weight_per_item_grams, purchase_value, purchase_currency, amount, tax_rate_pct, tax_amount, total_price_incl_tax')
+            .select('id, title, description, metal, type, country, weight_per_item_grams, purchase_value, purchase_currency, amount, tax_rate_pct, tax_amount, total_price_incl_tax, market_premium_pct')
             .order('created_at', { ascending: false }),
         supabase
+            .from('investment_accounts')
+            .select('id, name, type, tax_status')
+            .order('created_at', { ascending: true }),
+        supabase
             .from('investment_holdings')
-            .select('id, current_value')
+            .select('id, account_id, ticker, name, invested_amount, current_value')
             .order('created_at', { ascending: false }),
         supabase
             .from('investment_transactions')
-            .select('account_id, holding_id, current_value_impact, transaction_date'),
+            .select('account_id, holding_id, invested_amount_impact, current_value_impact, transaction_date'),
         supabase
             .from('real_estate_properties')
-            .select('id, estimated_value, current_value, market_value, mortgage_balance')
+            .select('id, name, address, estimated_value, current_value, market_value, mortgage_balance')
             .order('created_at', { ascending: false }),
     ])
 
@@ -142,9 +148,10 @@ export default async function Layout({
         cryptoLoadError: Boolean(cryptoAssetsResult.error),
         bullionHoldings: (bullionHoldingsResult.data as BullionHoldingRow[] | null) ?? [],
         bullionLoadError: Boolean(bullionHoldingsResult.error),
+        investmentAccounts: (investmentAccountsResult.data as InvestmentAccountRow[] | null) ?? [],
         investmentHoldings: (investmentHoldingsResult.data as InvestmentHoldingRow[] | null) ?? [],
         investmentAccountTransactions: (investmentAccountTransactionsResult.data as InvestmentAccountTransactionRow[] | null) ?? [],
-        investmentLoadError: Boolean(investmentHoldingsResult.error || investmentAccountTransactionsResult.error),
+        investmentLoadError: Boolean(investmentAccountsResult.error || investmentHoldingsResult.error || investmentAccountTransactionsResult.error),
         realEstateProperties: (realEstateResult.data as RealEstatePropertyRow[] | null) ?? [],
         realEstateLoadError: Boolean(realEstateResult.error),
     })

@@ -36,6 +36,10 @@ export function DashboardDataProvider({
 
             return {
                 ...previous,
+                investments: {
+                    ...previous.investments,
+                    totalValue: nextTotal,
+                },
                 portfolio: {
                     ...previous.portfolio,
                     totalAssets: nextTotalAssets,
