@@ -21,7 +21,7 @@ type Props = {
     onClose: () => void
     holding: InvestmentHoldingRow
     preferredCurrency: string
-    formatCurrency: (val: number, curr: any) => string
+    formatCurrency: (val: number, curr: string) => string
 }
 
 export default function InvestmentHistoryModal({ 
@@ -129,8 +129,8 @@ export default function InvestmentHistoryModal({
                     ) : (
                         <div className="space-y-3">
                             {transactions.map((tx) => {
-                                const isPositive = tx.current_value_impact > 0
-                                const isNegative = tx.current_value_impact < 0
+                                // const isPositive = tx.current_value_impact > 0
+                                // const isNegative = tx.current_value_impact < 0
                                 
                                 return (
                                     <div key={tx.id} className="bg-white/5 border border-white/10 rounded-xl p-4 transition-colors hover:bg-white/[0.07] group">
@@ -196,7 +196,7 @@ export default function InvestmentHistoryModal({
     )
 }
 
-function TrendingUp(props: any) {
+function TrendingUp(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
       {...props}

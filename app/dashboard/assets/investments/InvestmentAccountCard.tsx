@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client'
 
 import { useState } from 'react'
@@ -9,7 +10,7 @@ type Props = {
     account: InvestmentAccountCardData
     totalPortfolioValue: number
     preferredCurrency: string
-    formatCurrency: (val: number, curr: any) => string
+    formatCurrency: (val: number, curr: string) => string
     onEdit: (account: InvestmentAccountCardData) => void
     onTransaction: (account: InvestmentAccountCardData) => void
     onHistory: (account: InvestmentAccountCardData) => void

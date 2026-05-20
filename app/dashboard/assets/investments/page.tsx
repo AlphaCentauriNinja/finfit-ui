@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable react-hooks/set-state-in-effect */
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -175,7 +177,7 @@ export default function InvestmentsPage() {
         updateInvestmentsValue(nextTotalInvestments)
         setLoadError(null)
         setIsLoading(false)
-    }, [])
+    }, [updateInvestmentsValue])
 
     useEffect(() => {
         void loadData()

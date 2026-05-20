@@ -31,7 +31,7 @@ Object.defineProperty(window.HTMLElement.prototype, 'scrollIntoView', {
 
 const createQueryMock = () => {
   const result = { data: [], error: null }
-  const query: any = {
+  const query: Record<string, unknown> = {
     select: vi.fn(() => query),
     insert: vi.fn(() => query),
     update: vi.fn(() => query),
@@ -84,7 +84,7 @@ vi.mock('next/navigation', () => ({
 }))
 
 vi.mock('next/link', () => ({
-  default: ({ href, children, ...props }: any) =>
+  default: ({ href, children, ...props }: Record<string, unknown>) =>
     React.createElement('a', { href: typeof href === 'string' ? href : '#', ...props }, children),
 }))
 
@@ -93,12 +93,12 @@ vi.mock('@web3icons/react', () => ({
 }))
 
 vi.mock('react-day-picker', () => ({
-  DayPicker: ({ children }: any) => React.createElement('div', { 'data-testid': 'day-picker' }, children),
+  DayPicker: ({ children }: Record<string, unknown>) => React.createElement('div', { 'data-testid': 'day-picker' }, children),
 }))
 
 vi.mock('recharts', () => {
   const chartComponent = (name: string) => {
-    const Comp = ({ children }: any) => React.createElement('div', { 'data-testid': name }, children)
+    const Comp = ({ children }: Record<string, unknown>) => React.createElement('div', { 'data-testid': name }, children)
     Comp.displayName = name
     return Comp
   }

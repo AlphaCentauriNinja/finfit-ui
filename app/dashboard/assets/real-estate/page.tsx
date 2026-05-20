@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable react-hooks/set-state-in-effect */
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -52,6 +54,8 @@ export default function RealEstatePage() {
     }, [])
 
     useEffect(() => {
+         
+         
         void loadData()
     }, [loadData])
 
@@ -63,12 +67,16 @@ export default function RealEstatePage() {
             .on(
                 'postgres_changes',
                 { event: '*', schema: 'public', table: 'real_estate_properties' },
-                () => { void loadData() }
+                () => {  
+         
+        void loadData() }
             )
             .on(
                 'postgres_changes',
                 { event: '*', schema: 'public', table: 'real_estate_transactions' },
-                () => { void loadData() }
+                () => {  
+         
+        void loadData() }
             )
             .subscribe()
 

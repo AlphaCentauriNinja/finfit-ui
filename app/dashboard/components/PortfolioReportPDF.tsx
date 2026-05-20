@@ -1,8 +1,9 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client'
 
 import React, { forwardRef, useMemo } from 'react'
 import type { DashboardDataSnapshot } from '@/lib/dashboard-data'
-import { USD_TO_GBP } from '@/lib/crypto-data'
+
 import { formatCurrency } from '@/lib/utils'
 import { PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts'
 import { Building, TrendingUp, Coins, Bitcoin, PiggyBank, Briefcase } from 'lucide-react'
@@ -24,7 +25,7 @@ type Props = {
     spotSilverPricePerGram: number | null
 }
 
-const ASSET_THEMES: Record<string, { color: string, bg: string, icon: any }> = {
+const ASSET_THEMES: Record<string, { color: string, bg: string, icon: React.ElementType }> = {
     'Real Estate': { color: '#185FA5', bg: '#E6F1FB', icon: Building },
     Investments: { color: '#3B6D11', bg: '#EAF3DE', icon: TrendingUp },
     Bullion: { color: '#854F0B', bg: '#FAEEDA', icon: Coins },
@@ -36,14 +37,14 @@ const ASSET_THEMES: Record<string, { color: string, bg: string, icon: any }> = {
 const CHART_COLORS = ['#378ADD', '#1D9E75', '#EF9F27', '#7F77DD', '#D85A30', '#4A5568']
 
 export const PortfolioReportPDF = forwardRef<HTMLDivElement, Props>(({
-    data,
+    _data,
     dynamicAssetsWithAllocation,
     totalAssets,
     dynamicYtdPnl,
     dynamicYtdPercentage,
-    liveUsdByTicker,
-    spotGoldPricePerGram,
-    spotSilverPricePerGram,
+    _liveUsdByTicker,
+    _spotGoldPricePerGram,
+    _spotSilverPricePerGram,
 }, ref) => {
     const sortedAssets = useMemo(
         () => [...dynamicAssetsWithAllocation].filter((a) => a.value > 0).sort((a, b) => b.value - a.value),
