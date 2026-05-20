@@ -225,6 +225,7 @@ export function SpendingBreakdown({ hideValuesOverride }: { hideValuesOverride?:
                                 dataKey="amount"
                                 nameKey="name"
                                 stroke="none"
+                                isAnimationActive={false}
                             >
                                 {spendingData.map((_entry, index) => (
                                     <Cell key={`cell-${index}`} fill={SPENDING_COLORS[index % SPENDING_COLORS.length]} />
