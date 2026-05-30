@@ -184,9 +184,10 @@ function SpendingPieTooltip({ active, payload }: SpendingPieTooltipProps) {
     )
 }
 
-export function SpendingBreakdown() {
+export function SpendingBreakdown({ hideValuesOverride }: { hideValuesOverride?: boolean } = {}) {
     const dashboardData = useDashboardData()
-    const { hideValues } = usePrivacy()
+    const { hideValues: privacyHideValues } = usePrivacy()
+    const hideValues = hideValuesOverride ?? privacyHideValues
     const providerSpendingData = useMemo(() => {
         const topExpenditures = [...dashboardData.budget.expenditures]
             .sort((a, b) => b.amount - a.amount)
@@ -224,6 +225,7 @@ export function SpendingBreakdown() {
                                 dataKey="amount"
                                 nameKey="name"
                                 stroke="none"
+                                isAnimationActive={false}
                             >
                                 {spendingData.map((_entry, index) => (
                                     <Cell key={`cell-${index}`} fill={SPENDING_COLORS[index % SPENDING_COLORS.length]} />

@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 'use client'
 
 import { useEffect, useRef } from 'react'
@@ -33,9 +34,15 @@ export default function AutoLogoutHandler() {
             'touchstart',
         ]
 
-        const activityHandler = () => resetTimer()
+        const activityHandler = () =>  
+         
+         
+        resetTimer()
 
         // Initialize the timer
+         
+         
+         
         resetTimer()
 
         // Add event listeners

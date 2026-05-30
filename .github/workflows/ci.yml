@@ -6,9 +6,13 @@ on:
       - "**"
   pull_request:
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  test:
-    name: Unit Tests
+  validate:
+    name: Lint, Typecheck, and Tests
     runs-on: ubuntu-latest
 
     steps:
@@ -18,27 +22,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "25"
-          cache: "npm"
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run tests
-        run: npm test
-
-  static-analysis:
-    name: Static Analysis
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "25"
+          node-version: "22"
           cache: "npm"
 
       - name: Install dependencies
@@ -49,3 +33,77 @@ jobs:
 
       - name: Run type check
         run: npm run typecheck
+
+      - name: Run tests with coverage gate
+        run: npm run test:coverage
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+          if-no-files-found: ignore
+
+  dependency-audit:
+    name: Dependency Audit & Outdated Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Audit for known vulnerabilities
+        run: npm audit --omit=dev
+
+      - name: Check for outdated dependencies
+        run: |
+          echo "::group::Outdated dependencies"
+          npm outdated || true
+          echo "::endgroup::"
+
+  docker-security:
+    name: Dockerfile Lint & Container Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Lint Dockerfile with Hadolint
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile
+          failure-threshold: warning
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image for scanning
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: true
+          tags: finfit-ui:scan
+          build-args: |
+            NEXT_PUBLIC_SUPABASE_URL=https://placeholder.supabase.co
+            NEXT_PUBLIC_SUPABASE_ANON_KEY=placeholder-key
+
+      - name: Scan image with Trivy
+        uses: aquasecurity/trivy-action@0.31.0
+        with:
+          image-ref: finfit-ui:scan
+          format: table
+          exit-code: 1
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true

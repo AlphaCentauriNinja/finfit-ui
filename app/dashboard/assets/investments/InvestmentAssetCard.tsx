@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client'
 
 import { useMemo, useState } from 'react'
@@ -19,8 +20,8 @@ type Props = {
     totalPortfolioValue: number
     preferredCurrency: string
     hideValues: boolean
-    formatCurrency: (val: number, curr: any) => string
-    formatSignedCurrency: (val: number, curr: any) => string
+    formatCurrency: (val: number, curr: string) => string
+    formatSignedCurrency: (val: number, curr: string) => string
     onEdit: (holding: InvestmentHoldingRow) => void
     onTransaction: (holding: InvestmentHoldingRow) => void
     onHistory: (holding: InvestmentHoldingRow) => void

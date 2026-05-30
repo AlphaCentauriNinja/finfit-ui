@@ -7,6 +7,7 @@ export type BullionCurrencyCode = 'GBP' | 'EUR' | 'USD' | 'CHF' | 'CAD'
 export type BullionRow = {
     id: string
     metal: BullionMetal
+    title: string | null
     description: string
     amount: number
     weightPerItemGrams: number
@@ -15,6 +16,7 @@ export type BullionRow = {
     marketPriceGbp: number
     marketTotalGbp: number
     intrinsicTotalGbp: number
+    investedTotalGbp: number
     type: BullionType
     manufacturer: string
     country: string
@@ -28,11 +30,15 @@ export type BullionRow = {
     taxRatePct?: number | null
     taxAmount?: number | null
     totalPriceInclTax?: number | null
+    marketPremiumPct: number
+    notes: string | null
+    imagePath: string | null
 }
 
 export type BullionHoldingDbRow = {
     id: string
     metal: BullionMetal | string
+    title: string | null
     description: string | null
     amount: number | string | null
     weight_per_item_grams: number | string | null
@@ -49,6 +55,9 @@ export type BullionHoldingDbRow = {
     tax_rate_pct: number | string | null
     tax_amount: number | string | null
     total_price_incl_tax: number | string | null
+    market_premium_pct: number | string | null
+    notes: string | null
+    image_path: string | null
 }
 
 export type BullionCatalogProduct = {

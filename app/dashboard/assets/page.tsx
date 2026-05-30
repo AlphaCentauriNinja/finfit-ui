@@ -7,6 +7,7 @@ import { useDashboardData } from '@/app/dashboard/components/providers/Dashboard
 import { usePrivacy } from '@/app/dashboard/components/providers/PrivacyProvider'
 import { USD_TO_GBP, binanceCombinedStreamUrl } from '@/lib/crypto-data'
 import { formatCurrency } from '@/lib/utils'
+import { useSpotPrices } from '@/app/dashboard/assets/bullion/useSpotPrices'
 import type { LucideIcon } from 'lucide-react'
 
 type AssetRoute = {
@@ -148,10 +149,26 @@ export default function AssetsPage() {
         }, 0)
     }, [dashboardData.crypto.assets, liveUsdByTicker])
 
+    const spotPrices = useSpotPrices('GBP')
+    const liveBullionValue = useMemo(() => {
+        if (!spotPrices.goldPricePerGram || !spotPrices.silverPricePerGram) {
+            return dashboardData.bullion.totalInvested
+        }
+        return dashboardData.bullion.holdings.reduce((sum, row) => {
+            const price = row.metal === 'GOLD' ? spotPrices.goldPricePerGram! : spotPrices.silverPricePerGram!
+            const intrinsicTotal = price * row.weightPerItemGrams * row.amount
+            const premiumMultiplier = 1 + ((row.marketPremiumPct || 0) / 100)
+            return sum + (intrinsicTotal * premiumMultiplier)
+        }, 0)
+    }, [dashboardData.bullion, spotPrices.goldPricePerGram, spotPrices.silverPricePerGram])
+
     const dynamicAssetsWithAllocation = useMemo(() => {
         const updatedAssets = dashboardData.portfolio.assetsWithAllocation.map((asset) => {
             if (asset.name === 'Crypto') {
                 return { ...asset, value: liveCryptoValue }
+            }
+            if (asset.name === 'Bullion') {
+                return { ...asset, value: liveBullionValue }
             }
             return asset
         })
@@ -162,7 +179,7 @@ export default function AssetsPage() {
             ...asset,
             allocation: finalTotal > 0 ? (asset.value / finalTotal) * 100 : 0,
         }))
-    }, [dashboardData.portfolio.assetsWithAllocation, liveCryptoValue])
+    }, [dashboardData.portfolio.assetsWithAllocation, liveCryptoValue, liveBullionValue])
 
     const totalAssetsValue = useMemo(
         () => dynamicAssetsWithAllocation.reduce((sum, asset) => sum + asset.value, 0),

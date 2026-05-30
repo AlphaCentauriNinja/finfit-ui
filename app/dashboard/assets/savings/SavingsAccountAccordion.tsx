@@ -7,7 +7,7 @@ import EditAccountModal from './EditAccountModal'
 import PotOperationModal from './PotOperationModal'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import PensionOperationModal from '../pension/PensionOperationModal'
+// import PensionOperationModal from '../pension/PensionOperationModal'
 import DeleteActionModal from '@/app/dashboard/components/DeleteActionModal'
 type Props = {
     accounts: DashboardSavingsAccount[]

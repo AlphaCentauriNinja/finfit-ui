@@ -22,7 +22,7 @@ type Props = {
     onClose: () => void
     account: InvestmentAccountCardData
     preferredCurrency: string
-    formatCurrency: (val: number, curr: any) => string
+    formatCurrency: (val: number, curr: string) => string
     onChanged?: () => void
 }
 

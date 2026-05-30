@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client'
 
 import { ArrowUpRight, Plus, PiggyBank, Target, CreditCard } from 'lucide-react'

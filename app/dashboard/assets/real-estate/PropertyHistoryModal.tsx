@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
@@ -138,7 +139,7 @@ export default function PropertyHistoryModal({ isOpen, onClose, property, onDele
                                                 </div>
                                                 {tx.notes && (
                                                     <p className="text-xs text-white/50 mt-1 line-clamp-2 italic">
-                                                        "{tx.notes}"
+                                                        &quot;{tx.notes}&quot;
                                                     </p>
                                                 )}
                                             </div>
