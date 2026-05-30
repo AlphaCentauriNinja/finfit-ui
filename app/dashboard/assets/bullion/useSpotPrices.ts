@@ -52,7 +52,7 @@ export function useSpotPrices(currency: string = 'GBP'): SpotPricesState {
         const apiToken = process.env.NEXT_PUBLIC_FINFIT_API_TOKEN
 
         if (!apiUrl || !apiToken) {
-            console.warn('[useSpotPrices] NEXT_PUBLIC_FINFIT_API_URL or NEXT_PUBLIC_FINFIT_API_TOKEN is not set')
+            console.log('🔴 [useSpotPrices] NEXT_PUBLIC_FINFIT_API_URL or NEXT_PUBLIC_FINFIT_API_TOKEN is not set')
             setState((prev) => ({
                 ...prev,
                 isConnected: false,
@@ -64,18 +64,27 @@ export function useSpotPrices(currency: string = 'GBP'): SpotPricesState {
         let finalApiUrl = apiUrl
 
         try {
+            console.log(`🟡 [useSpotPrices] Starting health check to primary URL: ${finalApiUrl}/health`)
             // Health check first on primary
-            let healthResponse = await fetch(`${finalApiUrl}/health`, { cache: 'no-store' }).catch(() => null)
+            let healthResponse = await fetch(`${finalApiUrl}/health`, { cache: 'no-store' }).catch((err) => {
+                console.log(`🔴 [useSpotPrices] Primary fetch threw an error:`, err)
+                return null
+            })
             
             if (!healthResponse?.ok) {
-                console.warn(`[useSpotPrices] Primary health check failed at ${finalApiUrl}/health. Trying fallback localhost...`)
+                console.log(`🔴 [useSpotPrices] Primary health check failed (status: ${healthResponse?.status}). Trying fallback localhost...`)
                 finalApiUrl = 'http://localhost:4000/api/v1'
-                healthResponse = await fetch(`${finalApiUrl}/health`, { cache: 'no-store' }).catch(() => null)
+                healthResponse = await fetch(`${finalApiUrl}/health`, { cache: 'no-store' }).catch((err) => {
+                    console.log(`🔴 [useSpotPrices] Fallback fetch threw an error:`, err)
+                    return null
+                })
 
                 if (!healthResponse?.ok) {
                     throw new Error('FinFit API is unreachable on both primary and fallback URLs')
                 }
             }
+            
+            console.log(`🟢 [useSpotPrices] Health check passed on ${finalApiUrl}. Fetching metals data...`)
 
             const response = await fetch(
                 `${finalApiUrl}/metals?currency=${currency}&unit=toz`,
@@ -92,7 +101,7 @@ export function useSpotPrices(currency: string = 'GBP'): SpotPricesState {
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}))
-                console.warn(`[useSpotPrices] Metals request failed — status ${response.status}`, errorData)
+                console.log(`🔴 [useSpotPrices] Metals request failed — status ${response.status}`, errorData)
                 throw new Error(errorData.error || `HTTP ${response.status}`)
             }
 
@@ -121,7 +130,7 @@ export function useSpotPrices(currency: string = 'GBP'): SpotPricesState {
                     error: null,
                 })
             } else {
-                console.warn('[useSpotPrices] Unexpected response shape — metals.gold or metals.silver missing', data)
+                console.log('🔴 [useSpotPrices] Unexpected response shape — metals.gold or metals.silver missing', data)
                 setState((prev) => ({
                     ...prev,
                     isConnected: false,
@@ -130,7 +139,7 @@ export function useSpotPrices(currency: string = 'GBP'): SpotPricesState {
             }
         } catch (err) {
             if (!isMountedRef.current) return
-            console.warn('[useSpotPrices] Connection error:', err)
+            console.log('🔴 [useSpotPrices] Connection error caught:', err)
             setState((prev) => ({
                 ...prev,
                 isConnected: false,
