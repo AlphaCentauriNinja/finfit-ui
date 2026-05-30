@@ -52,6 +52,7 @@ export function useSpotPrices(currency: string = 'GBP'): SpotPricesState {
         const apiToken = process.env.NEXT_PUBLIC_FINFIT_API_TOKEN
 
         if (!apiUrl || !apiToken) {
+            console.error('[useSpotPrices] NEXT_PUBLIC_FINFIT_API_URL or NEXT_PUBLIC_FINFIT_API_TOKEN is not set')
             setState((prev) => ({
                 ...prev,
                 isConnected: false,
@@ -64,6 +65,7 @@ export function useSpotPrices(currency: string = 'GBP'): SpotPricesState {
             // Health check first
             const healthResponse = await fetch(`${apiUrl}/health`, { cache: 'no-store' })
             if (!healthResponse.ok) {
+                console.error(`[useSpotPrices] Health check failed — status ${healthResponse.status} from ${apiUrl}/health`)
                 throw new Error('FinFit API is unreachable')
             }
 
@@ -82,6 +84,7 @@ export function useSpotPrices(currency: string = 'GBP'): SpotPricesState {
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}))
+                console.error(`[useSpotPrices] Metals request failed — status ${response.status}`, errorData)
                 throw new Error(errorData.error || `HTTP ${response.status}`)
             }
 
@@ -110,6 +113,7 @@ export function useSpotPrices(currency: string = 'GBP'): SpotPricesState {
                     error: null,
                 })
             } else {
+                console.error('[useSpotPrices] Unexpected response shape — metals.gold or metals.silver missing', data)
                 setState((prev) => ({
                     ...prev,
                     isConnected: false,
@@ -118,6 +122,7 @@ export function useSpotPrices(currency: string = 'GBP'): SpotPricesState {
             }
         } catch (err) {
             if (!isMountedRef.current) return
+            console.error('[useSpotPrices] Connection error:', err)
             setState((prev) => ({
                 ...prev,
                 isConnected: false,
