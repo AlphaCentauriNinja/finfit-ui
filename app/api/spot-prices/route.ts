@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-type MetalsDevResponse = {
+const FINFIT_API_BASE_URL = process.env.FINFIT_API_URL
+const FINFIT_API_TOKEN = process.env.FINFIT_API_TOKEN
+
+type FinfitMetalsResponse = {
     status: string
     currency: string
     unit: string
@@ -31,18 +34,29 @@ const CACHE_TTL_MS = 60_000 // 60 seconds
 
 let cachedPrices: CachedPrices | null = null
 
+async function checkApiHealth(): Promise<boolean> {
+    try {
+        const response = await fetch(`${FINFIT_API_BASE_URL}/health`, {
+            cache: 'no-store',
+        })
+        return response.ok
+    } catch {
+        return false
+    }
+}
+
 export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const currency = searchParams.get('currency')?.toUpperCase() || 'GBP'
 
-    const apiKey = process.env.METALS_DEV_API_KEY
-
-    if (!apiKey) {
+    if (!FINFIT_API_BASE_URL || !FINFIT_API_TOKEN) {
         return NextResponse.json(
             {
-                error: 'METALS_DEV_API_KEY is not configured',
+                error: 'FINFIT_API_URL or FINFIT_API_TOKEN is not configured',
                 gold: null,
                 silver: null,
+                platinum: null,
+                palladium: null,
                 currency,
                 timestamp: null,
             },
@@ -67,22 +81,56 @@ export async function GET(request: NextRequest) {
         })
     }
 
+    // Check health before hitting metals endpoint
+    const isHealthy = await checkApiHealth()
+    if (!isHealthy) {
+        // If we have stale cached prices, return them as a fallback
+        if (cachedPrices && cachedPrices.currency === currency) {
+            return NextResponse.json({
+                gold: cachedPrices.gold,
+                silver: cachedPrices.silver,
+                platinum: cachedPrices.platinum,
+                palladium: cachedPrices.palladium,
+                currency: cachedPrices.currency,
+                timestamp: cachedPrices.timestamp,
+                cached: true,
+                stale: true,
+            })
+        }
+
+        return NextResponse.json(
+            {
+                error: 'FinFit API is unreachable',
+                gold: null,
+                silver: null,
+                platinum: null,
+                palladium: null,
+                currency,
+                timestamp: null,
+            },
+            { status: 503 }
+        )
+    }
+
     try {
-        const url = `https://api.metals.dev/v1/latest?api_key=${apiKey}&currency=${currency}&unit=toz`
+        const url = `${FINFIT_API_BASE_URL}/metals?currency=${currency}&unit=toz`
 
         const response = await fetch(url, {
-            headers: { Accept: 'application/json' },
+            headers: {
+                Accept: 'application/json',
+                Authorization: `Bearer ${FINFIT_API_TOKEN}`,
+            },
             cache: 'no-store',
         })
 
         if (!response.ok) {
-            throw new Error(`Metals.dev API returned ${response.status}`)
+            throw new Error(`FinFit API returned ${response.status}`)
         }
 
-        const data: MetalsDevResponse = await response.json()
+        const data: FinfitMetalsResponse = await response.json()
 
         if (data.status !== 'success') {
-            throw new Error(`Metals.dev API error: ${data.status}`)
+            throw new Error(`FinFit API error: ${data.status}`)
         }
 
         const goldPrice = data.metals?.gold ?? null
