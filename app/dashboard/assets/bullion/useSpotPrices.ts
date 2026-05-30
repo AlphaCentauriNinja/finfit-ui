@@ -48,8 +48,35 @@ export function useSpotPrices(currency: string = 'GBP'): SpotPricesState {
     const isMountedRef = useRef(true)
 
     const fetchPrices = useCallback(async () => {
+        const apiUrl = process.env.NEXT_PUBLIC_FINFIT_API_URL
+        const apiToken = process.env.NEXT_PUBLIC_FINFIT_API_TOKEN
+
+        if (!apiUrl || !apiToken) {
+            setState((prev) => ({
+                ...prev,
+                isConnected: false,
+                error: 'FinFit API is not configured',
+            }))
+            return
+        }
+
         try {
-            const response = await fetch(`/api/spot-prices?currency=${currency}`)
+            // Health check first
+            const healthResponse = await fetch(`${apiUrl}/health`, { cache: 'no-store' })
+            if (!healthResponse.ok) {
+                throw new Error('FinFit API is unreachable')
+            }
+
+            const response = await fetch(
+                `${apiUrl}/metals?currency=${currency}&unit=toz`,
+                {
+                    headers: {
+                        Accept: 'application/json',
+                        Authorization: `Bearer ${apiToken}`,
+                    },
+                    cache: 'no-store',
+                }
+            )
 
             if (!isMountedRef.current) return
 
@@ -62,18 +89,24 @@ export function useSpotPrices(currency: string = 'GBP'): SpotPricesState {
 
             if (!isMountedRef.current) return
 
-            if (data.gold !== null && data.silver !== null) {
+            if (data.metals?.gold !== undefined && data.metals?.silver !== undefined) {
+                const gold = data.metals.gold
+                const silver = data.metals.silver
+                const platinum = data.metals.platinum ?? null
+                const palladium = data.metals.palladium ?? null
+                const timestamp = data.timestamps?.metal ?? new Date().toISOString()
+
                 setState({
-                    goldPricePerOz: data.gold,
-                    silverPricePerOz: data.silver,
-                    platinumPricePerOz: data.platinum,
-                    palladiumPricePerOz: data.palladium,
-                    goldPricePerGram: data.gold / TROY_OZ_TO_GRAMS,
-                    silverPricePerGram: data.silver / TROY_OZ_TO_GRAMS,
-                    platinumPricePerGram: data.platinum !== null ? data.platinum / TROY_OZ_TO_GRAMS : null,
-                    palladiumPricePerGram: data.palladium !== null ? data.palladium / TROY_OZ_TO_GRAMS : null,
+                    goldPricePerOz: gold,
+                    silverPricePerOz: silver,
+                    platinumPricePerOz: platinum,
+                    palladiumPricePerOz: palladium,
+                    goldPricePerGram: gold / TROY_OZ_TO_GRAMS,
+                    silverPricePerGram: silver / TROY_OZ_TO_GRAMS,
+                    platinumPricePerGram: platinum !== null ? platinum / TROY_OZ_TO_GRAMS : null,
+                    palladiumPricePerGram: palladium !== null ? palladium / TROY_OZ_TO_GRAMS : null,
                     isConnected: true,
-                    lastUpdated: new Date(data.timestamp),
+                    lastUpdated: new Date(timestamp),
                     error: null,
                 })
             } else {
@@ -92,6 +125,7 @@ export function useSpotPrices(currency: string = 'GBP'): SpotPricesState {
             }))
         }
     }, [currency])
+
 
     useEffect(() => {
         isMountedRef.current = true
