@@ -58,7 +58,7 @@ export function ImportLedgerModal({ isOpen, onClose }: ImportLedgerModalProps) {
 
                 await processCsv(text)
             } catch (err: unknown) {
-                setError(err.message || 'Error processing CSV file.')
+                setError(err instanceof Error ? err.message : 'Error processing CSV file.')
                 setIsSaving(false)
             }
         }

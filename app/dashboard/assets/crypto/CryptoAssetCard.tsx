@@ -75,7 +75,7 @@ export default function CryptoAssetCard({ asset, totalCurrentValue, preferredCur
         [asset.usd]
     )
 
-    const IconComponent = (tokenIcons as Record<string, React.FC<React.SVGProps<SVGSVGElement>>>)[`Token${asset.ticker.toUpperCase()}`] || null
+    const IconComponent = (tokenIcons as Record<string, React.FC<React.SVGProps<SVGSVGElement> & { variant?: string }>>)[`Token${asset.ticker.toUpperCase()}`] || null
 
     return (
         <>
