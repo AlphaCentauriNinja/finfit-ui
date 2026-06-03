@@ -9,9 +9,9 @@ afterEach(() => {
 })
 
 class ResizeObserverMock {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
+  observe() { }
+  unobserve() { }
+  disconnect() { }
 }
 
 Object.defineProperty(globalThis, 'ResizeObserver', {
@@ -85,7 +85,7 @@ vi.mock('next/navigation', () => ({
 
 vi.mock('next/link', () => ({
   default: ({ href, children, ...props }: Record<string, unknown>) =>
-    React.createElement('a', { href: typeof href === 'string' ? href : '#', ...props }, children),
+    React.createElement('a', { href: typeof href === 'string' ? href : '#', ...props }, children as any),
 }))
 
 vi.mock('@web3icons/react', () => ({
@@ -93,29 +93,35 @@ vi.mock('@web3icons/react', () => ({
 }))
 
 vi.mock('react-day-picker', () => ({
-  DayPicker: ({ children }: Record<string, unknown>) => React.createElement('div', { 'data-testid': 'day-picker' }, children),
+  DayPicker: ({ children }: { children?: React.ReactNode }) => React.createElement('div', { 'data-testid': 'day-picker' }, children),
 }))
 
 vi.mock('recharts', () => {
   const chartComponent = (name: string) => {
-    const Comp = ({ children }: Record<string, unknown>) => React.createElement('div', { 'data-testid': name }, children)
+    const Comp = ({ children }: { children?: React.ReactNode }) => React.createElement('div', { 'data-testid': name }, children)
+    Comp.displayName = name
+    return Comp
+  }
+
+  const svgChartComponent = (name: string) => {
+    const Comp = ({ children }: { children?: React.ReactNode }) => React.createElement('svg', { 'data-testid': name }, children)
     Comp.displayName = name
     return Comp
   }
 
   return {
     ResponsiveContainer: chartComponent('ResponsiveContainer'),
-    AreaChart: chartComponent('AreaChart'),
+    AreaChart: svgChartComponent('AreaChart'),
     Area: chartComponent('Area'),
     XAxis: chartComponent('XAxis'),
     YAxis: chartComponent('YAxis'),
     CartesianGrid: chartComponent('CartesianGrid'),
     Tooltip: chartComponent('Tooltip'),
     Legend: chartComponent('Legend'),
-    PieChart: chartComponent('PieChart'),
+    PieChart: svgChartComponent('PieChart'),
     Pie: chartComponent('Pie'),
     Cell: chartComponent('Cell'),
-    LineChart: chartComponent('LineChart'),
+    LineChart: svgChartComponent('LineChart'),
     Line: chartComponent('Line'),
   }
 })

@@ -106,7 +106,7 @@ export default function RealEstatePropertyCard({ property, totalPortfolioValue, 
                 <EditPropertyModal
                     isOpen={isEditOpen}
                     onClose={() => setIsEditOpen(false)}
-                    property={property as unknown as PropertyRow}
+                    property={property as any}
                     onUpdated={onRefresh}
                     onDeleted={onRefresh}
                 />
@@ -116,7 +116,7 @@ export default function RealEstatePropertyCard({ property, totalPortfolioValue, 
                 <PropertyTransactionModal
                     isOpen={isTransactionOpen}
                     onClose={() => setIsTransactionOpen(false)}
-                    property={property as unknown as PropertyRow}
+                    property={property as any}
                     onSaved={onRefresh}
                 />
             )}
@@ -125,7 +125,7 @@ export default function RealEstatePropertyCard({ property, totalPortfolioValue, 
                 <PropertyHistoryModal
                     isOpen={isHistoryOpen}
                     onClose={() => setIsHistoryOpen(false)}
-                    property={property as unknown as PropertyRow}
+                    property={property as any}
                     onDeleted={onRefresh}
                 />
             )}

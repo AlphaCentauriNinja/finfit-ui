@@ -48,54 +48,11 @@ export function useSpotPrices(currency: string = 'GBP'): SpotPricesState {
     const isMountedRef = useRef(true)
 
     const fetchPrices = useCallback(async () => {
-        const apiUrl = process.env.NEXT_PUBLIC_FINFIT_API_URL
-        const apiToken = process.env.NEXT_PUBLIC_FINFIT_API_TOKEN
-
-        if (!apiUrl || !apiToken) {
-            console.error('🔴 [useSpotPrices] NEXT_PUBLIC_FINFIT_API_URL or NEXT_PUBLIC_FINFIT_API_TOKEN is not set')
-            setState((prev) => ({
-                ...prev,
-                isConnected: false,
-                error: 'FinFit API is not configured',
-            }))
-            return
-        }
-
-        let finalApiUrl = apiUrl
-
         try {
-            console.debug(`🟡 [useSpotPrices] Starting health check to primary URL: ${finalApiUrl}/health`)
-            // Health check first on primary
-            let healthResponse = await fetch(`${finalApiUrl}/health`, { cache: 'no-store' }).catch((err) => {
-                console.error(`🔴 [useSpotPrices] Primary fetch threw an error:`, err)
-                return null
+            const qs = new URLSearchParams({ currency, unit: 'toz' }).toString()
+            const response = await fetch(`/api/proxy/metals?${qs}`, {
+                cache: 'no-store',
             })
-            
-            if (!healthResponse?.ok) {
-                console.warn(`🔴 [useSpotPrices] Primary health check failed (status: ${healthResponse?.status}). Trying fallback localhost...`)
-                finalApiUrl = 'http://localhost:4000/api/v1'
-                healthResponse = await fetch(`${finalApiUrl}/health`, { cache: 'no-store' }).catch((err) => {
-                    console.error(`🔴 [useSpotPrices] Fallback fetch threw an error:`, err)
-                    return null
-                })
-
-                if (!healthResponse?.ok) {
-                    throw new Error('FinFit API is unreachable on both primary and fallback URLs')
-                }
-            }
-            
-            console.debug(`🟢 [useSpotPrices] Health check passed on ${finalApiUrl}. Fetching metals data...`)
-
-            const response = await fetch(
-                `${finalApiUrl}/metals?currency=${currency}&unit=toz`,
-                {
-                    headers: {
-                        Accept: 'application/json',
-                        Authorization: `Bearer ${apiToken}`,
-                    },
-                    cache: 'no-store',
-                }
-            )
 
             if (!isMountedRef.current) return
 

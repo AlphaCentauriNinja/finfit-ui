@@ -37,14 +37,14 @@ const ASSET_THEMES: Record<string, { color: string, bg: string, icon: React.Elem
 const CHART_COLORS = ['#378ADD', '#1D9E75', '#EF9F27', '#7F77DD', '#D85A30', '#4A5568']
 
 export const PortfolioReportPDF = forwardRef<HTMLDivElement, Props>(({
-    _data,
+    data: _data,
     dynamicAssetsWithAllocation,
     totalAssets,
     dynamicYtdPnl,
     dynamicYtdPercentage,
-    _liveUsdByTicker,
-    _spotGoldPricePerGram,
-    _spotSilverPricePerGram,
+    liveUsdByTicker: _liveUsdByTicker,
+    spotGoldPricePerGram: _spotGoldPricePerGram,
+    spotSilverPricePerGram: _spotSilverPricePerGram,
 }, ref) => {
     const sortedAssets = useMemo(
         () => [...dynamicAssetsWithAllocation].filter((a) => a.value > 0).sort((a, b) => b.value - a.value),
