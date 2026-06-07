@@ -6,6 +6,7 @@ import { ArrowLeft, Coins, Pencil, Calendar, MapPin, Scale, TrendingUp, Banknote
 import { createClient } from '@/lib/supabase/client'
 import { useSpotPrices } from '@/app/dashboard/assets/bullion/useSpotPrices'
 import { usePrivacy } from '@/app/dashboard/components/providers/PrivacyProvider'
+import { useCurrencyContext } from '@/app/dashboard/components/providers/DashboardDataProvider'
 import AddBullionModal from '@/app/dashboard/assets/bullion/AddBullionModal'
 import type { BullionCurrencyCode, BullionHoldingDbRow, BullionRow } from '@/app/dashboard/assets/bullion/types'
 
@@ -14,9 +15,7 @@ type CurrencyCode = 'GBP' | 'EUR' | 'USD' | 'CHF' | 'CAD'
 const BULLION_IMAGES_BUCKET = 'bullion_images'
 const BULLION_LIST_ROUTE = '/dashboard/assets/bullion'
 
-const GBP_TO_CURRENCY_RATE: Record<CurrencyCode, number> = {
-    GBP: 1, EUR: 1.17, USD: 1.28, CHF: 1.13, CAD: 1.74,
-}
+// GBP_TO_CURRENCY_RATE moved to CurrencyProvider
 
 const CURRENCY_LOCALE: Record<CurrencyCode, string> = {
     GBP: 'en-GB', EUR: 'de-DE', USD: 'en-US', CHF: 'de-CH', CAD: 'en-CA',
@@ -38,9 +37,7 @@ function normalizeCurrency(value: string | null | undefined): CurrencyCode {
     return 'GBP'
 }
 
-function convertFromGbp(valueGbp: number, currency: CurrencyCode): number {
-    return valueGbp * GBP_TO_CURRENCY_RATE[currency]
-}
+
 
 function formatCurrency(value: number, currency: CurrencyCode): string {
     return new Intl.NumberFormat(CURRENCY_LOCALE[currency], {
@@ -154,7 +151,7 @@ export default function BullionHoldingDetailPage() {
     const [isLoading, setIsLoading] = useState(true)
     const [loadError, setLoadError] = useState<string | null>(null)
     const [holding, setHolding] = useState<BullionRow | null>(null)
-    const [preferredCurrency, setPreferredCurrency] = useState<CurrencyCode>('GBP')
+    const { preferredCurrency, usdToPreferredCurrencyRate } = useCurrencyContext()
     const [isEditModalOpen, setIsEditModalOpen] = useState(false)
 
     const spotPrices = useSpotPrices(preferredCurrency)
@@ -172,11 +169,11 @@ export default function BullionHoldingDetailPage() {
         const marketTotalGbp = intrinsicTotalGbp * marketMultiplier
         const rawInvestedPerUnit = holding.totalPriceInclTax ?? holding.purchaseValue ?? 0
         const rawInvestedTotal = rawInvestedPerUnit * holding.amount
-        const investedCurrency = holding.purchaseCurrency ?? 'GBP'
-        const investedGbp = rawInvestedTotal / (GBP_TO_CURRENCY_RATE[investedCurrency] || 1)
+        const investedCurrency = holding.purchaseCurrency ?? 'USD'
+        const investedGbp = investedCurrency === 'USD' ? rawInvestedTotal * usdToPreferredCurrencyRate : rawInvestedTotal
 
         return { ...holding, marketPriceGbp, marketTotalGbp, intrinsicPriceGbp, intrinsicTotalGbp, investedTotalGbp: investedGbp }
-    }, [holding, spotPrices.goldPricePerGram, spotPrices.silverPricePerGram])
+    }, [holding, spotPrices.goldPricePerGram, spotPrices.silverPricePerGram, usdToPreferredCurrencyRate])
 
     useEffect(() => {
         let active = true
@@ -187,10 +184,7 @@ export default function BullionHoldingDetailPage() {
             setLoadError(null)
             const supabase = createClient()
 
-            const [userResult, settingsResult] = await Promise.all([
-                supabase.auth.getUser(),
-                supabase.from('user_settings').select('preferred_currency').maybeSingle(),
-            ])
+            const userResult = await supabase.auth.getUser()
 
             if (!active) return
             if (userResult.error || !userResult.data.user) {
@@ -198,8 +192,6 @@ export default function BullionHoldingDetailPage() {
                 setIsLoading(false)
                 return
             }
-
-            setPreferredCurrency(normalizeCurrency(settingsResult.data?.preferred_currency))
 
             const { data, error } = await supabase
                 .from('bullion_holdings')
@@ -322,21 +314,21 @@ export default function BullionHoldingDetailPage() {
             <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <div className="rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
                     <p className="text-xs font-semibold uppercase tracking-wider text-white/40">Market Value</p>
-                    <p className="mt-2 text-2xl font-bold text-white">{hideValues ? '••••' : formatCurrency(convertFromGbp(h.marketTotalGbp, preferredCurrency), preferredCurrency)}</p>
-                    <p className="mt-1 text-xs text-white/40">{hideValues ? '••••' : `${formatCurrency(convertFromGbp(h.marketPriceGbp, preferredCurrency), preferredCurrency)} per unit`}</p>
+                    <p className="mt-2 text-2xl font-bold text-white">{hideValues ? '••••' : formatCurrency(h.marketTotalGbp, preferredCurrency)}</p>
+                    <p className="mt-1 text-xs text-white/40">{hideValues ? '••••' : `${formatCurrency(h.marketPriceGbp, preferredCurrency)} per unit`}</p>
                 </div>
                 <div className="rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
                     <p className="text-xs font-semibold uppercase tracking-wider text-white/40">Intrinsic Value</p>
-                    <p className="mt-2 text-2xl font-bold text-white">{hideValues ? '••••' : formatCurrency(convertFromGbp(h.intrinsicTotalGbp, preferredCurrency), preferredCurrency)}</p>
-                    <p className="mt-1 text-xs text-white/40">{hideValues ? '••••' : `${formatCurrency(convertFromGbp(h.intrinsicPriceGbp, preferredCurrency), preferredCurrency)} per unit`}</p>
+                    <p className="mt-2 text-2xl font-bold text-white">{hideValues ? '••••' : formatCurrency(h.intrinsicTotalGbp, preferredCurrency)}</p>
+                    <p className="mt-1 text-xs text-white/40">{hideValues ? '••••' : `${formatCurrency(h.intrinsicPriceGbp, preferredCurrency)} per unit`}</p>
                 </div>
                 <div className="rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
                     <p className="text-xs font-semibold uppercase tracking-wider text-white/40">Total Invested</p>
-                    <p className="mt-2 text-2xl font-bold text-white">{hideValues ? '••••' : formatCurrency(convertFromGbp(h.investedTotalGbp, preferredCurrency), preferredCurrency)}</p>
+                    <p className="mt-2 text-2xl font-bold text-white">{hideValues ? '••••' : formatCurrency(h.investedTotalGbp, preferredCurrency)}</p>
                 </div>
                 <div className="rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
                     <p className="text-xs font-semibold uppercase tracking-wider text-white/40">PNL</p>
-                    <p className={`mt-2 text-2xl font-bold ${pnlClassName}`}>{hideValues ? '••••' : formatSignedCurrency(convertFromGbp(pnlGbp, preferredCurrency), preferredCurrency)}</p>
+                    <p className={`mt-2 text-2xl font-bold ${pnlClassName}`}>{hideValues ? '••••' : formatSignedCurrency(pnlGbp, preferredCurrency)}</p>
                     <span className={`mt-1 inline-flex rounded-md border px-2 py-0.5 text-xs font-semibold ${pnlBadgeClassName}`}>
                         {hideValues ? '••••' : `${pnlGbp >= 0 ? '+' : ''}${pnlPct.toFixed(2)}%`}
                     </span>

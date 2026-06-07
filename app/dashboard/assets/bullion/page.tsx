@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { AlertTriangle, ArrowDownRight, ArrowUpRight, ChevronRight, Coins, LayoutGrid, Minus, X, Database, TrendingUp, Wifi, WifiOff } from 'lucide-react'
 import { useSpotPrices } from './useSpotPrices'
+import { useCurrencyContext } from '@/app/dashboard/components/providers/DashboardDataProvider'
 import { createClient } from '@/lib/supabase/client'
 import { usePrivacy } from '@/app/dashboard/components/providers/PrivacyProvider'
 import EmptyStateAlert from '@/app/dashboard/components/EmptyStateAlert'
@@ -37,13 +38,7 @@ type BullionGroup = {
     accentBorderClassName: string
 }
 
-const GBP_TO_CURRENCY_RATE: Record<CurrencyCode, number> = {
-    GBP: 1,
-    EUR: 1.17,
-    USD: 1.28,
-    CHF: 1.13,
-    CAD: 1.74,
-}
+// GBP_TO_CURRENCY_RATE moved to CurrencyProvider
 
 const CURRENCY_LOCALE: Record<CurrencyCode, string> = {
     GBP: 'en-GB',
@@ -76,9 +71,7 @@ function buildBullionImagePublicUrl(imagePath: string | null | undefined): strin
     return `${supabaseUrl}/storage/v1/object/public/${BULLION_IMAGES_BUCKET}/${encodedPath}`
 }
 
-function convertFromGbp(valueGbp: number, currency: CurrencyCode): number {
-    return valueGbp * GBP_TO_CURRENCY_RATE[currency]
-}
+
 
 function formatCurrency(value: number, currency: CurrencyCode): string {
     return new Intl.NumberFormat(CURRENCY_LOCALE[currency], {
@@ -244,6 +237,7 @@ function BullionHoldingsListModal({
     isOpen,
     onClose,
     preferredCurrency,
+    rates,
     hideValues,
 }: {
     group: BullionGroup | null
@@ -307,7 +301,7 @@ function BullionHoldingsListModal({
                                             <div className="min-w-0 flex-1">
                                                 <p className="truncate text-sm font-semibold text-white">{rowDisplayTitle}</p>
                                                 <p className="mt-0.5 text-xs text-white/45">
-                                                    {hideValues ? '****' : `${row.amount.toLocaleString('en-GB')} units · ${formatCurrency(convertFromGbp(row.marketTotalGbp, preferredCurrency), preferredCurrency)}`}
+                                                    {hideValues ? '****' : `${row.amount.toLocaleString('en-GB')} units · ${formatCurrency(row.marketTotalGbp, preferredCurrency)}`}
                                                 </p>
                                             </div>
                                             <ChevronRight className="h-4 w-4 shrink-0 text-white/15 transition-all group-hover/row:translate-x-0.5 group-hover/row:text-white/40" />
@@ -354,7 +348,7 @@ function BarIcon({ className }: { className?: string }) {
 export default function BullionPage() {
     const router = useRouter()
     const { hideValues } = usePrivacy()
-    const [preferredCurrency, setPreferredCurrency] = useState<CurrencyCode>('GBP')
+    const { preferredCurrency, usdToPreferredCurrencyRate } = useCurrencyContext()
     const [bullionRows, setBullionRows] = useState<BullionRow[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [loadError, setLoadError] = useState<string | null>(null)
@@ -384,8 +378,8 @@ export default function BullionPage() {
 
             const rawInvestedPerUnit = row.totalPriceInclTax ?? row.purchaseValue ?? 0
             const rawInvestedTotal = rawInvestedPerUnit * row.amount
-            const investedCurrency = row.purchaseCurrency ?? 'GBP'
-            const investedGbp = rawInvestedTotal / (GBP_TO_CURRENCY_RATE[investedCurrency] || 1)
+            const investedCurrency = row.purchaseCurrency ?? 'USD'
+            const investedGbp = investedCurrency === 'USD' ? rawInvestedTotal * usdToPreferredCurrencyRate : rawInvestedTotal
 
             return {
                 ...row,
@@ -396,29 +390,7 @@ export default function BullionPage() {
                 investedTotalGbp: investedGbp,
             }
         })
-    }, [bullionRows, spotPrices.goldPricePerGram, spotPrices.silverPricePerGram])
-
-    useEffect(() => {
-        let isMounted = true
-
-        const loadPreferredCurrency = async () => {
-            const supabase = createClient()
-            const { data } = await supabase
-                .from('user_settings')
-                .select('preferred_currency')
-                .maybeSingle()
-
-            if (!isMounted) return
-
-            setPreferredCurrency(normalizeCurrency(data?.preferred_currency))
-        }
-
-        void loadPreferredCurrency()
-
-        return () => {
-            isMounted = false
-        }
-    }, [])
+    }, [bullionRows, spotPrices.goldPricePerGram, spotPrices.silverPricePerGram, usdToPreferredCurrencyRate])
 
     useEffect(() => {
         let isMounted = true
@@ -638,26 +610,26 @@ export default function BullionPage() {
                         <div className="rounded-2xl border border-white/10 bg-white/5 p-6 shadow-sm backdrop-blur-sm">
                             <p className="text-sm font-medium text-white/60">Market Value</p>
                             <p className="mt-2 text-3xl font-bold text-white">
-                                {hideValues ? '****' : formatCurrency(convertFromGbp(totalMarketGbp, preferredCurrency), preferredCurrency)}
+                                {hideValues ? '****' : formatCurrency(totalMarketGbp * usdToPreferredCurrencyRate, preferredCurrency)}
                             </p>
                         </div>
                         <div className="rounded-2xl border border-white/10 bg-white/5 p-6 shadow-sm backdrop-blur-sm">
                             <p className="text-sm font-medium text-white/60">Total Invested</p>
                             <p className="mt-2 text-3xl font-bold text-white">
-                                {hideValues ? '****' : formatCurrency(convertFromGbp(totalInvestedGbp, preferredCurrency), preferredCurrency)}
+                                {hideValues ? '****' : formatCurrency(totalInvestedGbp * usdToPreferredCurrencyRate, preferredCurrency)}
                             </p>
                         </div>
                         <div className="rounded-2xl border border-white/10 bg-white/5 p-6 shadow-sm backdrop-blur-sm">
                             <p className="text-sm font-medium text-white/60">Intrinsic Value</p>
                             <p className="mt-2 text-3xl font-bold text-white">
-                                {hideValues ? '****' : formatCurrency(convertFromGbp(totalIntrinsicGbp, preferredCurrency), preferredCurrency)}
+                                {hideValues ? '****' : formatCurrency(totalIntrinsicGbp * usdToPreferredCurrencyRate, preferredCurrency)}
                             </p>
                         </div>
                         <div className="rounded-2xl border border-white/10 bg-white/5 p-6 shadow-sm backdrop-blur-sm">
                             <p className="text-sm font-medium text-white/60">PNL</p>
                             <div className="mt-2 flex items-center gap-2">
                                 <p className={`text-3xl font-bold ${totalPnlClassName}`}>
-                                    {hideValues ? '****' : formatSignedCurrency(convertFromGbp(totalPnlGbp, preferredCurrency), preferredCurrency)}
+                                    {hideValues ? '****' : formatSignedCurrency(totalPnlGbp * usdToPreferredCurrencyRate, preferredCurrency)}
                                 </p>
                                 <span className={`rounded-md px-2 py-1 text-xs ${totalPnlPillClassName}`}>
                                     {hideValues ? '****' : `${totalPnlPct >= 0 ? '+' : ''}${totalPnlPct.toFixed(2)}%`}
@@ -685,7 +657,7 @@ export default function BullionPage() {
                                         <div>
                                             <h3 className="text-sm font-medium text-white/60">{group.title}</h3>
                                             <p className="mt-1 text-2xl font-bold text-white">
-                                                {hideValues ? '****' : formatCurrency(convertFromGbp(group.marketTotalGbp, preferredCurrency), preferredCurrency)}
+                                                {hideValues ? '****' : formatCurrency(group.marketTotalGbp, preferredCurrency)}
                                             </p>
                                         </div>
                                         <div className={`flex h-10 w-10 items-center justify-center rounded-full border transition-transform group-hover/card:scale-110 ${group.iconToneClassName}`}>
@@ -696,7 +668,7 @@ export default function BullionPage() {
                                     <div className="mt-2 flex flex-wrap items-center gap-2">
                                         <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${pnlPillTone}`}>
                                             <PnlIcon className="mr-1 h-3.5 w-3.5" />
-                                            PNL {hideValues ? '****' : formatSignedCurrency(convertFromGbp(group.pnlGbp, preferredCurrency), preferredCurrency)}
+                                            PNL {hideValues ? '****' : formatSignedCurrency(group.pnlGbp, preferredCurrency)}
                                         </span>
                                         <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${pnlPillTone}`}>
                                             {hideValues ? '****' : `${group.pnlGbp >= 0 ? '+' : ''}${group.pnlPct.toFixed(2)}%`}

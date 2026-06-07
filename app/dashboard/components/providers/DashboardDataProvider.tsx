@@ -3,21 +3,53 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import type { DashboardDataSnapshot } from '@/lib/dashboard-data'
 
+import type { CurrencyCode } from '@/lib/crypto-data'
+
 export type DashboardDataContextValue = {
     data: DashboardDataSnapshot
     updateInvestmentsValue: (nextTotal: number) => void
+    preferredCurrency: CurrencyCode
+    setPreferredCurrency: (currency: CurrencyCode) => void
+    usdToPreferredCurrencyRate: number
 }
 
 export const DashboardDataContext = createContext<DashboardDataContextValue | undefined>(undefined)
 
 export function DashboardDataProvider({
     initialData,
+    initialCurrency,
     children,
 }: {
     initialData: DashboardDataSnapshot
+    initialCurrency: CurrencyCode
     children: React.ReactNode
 }) {
     const [data, setData] = useState(initialData)
+    const [preferredCurrency, setPreferredCurrency] = useState<CurrencyCode>(initialCurrency)
+    const [usdToPreferredCurrencyRate, setUsdToPreferredCurrencyRate] = useState<number>(1)
+
+    useEffect(() => {
+        let active = true
+
+        const fetchRates = async () => {
+            try {
+                const res = await fetch('/api/proxy/currencies')
+                const json = await res.json()
+                if (active && json.success && json.usdToCurrencyRates) {
+                    const rate = json.usdToCurrencyRates[preferredCurrency] || 1
+                    setUsdToPreferredCurrencyRate(rate)
+                }
+            } catch (err) {
+                console.error('Failed to fetch currency rates', err)
+            }
+        }
+
+        void fetchRates()
+
+        return () => {
+            active = false
+        }
+    }, [preferredCurrency])
 
     const updateInvestmentsValue = useCallback((nextTotal: number) => {
         setData((previous) => {
@@ -55,7 +87,13 @@ export function DashboardDataProvider({
         setData(initialData)
     }, [initialData])
 
-    const value = useMemo(() => ({ data, updateInvestmentsValue }), [data, updateInvestmentsValue])
+    const value = useMemo(() => ({
+        data,
+        updateInvestmentsValue,
+        preferredCurrency,
+        setPreferredCurrency,
+        usdToPreferredCurrencyRate,
+    }), [data, updateInvestmentsValue, preferredCurrency, usdToPreferredCurrencyRate])
 
     return (
         <DashboardDataContext.Provider value={value}>
@@ -83,5 +121,17 @@ export function useDashboardDataActions() {
 
     return {
         updateInvestmentsValue: context.updateInvestmentsValue,
+    }
+}
+
+export function useCurrencyContext() {
+    const context = useContext(DashboardDataContext)
+    if (!context) {
+        throw new Error('useCurrencyContext must be used inside DashboardDataProvider')
+    }
+    return {
+        preferredCurrency: context.preferredCurrency,
+        setPreferredCurrency: context.setPreferredCurrency,
+        usdToPreferredCurrencyRate: context.usdToPreferredCurrencyRate,
     }
 }

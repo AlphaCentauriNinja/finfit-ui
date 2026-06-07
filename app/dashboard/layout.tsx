@@ -6,6 +6,7 @@ import MobileNav from '@/app/dashboard/components/mobile/MobileNav'
 import AutoLogoutHandler from '@/app/dashboard/components/Auth/AutoLogoutHandler'
 import { DashboardDataProvider } from '@/app/dashboard/components/providers/DashboardDataProvider'
 import { PrivacyProvider } from '@/app/dashboard/components/providers/PrivacyProvider'
+import { CurrencyCode } from '@/lib/crypto-data'
 import {
     buildDashboardSnapshot,
     type DebtEntryRow,
@@ -53,6 +54,7 @@ export default async function Layout({
         investmentHoldingsResult,
         investmentAccountTransactionsResult,
         realEstateResult,
+        userSettingsResult,
     ] = await Promise.all([
         supabase
             .from('pension_accounts')
@@ -115,6 +117,10 @@ export default async function Layout({
             .from('real_estate_properties')
             .select('id, name, address, estimated_value, current_value, market_value, mortgage_balance')
             .order('created_at', { ascending: false }),
+        supabase
+            .from('user_settings')
+            .select('preferred_currency')
+            .maybeSingle(),
     ])
 
     const dashboardData = buildDashboardSnapshot({
@@ -156,6 +162,9 @@ export default async function Layout({
         realEstateLoadError: Boolean(realEstateResult.error),
     })
 
+    const preferredCurrencyRaw = userSettingsResult.data?.preferred_currency
+    const initialCurrency: CurrencyCode = (preferredCurrencyRaw === 'GBP' || preferredCurrencyRaw === 'EUR' || preferredCurrencyRaw === 'USD' || preferredCurrencyRaw === 'CHF' || preferredCurrencyRaw === 'CAD') ? preferredCurrencyRaw : 'GBP'
+
     return (
         <div data-dashboard-root className="min-h-screen bg-slate-950 relative overflow-hidden font-sans text-gray-100">
             <AutoLogoutHandler />
@@ -176,7 +185,7 @@ export default async function Layout({
                         <Sidebar />
                     </div>
                     <PrivacyProvider>
-                        <DashboardDataProvider initialData={dashboardData}>
+                        <DashboardDataProvider initialData={dashboardData} initialCurrency={initialCurrency}>
                             <div className="flex-1 flex flex-col min-h-[calc(100vh-2rem)] overflow-hidden">
                                 <Navbar userEmail={user?.email} userFullName={user?.user_metadata?.full_name} />
                                 <main className="flex-1 p-8 pb-10 overflow-y-auto">

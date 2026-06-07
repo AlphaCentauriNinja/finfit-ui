@@ -118,7 +118,7 @@ export const sampleSettingsProps = {
 
 export const renderWithProviders = (ui: React.ReactElement) =>
   render(
-    <AppDashboardDataProvider initialData={providerSnapshot}>
+    <AppDashboardDataProvider initialData={providerSnapshot} initialCurrency="GBP">
       <PrivacyProvider>{ui}</PrivacyProvider>
     </AppDashboardDataProvider>
   )

@@ -131,7 +131,7 @@ describe('Main component smoke coverage', () => {
     }
 
     render(
-      <AppDashboardDataProvider initialData={providerSnapshot}>
+      <AppDashboardDataProvider initialData={providerSnapshot} initialCurrency="GBP">
         <Probe />
       </AppDashboardDataProvider>
     )
@@ -149,7 +149,7 @@ describe('Main component smoke coverage', () => {
     }
 
     render(
-      <SharedDashboardDataProvider initialData={providerSnapshot}>
+      <SharedDashboardDataProvider initialData={providerSnapshot} initialCurrency="GBP">
         <SharedProbe />
       </SharedDashboardDataProvider>
     )

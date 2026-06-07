@@ -22,6 +22,7 @@ import {
     XCircle,
 } from 'lucide-react'
 import DatePickerField from '@/app/dashboard/components/DatePickerField'
+import { useCurrencyContext } from '@/app/dashboard/components/providers/DashboardDataProvider'
 
 export type CurrencyCode = 'GBP' | 'EUR' | 'USD' | 'CHF' | 'CAD'
 
@@ -185,6 +186,7 @@ export default function SettingsClient({
     missingTables,
 }: Props) {
     const router = useRouter()
+    const { setPreferredCurrency } = useCurrencyContext()
     const [activeTab, setActiveTab] = useState<SettingsTab>('personal')
     const [feedback, setFeedback] = useState<Feedback | null>(null)
     const [isSavingPersonal, setIsSavingPersonal] = useState(false)
@@ -304,6 +306,7 @@ export default function SettingsClient({
                 action: 'set_currency',
                 preferredCurrency,
             })
+            setPreferredCurrency(preferredCurrency as CurrencyCode)
             refreshWithSuccess('Currency preference saved.')
         } catch (error) {
             setFeedback({
