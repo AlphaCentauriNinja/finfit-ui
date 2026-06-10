@@ -237,7 +237,6 @@ function BullionHoldingsListModal({
     isOpen,
     onClose,
     preferredCurrency,
-    rates,
     hideValues,
 }: {
     group: BullionGroup | null

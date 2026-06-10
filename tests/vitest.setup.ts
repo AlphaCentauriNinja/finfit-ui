@@ -8,6 +8,14 @@ afterEach(() => {
   vi.clearAllMocks()
 })
 
+Object.defineProperty(globalThis, 'fetch', {
+  writable: true,
+  value: vi.fn(async () => ({
+    ok: true,
+    json: async () => ({ success: true, usdToCurrencyRates: { GBP: 1, EUR: 1.17, USD: 1.28, CHF: 1.13, CAD: 1.74 } })
+  })),
+})
+
 class ResizeObserverMock {
   observe() { }
   unobserve() { }
