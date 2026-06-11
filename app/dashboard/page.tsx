@@ -61,21 +61,13 @@ const getRouteForAsset = (name: string) => {
 export default function Overview() {
     const dashboardData = useDashboardData()
     const { hideValues, toggleHideValues } = usePrivacy()
-    const [optimisticHideValues, setOptimisticHideValues] = useState(hideValues)
     const [isExporting, setIsExporting] = useState(false)
     const pdfRef = useRef<HTMLDivElement>(null)
 
     // Crypto Websocket Logic
     const [liveUsdByTicker, setLiveUsdByTicker] = useState<Record<string, number>>({})
 
-    useEffect(() => {
-        setOptimisticHideValues(hideValues)
-    }, [hideValues])
 
-    const handleToggleHideValues = () => {
-        setOptimisticHideValues((previous) => !previous)
-        toggleHideValues()
-    }
 
     useEffect(() => {
         let isActive = true
@@ -275,35 +267,34 @@ export default function Overview() {
                                 </span>
                             </button>
                             <button
-                                onClick={handleToggleHideValues}
+                                onClick={toggleHideValues}
                                 className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 hover:text-emerald-200 transition-colors"
-                                title={optimisticHideValues ? "Show values" : "Hide values"}
+                                title={hideValues ? "Show values" : "Hide values"}
                             >
-                                {optimisticHideValues ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                                {hideValues ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                                 <span className="text-sm font-medium">
-                                    {optimisticHideValues ? "Show Values" : "Hide Values"}
+                                    {hideValues ? "Show Values" : "Hide Values"}
                                 </span>
                             </button>
                         </div>
                     </div>
                     <StatCard
                         title="Total Net Assets"
-                        value={formatCurrency(totalAssets, optimisticHideValues)}
+                        value={formatCurrency(totalAssets, hideValues)}
                         change={ytdChangeLabel}
                         icon={Wallet}
                     />
                 </section>
 
                 {/* Portfolio Graph */}
-                {!optimisticHideValues ? (
-                    <section>
-                        <PortfolioGraph
-                            totalAssets={totalAssets}
-                            ytdPnl={dynamicYtdPnl}
-                            ytdPercentage={dynamicYtdPercentage}
-                        />
-                    </section>
-                ) : null}
+                {/* Keep mounted so chart doesn't re-animate when values are revealed */}
+                <section className={hideValues ? 'hidden' : ''}>
+                    <PortfolioGraph
+                        totalAssets={totalAssets}
+                        ytdPnl={dynamicYtdPnl}
+                        ytdPercentage={dynamicYtdPercentage}
+                    />
+                </section>
 
                 {/* Asset Grid */}
                 <section>
@@ -325,7 +316,7 @@ export default function Overview() {
                                         value={asset.value}
                                         allocation={asset.allocation}
                                         icon={getIconForAsset(asset.name)}
-                                        hideValues={optimisticHideValues}
+                                        hideValues={hideValues}
                                     />
                                 </Link>
                             )
@@ -341,14 +332,14 @@ export default function Overview() {
                 <FinFitScoreWidget />
 
                 {/* Spending */}
-                <SpendingBreakdown hideValuesOverride={optimisticHideValues} />
+                <SpendingBreakdown hideValuesOverride={hideValues} />
 
                 {/* Debt */}
-                <DebtWidget hideValuesOverride={optimisticHideValues} />
+                <DebtWidget hideValuesOverride={hideValues} />
 
 
                 {/* Goals */}
-                <GoalTracker hideValuesOverride={optimisticHideValues} />
+                <GoalTracker hideValuesOverride={hideValues} />
             </aside>
         </div>
         </>
