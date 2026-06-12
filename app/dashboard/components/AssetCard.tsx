@@ -7,6 +7,7 @@ type Props = {
     allocation: number
     icon?: ElementType
     hideValues?: boolean
+    currency?: string
 }
 
 export default function AssetCard({
@@ -15,6 +16,7 @@ export default function AssetCard({
     allocation,
     icon: Icon,
     hideValues = false,
+    currency,
 }: Props) {
     return (
         <div className="bg-white/5 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/10 hover:shadow-md hover:bg-white/10 transition-all group">
@@ -33,7 +35,7 @@ export default function AssetCard({
             </div>
 
             <h3 className="text-2xl font-bold text-white mb-6">
-                {formatCurrency(value, hideValues)}
+                {formatCurrency(value, hideValues, currency)}
             </h3>
 
             <div className="w-full bg-white/5 rounded-full h-1.5 overflow-hidden">

@@ -56,7 +56,7 @@ export function PortfolioGraph({ totalAssets, ytdPnl, ytdPercentage }: Portfolio
                     YTD PNL {ytdPnl >= 0 ? '+' : '-'}£{Math.abs(ytdPnl).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ({ytdPercentage >= 0 ? '+' : ''}{ytdPercentage.toFixed(2)}%)
                 </span>
             </div>
-            <div className="h-[300px] w-full mt-6">
+            <div className="h-[525px] w-full mt-6">
                 <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={portfolioData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
                         <defs>

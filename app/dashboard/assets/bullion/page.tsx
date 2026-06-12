@@ -609,26 +609,26 @@ export default function BullionPage() {
                         <div className="rounded-2xl border border-white/10 bg-white/5 p-6 shadow-sm backdrop-blur-sm">
                             <p className="text-sm font-medium text-white/60">Market Value</p>
                             <p className="mt-2 text-3xl font-bold text-white">
-                                {hideValues ? '****' : formatCurrency(totalMarketGbp * usdToPreferredCurrencyRate, preferredCurrency)}
+                                {hideValues ? '****' : formatCurrency(totalMarketGbp, preferredCurrency)}
                             </p>
                         </div>
                         <div className="rounded-2xl border border-white/10 bg-white/5 p-6 shadow-sm backdrop-blur-sm">
                             <p className="text-sm font-medium text-white/60">Total Invested</p>
                             <p className="mt-2 text-3xl font-bold text-white">
-                                {hideValues ? '****' : formatCurrency(totalInvestedGbp * usdToPreferredCurrencyRate, preferredCurrency)}
+                                {hideValues ? '****' : formatCurrency(totalInvestedGbp, preferredCurrency)}
                             </p>
                         </div>
                         <div className="rounded-2xl border border-white/10 bg-white/5 p-6 shadow-sm backdrop-blur-sm">
                             <p className="text-sm font-medium text-white/60">Intrinsic Value</p>
                             <p className="mt-2 text-3xl font-bold text-white">
-                                {hideValues ? '****' : formatCurrency(totalIntrinsicGbp * usdToPreferredCurrencyRate, preferredCurrency)}
+                                {hideValues ? '****' : formatCurrency(totalIntrinsicGbp, preferredCurrency)}
                             </p>
                         </div>
                         <div className="rounded-2xl border border-white/10 bg-white/5 p-6 shadow-sm backdrop-blur-sm">
                             <p className="text-sm font-medium text-white/60">PNL</p>
                             <div className="mt-2 flex items-center gap-2">
                                 <p className={`text-3xl font-bold ${totalPnlClassName}`}>
-                                    {hideValues ? '****' : formatSignedCurrency(totalPnlGbp * usdToPreferredCurrencyRate, preferredCurrency)}
+                                    {hideValues ? '****' : formatSignedCurrency(totalPnlGbp, preferredCurrency)}
                                 </p>
                                 <span className={`rounded-md px-2 py-1 text-xs ${totalPnlPillClassName}`}>
                                     {hideValues ? '****' : `${totalPnlPct >= 0 ? '+' : ''}${totalPnlPct.toFixed(2)}%`}

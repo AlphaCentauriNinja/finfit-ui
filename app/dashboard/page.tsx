@@ -25,7 +25,7 @@ import {
     SpendingBreakdown
 } from '@/app/dashboard/components/DashboardWidgets'
 import { PortfolioReportPDF } from '@/app/dashboard/components/PortfolioReportPDF'
-import { useDashboardData } from '@/app/dashboard/components/providers/DashboardDataProvider'
+import { useDashboardData, useCurrencyContext } from '@/app/dashboard/components/providers/DashboardDataProvider'
 import { usePrivacy } from '@/app/dashboard/components/providers/PrivacyProvider'
 import { USD_TO_GBP, binanceCombinedStreamUrl } from '@/lib/crypto-data'
 import { formatCurrency } from '@/lib/utils'
@@ -60,6 +60,7 @@ const getRouteForAsset = (name: string) => {
 
 export default function Overview() {
     const dashboardData = useDashboardData()
+    const { preferredCurrency, usdToPreferredCurrencyRate } = useCurrencyContext()
     const { hideValues, toggleHideValues } = usePrivacy()
     const [isExporting, setIsExporting] = useState(false)
     const pdfRef = useRef<HTMLDivElement>(null)
@@ -119,12 +120,12 @@ export default function Overview() {
     const liveCryptoValue = useMemo(() => {
         return dashboardData.crypto.assets.reduce((sum, row) => {
             const liveUsd = liveUsdByTicker[row.ticker] ?? row.usd
-            return sum + (row.amount * liveUsd * USD_TO_GBP)
+            return sum + (row.amount * liveUsd * usdToPreferredCurrencyRate)
         }, 0)
-    }, [dashboardData.crypto.assets, liveUsdByTicker])
+    }, [dashboardData.crypto.assets, liveUsdByTicker, usdToPreferredCurrencyRate])
 
     // Real-time Bullion Value
-    const spotPrices = useSpotPrices('GBP')
+    const spotPrices = useSpotPrices(preferredCurrency)
     const liveBullionValue = useMemo(() => {
         if (!spotPrices.goldPricePerGram || !spotPrices.silverPricePerGram) {
             return dashboardData.bullion.totalInvested
@@ -280,7 +281,7 @@ export default function Overview() {
                     </div>
                     <StatCard
                         title="Total Net Assets"
-                        value={formatCurrency(totalAssets, hideValues)}
+                        value={formatCurrency(totalAssets, hideValues, preferredCurrency)}
                         change={ytdChangeLabel}
                         icon={Wallet}
                     />
@@ -317,6 +318,7 @@ export default function Overview() {
                                         allocation={asset.allocation}
                                         icon={getIconForAsset(asset.name)}
                                         hideValues={hideValues}
+                                        currency={preferredCurrency}
                                     />
                                 </Link>
                             )

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { BriefcaseBusiness, ChevronRight, Coins, Gem, Home, PiggyBank, TrendingUp } from 'lucide-react'
-import { useDashboardData } from '@/app/dashboard/components/providers/DashboardDataProvider'
+import { useDashboardData, useCurrencyContext } from '@/app/dashboard/components/providers/DashboardDataProvider'
 import { usePrivacy } from '@/app/dashboard/components/providers/PrivacyProvider'
 import { USD_TO_GBP, binanceCombinedStreamUrl } from '@/lib/crypto-data'
 import { formatCurrency } from '@/lib/utils'
@@ -93,6 +93,7 @@ const assetRoutes: AssetRoute[] = [
 
 export default function AssetsPage() {
     const dashboardData = useDashboardData()
+    const { preferredCurrency, usdToPreferredCurrencyRate } = useCurrencyContext()
     const { hideValues } = usePrivacy()
     const [liveUsdByTicker, setLiveUsdByTicker] = useState<Record<string, number>>({})
 
@@ -145,11 +146,11 @@ export default function AssetsPage() {
     const liveCryptoValue = useMemo(() => {
         return dashboardData.crypto.assets.reduce((sum, row) => {
             const liveUsd = liveUsdByTicker[row.ticker] ?? row.usd
-            return sum + (row.amount * liveUsd * USD_TO_GBP)
+            return sum + (row.amount * liveUsd * usdToPreferredCurrencyRate)
         }, 0)
-    }, [dashboardData.crypto.assets, liveUsdByTicker])
+    }, [dashboardData.crypto.assets, liveUsdByTicker, usdToPreferredCurrencyRate])
 
-    const spotPrices = useSpotPrices('GBP')
+    const spotPrices = useSpotPrices(preferredCurrency)
     const liveBullionValue = useMemo(() => {
         if (!spotPrices.goldPricePerGram || !spotPrices.silverPricePerGram) {
             return dashboardData.bullion.totalInvested
@@ -204,7 +205,7 @@ export default function AssetsPage() {
             <div className="mb-8 rounded-2xl border border-white/10 bg-white/5 p-6 shadow-sm backdrop-blur-sm">
                 <p className="text-sm font-medium text-white/60">Total Assets Value</p>
                 <p className="mt-2 text-3xl font-bold text-white">
-                    {formatCurrency(totalAssetsValue, hideValues)}
+                    {formatCurrency(totalAssetsValue, hideValues, preferredCurrency)}
                 </p>
             </div>
 
@@ -227,7 +228,7 @@ export default function AssetsPage() {
                                         <div>
                                             <h3 className="text-sm font-medium text-white/60">{route.name}</h3>
                                             <p className="text-2xl font-bold text-white mt-1">
-                                                {formatCurrency(value, hideValues)}
+                                                {formatCurrency(value, hideValues, preferredCurrency)}
                                             </p>
                                         </div>
                                         <div className={`w-10 h-10 rounded-full ${route.iconBg} flex items-center justify-center ${route.iconColor} font-bold border ${route.iconBorder} group-hover/card:scale-110 transition-transform`}>
