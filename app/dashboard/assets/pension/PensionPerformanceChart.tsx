@@ -120,7 +120,7 @@ export default function PensionPerformanceChart({ data }: Props) {
             </div>
 
             {/* Chart */}
-            <div className="h-[340px] w-full p-4 pt-6">
+            <div className="h-[550px] w-full p-4 pt-6">
                 <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={filteredData} margin={{ top: 4, right: 16, left: 0, bottom: 4 }}>
                         <CartesianGrid
