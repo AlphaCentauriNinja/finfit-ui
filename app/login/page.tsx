@@ -23,9 +23,8 @@ export default function LoginPage() {
 
         const { error } = await supabase.auth.signInWithPassword({ email, password })
 
-        setLoading(false)
-
         if (error) {
+            setLoading(false)
             setError(error.message)
             return
         }
@@ -34,9 +33,10 @@ export default function LoginPage() {
     }
 
     return (
-        <div className="min-h-screen bg-background flex">
-            {/* Left panel — illustration */}
-            <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-green-600 to-green-700 relative overflow-hidden flex-col items-center justify-center p-16">
+        <>
+            <div className="min-h-screen bg-background flex">
+                {/* Left panel — illustration */}
+                <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-green-600 to-green-700 relative overflow-hidden flex-col items-center justify-center p-16">
                 {/* Decorative dots */}
                 <div
                     className="absolute inset-0 opacity-10"
@@ -203,5 +203,14 @@ export default function LoginPage() {
                 </div>
             </div>
         </div>
+            
+            {/* Full-screen loading spinner overlay */}
+            {loading && (
+                <div className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-sm flex flex-col items-center justify-center">
+                    <div className="w-12 h-12 rounded-full border-4 border-primary/30 border-t-primary animate-spin mb-4" />
+                    <p className="text-white/80 font-medium">Logging in...</p>
+                </div>
+            )}
+        </>
     )
 }

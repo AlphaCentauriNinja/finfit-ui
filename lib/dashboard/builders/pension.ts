@@ -95,16 +95,21 @@ export const buildPensionSnapshot = (
     const totalPensionPnlPercentage = totalPensionContributions > 0 ? (totalPensionPnl / totalPensionContributions) * 100 : 0
 
     // Build timeline for charts
-    const timelineEvents: Array<{ date: string; amount: number; type: 'value' | 'contribution' }> = []
+    const timelineEvents: Array<{ date: string; amount: number; type: 'value' | 'contribution'; accountId?: string }> = []
 
-    Object.values(latestValueByAccount).forEach((snapshot) => {
-        timelineEvents.push({
-            date: snapshot.valueDate,
-            amount: snapshot.amount,
-            type: 'value',
+    // 1. Add all historical value snapshots to timeline
+    Object.entries(sortedSnapshotsByAccount).forEach(([accountId, snapshots]) => {
+        snapshots.forEach((snapshot) => {
+            timelineEvents.push({
+                date: snapshot.valueDate,
+                amount: snapshot.amount,
+                type: 'value',
+                accountId: accountId
+            })
         })
     })
 
+    // 2. Add contributions to timeline
     contributionRows.forEach((row) => {
         if (!row.contribution_date) return
         const amount = toNumber(row.contribution_value)
@@ -113,29 +118,66 @@ export const buildPensionSnapshot = (
             date: row.contribution_date,
             amount: amount,
             type: 'contribution',
+            accountId: row.pension_account_id
         })
     })
 
-    timelineEvents.sort((a, b) => a.date.localeCompare(b.date))
+    // Sort timeline chronologically
+    timelineEvents.sort((a, b) => {
+        if (a.date !== b.date) return a.date.localeCompare(b.date)
+        // If dates are identical, process 'contribution' BEFORE 'value' so value snapshot overrides the total
+        if (a.type !== b.type) return a.type === 'contribution' ? -1 : 1
+        return 0
+    })
 
     const monthData: Record<string, { current: number; contributions: number }> = {}
-    let runningTotal = 0
+    const latestValueByAccountTracker: Record<string, number> = {}
     let runningContributions = 0
+
+    // Initialize the tracker with starting values for accounts that have no snapshots yet
+    // OR we can just rely on snapshots. If an account has no snapshots, it doesn't appear on the chart
+    // until it gets a snapshot. But it's better to initialize it with its current_value
+    // if there are NO snapshots at all for that account.
+    accountRows.forEach((acc) => {
+        const snapshots = sortedSnapshotsByAccount[acc.id] ?? []
+        if (snapshots.length === 0) {
+            // If no snapshots exist, we assume its current_value has been there since its creation
+            // We'll just track it from the beginning
+            latestValueByAccountTracker[acc.id] = toNumber(acc.current_value) || 0
+        } else {
+            // It will be populated when we encounter its snapshots in the timeline
+            latestValueByAccountTracker[acc.id] = 0
+        }
+    })
+
+    // If there are no timeline events but we have some starting values, we should at least show the current month
+    if (timelineEvents.length === 0) {
+        const currentMonth = new Date().toISOString().slice(0, 7)
+        const initialTotal = Object.values(latestValueByAccountTracker).reduce((sum, val) => sum + val, 0)
+        monthData[currentMonth] = { current: initialTotal, contributions: 0 }
+    }
 
     timelineEvents.forEach((event) => {
         const monthKey = event.date.slice(0, 7)
-        if (!monthData[monthKey]) {
-            monthData[monthKey] = { current: runningTotal, contributions: runningContributions }
-        }
-
-        if (event.type === 'value') {
-            runningTotal += event.amount
-        } else {
+        
+        if (event.type === 'value' && event.accountId) {
+            // Value snapshot sets the absolute value
+            latestValueByAccountTracker[event.accountId] = event.amount
+        } else if (event.type === 'contribution') {
             runningContributions += event.amount
+            if (event.accountId) {
+                // A contribution inherently increases the account value
+                latestValueByAccountTracker[event.accountId] += event.amount
+            }
         }
 
-        monthData[monthKey].current = runningTotal
-        monthData[monthKey].contributions = runningContributions
+        const currentTotal = Object.values(latestValueByAccountTracker).reduce((sum, val) => sum + val, 0)
+
+        // Overwrite the month data with the latest state at the end of that event
+        monthData[monthKey] = { 
+            current: currentTotal, 
+            contributions: runningContributions 
+        }
     })
 
     const months = Object.keys(monthData).sort()
