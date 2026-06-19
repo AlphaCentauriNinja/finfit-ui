@@ -167,7 +167,9 @@ export default function Overview() {
             ? (dynamicYtdPnl / dashboardData.portfolio.startOfYearValue) * 100
             : 0
     }, [dynamicYtdPnl, dashboardData.portfolio.startOfYearValue])
-    const ytdChangeLabel = `${dynamicYtdPercentage >= 0 ? '+' : ''}${dynamicYtdPercentage.toFixed(2)}% YTD`
+    const ytdChangeLabel = hideValues 
+        ? '**** YTD' 
+        : `${dynamicYtdPercentage >= 0 ? '+' : ''}${dynamicYtdPercentage.toFixed(2)}% YTD`
 
     const handleExportPDF = async () => {
         if (isExporting) return
@@ -281,7 +283,7 @@ export default function Overview() {
                     </div>
                     <StatCard
                         title="Total Net Assets"
-                        value={formatCurrency(totalAssets, hideValues, preferredCurrency)}
+                        value={formatCurrency(totalAssets, preferredCurrency, hideValues)}
                         change={ytdChangeLabel}
                         icon={Wallet}
                     />

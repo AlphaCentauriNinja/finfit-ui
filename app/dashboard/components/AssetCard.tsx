@@ -1,5 +1,6 @@
 import { ElementType } from 'react'
 import { formatCurrency } from '@/lib/utils'
+import type { CurrencyCode } from '@/lib/types/currency'
 
 type Props = {
     name: string
@@ -7,7 +8,7 @@ type Props = {
     allocation: number
     icon?: ElementType
     hideValues?: boolean
-    currency?: string
+    currency?: CurrencyCode
 }
 
 export default function AssetCard({
@@ -35,7 +36,7 @@ export default function AssetCard({
             </div>
 
             <h3 className="text-2xl font-bold text-white mb-6">
-                {formatCurrency(value, hideValues, currency)}
+                {formatCurrency(value, currency, hideValues)}
             </h3>
 
             <div className="w-full bg-white/5 rounded-full h-1.5 overflow-hidden">

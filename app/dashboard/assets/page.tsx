@@ -205,7 +205,7 @@ export default function AssetsPage() {
             <div className="mb-8 rounded-2xl border border-white/10 bg-white/5 p-6 shadow-sm backdrop-blur-sm">
                 <p className="text-sm font-medium text-white/60">Total Assets Value</p>
                 <p className="mt-2 text-3xl font-bold text-white">
-                    {formatCurrency(totalAssetsValue, hideValues, preferredCurrency)}
+                    {formatCurrency(totalAssetsValue, preferredCurrency, hideValues)}
                 </p>
             </div>
 
@@ -228,7 +228,7 @@ export default function AssetsPage() {
                                         <div>
                                             <h3 className="text-sm font-medium text-white/60">{route.name}</h3>
                                             <p className="text-2xl font-bold text-white mt-1">
-                                                {formatCurrency(value, hideValues, preferredCurrency)}
+                                                {formatCurrency(value, preferredCurrency, hideValues)}
                                             </p>
                                         </div>
                                         <div className={`w-10 h-10 rounded-full ${route.iconBg} flex items-center justify-center ${route.iconColor} font-bold border ${route.iconBorder} group-hover/card:scale-110 transition-transform`}>

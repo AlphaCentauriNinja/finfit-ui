@@ -30,7 +30,7 @@ type Props = {
 const DEFAULT_CURRENCY: BullionCurrencyCode = 'GBP'
 const BULLION_IMAGES_BUCKET = 'bullion_images'
 const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024
-const TARGET_IMAGE_SIZE_PX = 64
+const TARGET_IMAGE_MAX_PX = 1024
 const ALLOWED_IMAGE_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'])
 
 const getTodayIsoDate = (): string => {
@@ -75,7 +75,7 @@ const resolveImageExtension = (file: File): string => {
     return 'jpg'
 }
 
-const resizeImageToSquare = async (file: File, sizePx: number): Promise<File> => {
+const processImageForUpload = async (file: File, maxPx: number): Promise<File> => {
     const imageObjectUrl = URL.createObjectURL(file)
 
     try {
@@ -86,29 +86,34 @@ const resizeImageToSquare = async (file: File, sizePx: number): Promise<File> =>
             img.src = imageObjectUrl
         })
 
+        // Scale down if larger than maxPx, preserving aspect ratio
+        let { width, height } = image
+        if (width > maxPx || height > maxPx) {
+            if (width > height) {
+                height = Math.round((height * maxPx) / width)
+                width = maxPx
+            } else {
+                width = Math.round((width * maxPx) / height)
+                height = maxPx
+            }
+        }
+
         const canvas = document.createElement('canvas')
-        canvas.width = sizePx
-        canvas.height = sizePx
+        canvas.width = width
+        canvas.height = height
 
         const context = canvas.getContext('2d')
         if (!context) {
             throw new Error('Failed to prepare image processing context.')
         }
 
-        // Cover-fit the source image into a square output while preserving aspect ratio.
-        const scale = Math.max(sizePx / image.width, sizePx / image.height)
-        const scaledWidth = image.width * scale
-        const scaledHeight = image.height * scale
-        const offsetX = (sizePx - scaledWidth) / 2
-        const offsetY = (sizePx - scaledHeight) / 2
-
-        context.clearRect(0, 0, sizePx, sizePx)
+        context.clearRect(0, 0, width, height)
         context.imageSmoothingEnabled = true
         context.imageSmoothingQuality = 'high'
-        context.drawImage(image, offsetX, offsetY, scaledWidth, scaledHeight)
+        context.drawImage(image, 0, 0, width, height)
 
         const outputBlob = await new Promise<Blob | null>((resolve) => {
-            canvas.toBlob(resolve, 'image/png')
+            canvas.toBlob(resolve, 'image/jpeg', 0.85) // Use JPEG with 85% quality to save space
         })
 
         if (!outputBlob) {
@@ -118,8 +123,8 @@ const resizeImageToSquare = async (file: File, sizePx: number): Promise<File> =>
         const originalNameWithoutExt = file.name.replace(/\.[^.]+$/, '')
         return new File(
             [outputBlob],
-            `${originalNameWithoutExt || 'bullion-holding'}-${sizePx}x${sizePx}.png`,
-            { type: 'image/png', lastModified: Date.now() }
+            `${originalNameWithoutExt || 'bullion-holding'}.jpg`,
+            { type: 'image/jpeg', lastModified: Date.now() }
         )
     } finally {
         URL.revokeObjectURL(imageObjectUrl)
@@ -473,8 +478,8 @@ export default function AddBullionModal({ isOpen, onClose, onCreated, onUpdated,
         }
 
         try {
-            const resizedFile = await resizeImageToSquare(selectedFile, TARGET_IMAGE_SIZE_PX)
-            setImageFile(resizedFile)
+            const processedFile = await processImageForUpload(selectedFile, TARGET_IMAGE_MAX_PX)
+            setImageFile(processedFile)
             setIsImageMarkedForRemoval(false)
             setFormError(null)
         } catch {
@@ -878,7 +883,7 @@ export default function AddBullionModal({ isOpen, onClose, onCreated, onUpdated,
                                 disabled={isSaving}
                                 className="block w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-sm text-white file:mr-4 file:rounded-lg file:border-0 file:bg-indigo-500/20 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-indigo-200 hover:file:bg-indigo-500/30"
                             />
-                            <p className="text-xs text-white/45">Supported formats: JPG, PNG, WEBP, HEIC, HEIF (max 5MB). Image is resized to 64x64 before upload.</p>
+                            <p className="text-xs text-white/45">Supported formats: JPG, PNG, WEBP, HEIC, HEIF (max 5MB).</p>
                         </div>
 
                         <div className="mt-3 space-y-2">

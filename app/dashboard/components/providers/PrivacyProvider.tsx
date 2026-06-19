@@ -21,6 +21,8 @@ export function PrivacyProvider({ children }: { children: ReactNode }) {
         }
     })
 
+    const [isReloading, setIsReloading] = useState(false)
+
     useEffect(() => {
         try {
             localStorage.setItem(STORAGE_KEY, String(hideValues))
@@ -30,12 +32,29 @@ export function PrivacyProvider({ children }: { children: ReactNode }) {
     }, [hideValues])
 
     const toggleHideValues = useCallback(() => {
-        setHideValues(prev => !prev)
-    }, [])
+        setIsReloading(true)
+        const nextValue = !hideValues
+        setHideValues(nextValue)
+        try {
+            localStorage.setItem(STORAGE_KEY, String(nextValue))
+        } catch {
+            // Ignore storage errors
+        }
+        
+        setTimeout(() => {
+            window.location.reload()
+        }, 300)
+    }, [hideValues])
 
     return (
         <PrivacyContext.Provider value={{ hideValues, toggleHideValues }}>
             {children}
+            {isReloading && (
+                <div className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-sm flex flex-col items-center justify-center">
+                    <div className="w-12 h-12 rounded-full border-4 border-indigo-500/30 border-t-indigo-500 animate-spin mb-4" />
+                    <p className="text-white/80 font-medium">Reloading dashboard...</p>
+                </div>
+            )}
         </PrivacyContext.Provider>
     )
 }

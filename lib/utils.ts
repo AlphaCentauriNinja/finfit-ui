@@ -5,24 +5,8 @@ export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs))
 }
 
-export function formatCurrency(value: number, hideValues: boolean = false, currency?: string): string {
-    if (hideValues) {
-        return "****"
-    }
-    if (currency) {
-        const locales: Record<string, string> = {
-            GBP: 'en-GB',
-            EUR: 'de-DE',
-            USD: 'en-US',
-            CHF: 'de-CH',
-            CAD: 'en-CA',
-        }
-        return new Intl.NumberFormat(locales[currency] || 'en-GB', {
-            style: 'currency',
-            currency,
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-        }).format(value)
-    }
-    return `£${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-}
+// Re-export shared utilities for backward compatibility.
+// New code should import directly from the specific modules.
+export { toNumber, toNumberOrNull } from '@/lib/utils/number'
+export { formatCurrency, formatSignedCurrency, formatWeight } from '@/lib/utils/currency'
+export { type CurrencyCode, normalizeCurrency, CURRENCY_LOCALE, CURRENCY_TO_GBP, USD_TO_GBP, GBP_TO_CURRENCY_RATE } from '@/lib/types/currency'

@@ -60,7 +60,7 @@ export default function PensionAccountCard({ pension, total }: Props) {
             <div className="bg-white/5 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/10 hover:bg-white/10 transition-colors">
                 <h3 className="text-sm font-medium text-white/60">{pension.name}</h3>
                 <p className="text-2xl font-bold text-white mt-2">
-                    {formatCurrency(pension.value, hideValues)}
+                    {formatCurrency(pension.value, undefined, hideValues)}
                 </p>
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                     <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${pnlPillTone}`}>

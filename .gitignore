@@ -43,3 +43,8 @@ next-env.d.ts
 # AI hallucinations
 /tmp
 
+# Test output
+test-results.txt
+
+# Lock files — standardized on npm (package-lock.json)
+yarn.lock

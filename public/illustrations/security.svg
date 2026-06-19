@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 480" fill="none">
+  <!-- Background glow -->
+  <circle cx="280" cy="220" r="180" fill="#dcfce7" opacity="0.4"/>
+  
+  <!-- Shield body -->
+  <path d="M280 60 L420 120 L420 260 Q420 360 280 420 Q140 360 140 260 L140 120 Z" fill="#16a34a"/>
+  <path d="M280 80 L400 132 L400 260 Q400 348 280 400 Q160 348 160 260 L160 132 Z" fill="#15803d"/>
+  
+  <!-- Shield highlight -->
+  <path d="M280 80 L400 132 L400 200 Q340 190 280 180 Q220 190 160 200 L160 132 Z" fill="#22c55e" opacity="0.3"/>
+  
+  <!-- Lock icon in center -->
+  <rect x="248" y="220" width="64" height="54" rx="8" fill="white"/>
+  <path d="M260 220 L260 205 Q260 185 280 185 Q300 185 300 205 L300 220" stroke="white" stroke-width="6" stroke-linecap="round" fill="none"/>
+  <circle cx="280" cy="247" r="8" fill="#16a34a"/>
+  <rect x="277" y="247" width="6" height="14" rx="3" fill="#16a34a"/>
+  
+  <!-- Checkmark overlay top-right -->
+  <circle cx="380" cy="130" r="28" fill="#22c55e"/>
+  <path d="M368 130 L376 138 L392 122" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- Small decorative shields -->
+  <path d="M155 170 L185 182 L185 218 Q185 238 155 248 Q125 238 125 218 L125 182 Z" fill="#dcfce7"/>
+  <rect x="143" y="205" width="24" height="20" rx="4" fill="#16a34a" opacity="0.4"/>
+  <path d="M143 205 L143 198 Q143 192 155 192 Q167 192 167 198 L167 205" stroke="#16a34a" stroke-width="2.5" fill="none" opacity="0.6"/>
+  
+  <path d="M395 170 L425 182 L425 218 Q425 238 395 248 Q365 238 365 218 L365 182 Z" fill="#dcfce7"/>
+  <rect x="383" y="205" width="24" height="20" rx="4" fill="#16a34a" opacity="0.4"/>
+  <path d="M383 205 L383 198 Q383 192 395 192 Q407 192 407 198 L407 205" stroke="#16a34a" stroke-width="2.5" fill="none" opacity="0.6"/>
+  
+  <!-- Stars / sparkles -->
+  <path d="M120 100 L124 112 L136 116 L124 120 L120 132 L116 120 L104 116 L116 112 Z" fill="#fbbf24"/>
+  <path d="M440 300 L443 309 L452 312 L443 315 L440 324 L437 315 L428 312 L437 309 Z" fill="#fbbf24"/>
+  <path d="M80 300 L82 307 L89 309 L82 311 L80 318 L78 311 L71 309 L78 307 Z" fill="#2563eb"/>
+  
+  <!-- Data lock badges -->
+  <rect x="60" y="370" width="150" height="60" rx="12" fill="white" filter="drop-shadow(0 4px 12px rgba(0,0,0,0.08))"/>
+  <circle cx="85" cy="400" r="18" fill="#dcfce7"/>
+  <path d="M79 400 L83 404 L91 396" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="110" y="388" width="85" height="7" rx="3.5" fill="#e2e8f0"/>
+  <rect x="110" y="401" width="65" height="6" rx="3" fill="#e2e8f0"/>
+  <rect x="110" y="413" width="75" height="5" rx="2.5" fill="#e2e8f0"/>
+  
+  <rect x="350" y="370" width="150" height="60" rx="12" fill="white" filter="drop-shadow(0 4px 12px rgba(0,0,0,0.08))"/>
+  <circle cx="375" cy="400" r="18" fill="#dbeafe"/>
+  <path d="M368 403 L372 398 Q375 394 378 398 L382 403" stroke="#2563eb" stroke-width="2" stroke-linecap="round" fill="none"/>
+  <circle cx="375" cy="403" r="3" fill="#2563eb"/>
+  <rect x="400" y="388" width="85" height="7" rx="3.5" fill="#e2e8f0"/>
+  <rect x="400" y="401" width="65" height="6" rx="3" fill="#e2e8f0"/>
+  <rect x="400" y="413" width="75" height="5" rx="2.5" fill="#e2e8f0"/>
+</svg>

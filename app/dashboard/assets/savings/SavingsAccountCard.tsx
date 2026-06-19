@@ -29,7 +29,7 @@ export default function SavingsAccountCard({ account, totalSavingsValue }: Props
                     <div>
                         <h3 className="text-sm font-medium text-white/60">{account.name}</h3>
                         <p className="text-2xl font-bold text-white mt-1">
-                            {formatCurrency(account.totalValue, hideValues)}
+                            {formatCurrency(account.totalValue, undefined, hideValues)}
                         </p>
                     </div>
                     <div className="w-10 h-10 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-400 font-bold border border-indigo-500/20 group-hover/card:scale-110 transition-transform">

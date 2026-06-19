@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 500" fill="none">
+  <!-- Background -->
+  <circle cx="300" cy="250" r="220" fill="#dcfce7" opacity="0.3"/>
+  
+  <!-- Phone -->
+  <rect x="200" y="80" width="200" height="360" rx="24" fill="#1e293b"/>
+  <rect x="210" y="92" width="180" height="336" rx="16" fill="#0f172a"/>
+  <!-- Phone notch -->
+  <rect x="258" y="92" width="84" height="24" rx="12" fill="#1e293b"/>
+  
+  <!-- Screen content -->
+  <rect x="220" y="126" width="160" height="290" rx="8" fill="#f8fafc"/>
+  
+  <!-- App bar -->
+  <rect x="220" y="126" width="160" height="40" rx="8" fill="#16a34a"/>
+  <rect x="232" y="136" width="60" height="8" rx="4" fill="white" opacity="0.9"/>
+  <rect x="232" y="149" width="40" height="5" rx="2.5" fill="white" opacity="0.6"/>
+  <!-- Bell icon on app bar -->
+  <circle cx="362" cy="146" r="10" fill="white" opacity="0.2"/>
+  <path d="M358 143 Q362 140 366 143 L367 148 L357 148 Z" fill="white"/>
+  <path d="M360 148 Q362 152 364 148" fill="white"/>
+  
+  <!-- Notification cards -->
+  <rect x="228" y="176" width="144" height="52" rx="8" fill="white" filter="drop-shadow(0 2px 8px rgba(0,0,0,0.08))"/>
+  <circle cx="244" cy="202" r="12" fill="#dcfce7"/>
+  <path d="M239 202 L243 206 L249 198" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="262" y="191" width="60" height="6" rx="3" fill="#0f172a"/>
+  <rect x="262" y="202" width="90" height="5" rx="2.5" fill="#94a3b8"/>
+  <rect x="262" y="212" width="70" height="5" rx="2.5" fill="#94a3b8"/>
+  <rect x="312" y="185" width="50" height="14" rx="7" fill="#dcfce7"/>
+  <rect x="320" y="189" width="34" height="6" rx="3" fill="#16a34a"/>
+
+  <rect x="228" y="236" width="144" height="52" rx="8" fill="white" filter="drop-shadow(0 2px 8px rgba(0,0,0,0.08))"/>
+  <circle cx="244" cy="262" r="12" fill="#fef3c7"/>
+  <path d="M244 256 L244 262 L247 265" stroke="#f59e0b" stroke-width="2" stroke-linecap="round"/>
+  <rect x="262" y="251" width="55" height="6" rx="3" fill="#0f172a"/>
+  <rect x="262" y="262" width="85" height="5" rx="2.5" fill="#94a3b8"/>
+  <rect x="262" y="272" width="65" height="5" rx="2.5" fill="#94a3b8"/>
+
+  <rect x="228" y="296" width="144" height="52" rx="8" fill="white" filter="drop-shadow(0 2px 8px rgba(0,0,0,0.08))"/>
+  <circle cx="244" cy="322" r="12" fill="#dbeafe"/>
+  <path d="M239 322 Q244 316 249 322 Q244 328 239 322Z" fill="#2563eb"/>
+  <rect x="262" y="311" width="70" height="6" rx="3" fill="#0f172a"/>
+  <rect x="262" y="322" width="90" height="5" rx="2.5" fill="#94a3b8"/>
+  <rect x="262" y="332" width="50" height="5" rx="2.5" fill="#94a3b8"/>
+
+  <!-- Floating notification badge -->
+  <rect x="370" y="140" width="120" height="50" rx="10" fill="white" filter="drop-shadow(0 4px 16px rgba(22,163,74,0.15))"/>
+  <circle cx="385" cy="165" r="12" fill="#16a34a"/>
+  <text x="385" y="170" text-anchor="middle" fill="white" font-size="12" font-family="Arial" font-weight="bold">✓</text>
+  <rect x="402" y="155" width="70" height="6" rx="3" fill="#0f172a"/>
+  <rect x="402" y="166" width="55" height="5" rx="2.5" fill="#94a3b8"/>
+
+  <!-- Floating alert -->
+  <rect x="100" y="200" width="100" height="50" rx="10" fill="white" filter="drop-shadow(0 4px 16px rgba(0,0,0,0.1))"/>
+  <circle cx="116" cy="225" r="10" fill="#fef3c7"/>
+  <text x="116" y="230" text-anchor="middle" fill="#f59e0b" font-size="10" font-family="Arial" font-weight="bold">!</text>
+  <rect x="132" y="216" width="55" height="5" rx="2.5" fill="#0f172a"/>
+  <rect x="132" y="227" width="45" height="5" rx="2.5" fill="#94a3b8"/>
+  <rect x="132" y="238" width="35" height="5" rx="2.5" fill="#94a3b8"/>
+
+  <!-- Signal waves from phone -->
+  <path d="M420 250 Q440 235 440 250 Q440 265 420 250" stroke="#16a34a" stroke-width="2" fill="none" opacity="0.4"/>
+  <path d="M430 250 Q460 228 460 250 Q460 272 430 250" stroke="#16a34a" stroke-width="2" fill="none" opacity="0.25"/>
+  <path d="M440 250 Q480 220 480 250 Q480 280 440 250" stroke="#16a34a" stroke-width="2" fill="none" opacity="0.15"/>
+</svg>

@@ -1,3 +1,12 @@
+/**
+ * Crypto asset data types and Binance stream configuration.
+ *
+ * Currency types and constants are now imported from @/lib/types/currency.
+ */
+
+// Re-export currency types for backward compatibility with existing imports
+export { type CurrencyCode, USD_TO_GBP, GBP_TO_CURRENCY_RATE, CURRENCY_LOCALE } from '@/lib/types/currency'
+
 export type CryptoRow = {
     id: string
     ticker: string
@@ -7,26 +16,6 @@ export type CryptoRow = {
     usd: number
     marketValueGbp: number
     investedGbp: number
-}
-
-export type CurrencyCode = 'GBP' | 'EUR' | 'USD' | 'CHF' | 'CAD'
-
-export const USD_TO_GBP = 0.746
-
-export const GBP_TO_CURRENCY_RATE: Record<CurrencyCode, number> = {
-    GBP: 1,
-    EUR: 1.17,
-    USD: 1.28,
-    CHF: 1.13,
-    CAD: 1.74,
-}
-
-export const CURRENCY_LOCALE: Record<CurrencyCode, string> = {
-    GBP: 'en-GB',
-    EUR: 'de-DE',
-    USD: 'en-US',
-    CHF: 'de-CH',
-    CAD: 'en-CA',
 }
 
 export const DEFAULT_COIN_NAME_BY_TICKER: Record<string, string> = {

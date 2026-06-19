@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 500" fill="none">
+  <!-- Background -->
+  <circle cx="300" cy="250" r="220" fill="#dcfce7" opacity="0.3"/>
+  
+  <!-- Plant/growth tree -->
+  <rect x="285" y="340" width="30" height="80" rx="6" fill="#86efac"/>
+  
+  <!-- Leaves -->
+  <ellipse cx="300" cy="280" rx="80" ry="70" fill="#16a34a"/>
+  <ellipse cx="240" cy="310" rx="60" ry="55" fill="#22c55e"/>
+  <ellipse cx="360" cy="310" rx="60" ry="55" fill="#22c55e"/>
+  <ellipse cx="300" cy="340" rx="90" ry="30" fill="#15803d"/>
+  
+  <!-- Coin stack -->
+  <ellipse cx="440" cy="400" rx="50" ry="14" fill="#fbbf24"/>
+  <rect x="390" y="360" width="100" height="40" rx="0" fill="#fbbf24"/>
+  <ellipse cx="440" cy="360" rx="50" ry="14" fill="#fcd34d"/>
+  <rect x="390" y="320" width="100" height="40" rx="0" fill="#fcd34d"/>
+  <ellipse cx="440" cy="320" rx="50" ry="14" fill="#fde68a"/>
+  <rect x="390" y="285" width="100" height="35" rx="0" fill="#fde68a"/>
+  <ellipse cx="440" cy="285" rx="50" ry="14" fill="#fef3c7"/>
+
+  <!-- Coin labels -->
+  <text x="440" y="290" text-anchor="middle" fill="#92400e" font-size="14" font-family="Arial" font-weight="bold">£</text>
+  <text x="440" y="326" text-anchor="middle" fill="#92400e" font-size="14" font-family="Arial" font-weight="bold">£</text>
+  <text x="440" y="366" text-anchor="middle" fill="#92400e" font-size="14" font-family="Arial" font-weight="bold">£</text>
+  
+  <!-- Arrow upward growth -->
+  <path d="M160 380 L160 160" stroke="#16a34a" stroke-width="3" stroke-dasharray="8 4"/>
+  <polygon points="148,168 160,145 172,168" fill="#16a34a"/>
+
+  <!-- Bar chart -->
+  <rect x="160" y="380" width="230" height="3" fill="#e2e8f0"/>
+  <rect x="175" y="320" width="30" height="60" rx="4" fill="#16a34a" opacity="0.4"/>
+  <rect x="215" y="290" width="30" height="90" rx="4" fill="#16a34a" opacity="0.6"/>
+  <rect x="255" y="255" width="30" height="125" rx="4" fill="#16a34a" opacity="0.8"/>
+  <rect x="295" y="225" width="30" height="155" rx="4" fill="#16a34a"/>
+  <rect x="335" y="200" width="30" height="180" rx="4" fill="#16a34a"/>
+  
+  <!-- Chart line -->
+  <polyline points="190,320 230,290 270,255 310,225 350,200" stroke="#15803d" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="350" cy="200" r="5" fill="#15803d"/>
+  
+  <!-- Floating stat card -->
+  <rect x="380" y="155" width="170" height="80" rx="12" fill="white" filter="drop-shadow(0 4px 16px rgba(22,163,74,0.15))"/>
+  <rect x="396" y="170" width="50" height="8" rx="4" fill="#e2e8f0"/>
+  <rect x="396" y="186" width="80" height="12" rx="6" fill="#16a34a"/>
+  <rect x="396" y="205" width="60" height="6" rx="3" fill="#86efac"/>
+  <circle cx="520" cy="183" r="18" fill="#dcfce7"/>
+  <path d="M512 183 L516 187 L528 175" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- Small badges -->
+  <rect x="120" y="160" width="80" height="28" rx="14" fill="#dcfce7"/>
+  <text x="160" y="179" text-anchor="middle" fill="#16a34a" font-size="11" font-family="Arial" font-weight="bold">+12.4%</text>
+  
+  <rect x="90" y="250" width="65" height="28" rx="14" fill="#dbeafe"/>
+  <text x="122" y="269" text-anchor="middle" fill="#2563eb" font-size="11" font-family="Arial" font-weight="bold">ISA</text>
+</svg>
